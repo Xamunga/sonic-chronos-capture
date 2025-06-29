@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -11,11 +10,24 @@ import { Folder, Calendar, Clock, FileText, Trash2, Settings } from 'lucide-reac
 const FileManagementSettings = () => {
   const [outputPath, setOutputPath] = useState('C:\\Gravacoes\\');
   const [autoDateFolder, setAutoDateFolder] = useState(true);
+  const [dateFormat, setDateFormat] = useState('YYYY/MM/DD');
   const [autoDeleteOld, setAutoDeleteOld] = useState(false);
   const [keepDays, setKeepDays] = useState(30);
   const [splitInterval, setSplitInterval] = useState(60);
   const [fileNamePattern, setFileNamePattern] = useState('timestamp-title-sequence');
   const [customTitle, setCustomTitle] = useState('Gravacao');
+
+  const dateFormats = [
+    { value: 'YYYY/MM/DD', label: 'AAAA/MM/DD (2024/12/29)' },
+    { value: 'YYYY-MM-DD', label: 'AAAA-MM-DD (2024-12-29)' },
+    { value: 'DD/MM/YYYY', label: 'DD/MM/AAAA (29/12/2024)' },
+    { value: 'DD-MM-YYYY', label: 'DD-MM-AAAA (29-12-2024)' },
+    { value: 'MM/DD/YYYY', label: 'MM/DD/AAAA (12/29/2024)' },
+    { value: 'MM-DD-YYYY', label: 'MM-DD-AAAA (12-29-2024)' },
+    { value: 'YYYY/MM', label: 'AAAA/MM (2024/12)' },
+    { value: 'YYYY-MM', label: 'AAAA-MM (2024-12)' },
+    { value: 'YYYY', label: 'Apenas Ano (2024)' }
+  ];
 
   const fileNamePatterns = [
     { value: 'timestamp-title-sequence', label: 'Data/Hora + Título + Sequência' },
@@ -38,6 +50,36 @@ const FileManagementSettings = () => {
         return `${sequence}_${timestamp}_${customTitle}.wav`;
       default:
         return `${timestamp}_${customTitle}_${sequence}.wav`;
+    }
+  };
+
+  const formatExampleDateFolder = () => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    
+    switch (dateFormat) {
+      case 'YYYY/MM/DD':
+        return `${year}/${month}/${day}`;
+      case 'YYYY-MM-DD':
+        return `${year}-${month}-${day}`;
+      case 'DD/MM/YYYY':
+        return `${day}/${month}/${year}`;
+      case 'DD-MM-YYYY':
+        return `${day}-${month}-${year}`;
+      case 'MM/DD/YYYY':
+        return `${month}/${day}/${year}`;
+      case 'MM-DD-YYYY':
+        return `${month}-${day}-${year}`;
+      case 'YYYY/MM':
+        return `${year}/${month}`;
+      case 'YYYY-MM':
+        return `${year}-${month}`;
+      case 'YYYY':
+        return `${year}`;
+      default:
+        return `${year}/${month}/${day}`;
     }
   };
 
@@ -75,7 +117,7 @@ const FileManagementSettings = () => {
                   Criar Subpastas por Data
                 </Label>
                 <p className="text-xs text-muted-foreground">
-                  Organiza automaticamente por AAAA/MM/DD
+                  Organiza automaticamente por data
                 </p>
               </div>
               <Switch
@@ -84,10 +126,30 @@ const FileManagementSettings = () => {
               />
             </div>
 
+            {autoDateFolder && (
+              <div>
+                <Label htmlFor="date-format" className="text-sm font-medium text-studio-electric">
+                  Formato das Subpastas
+                </Label>
+                <Select value={dateFormat} onValueChange={setDateFormat}>
+                  <SelectTrigger className="mt-2 bg-studio-dark border-studio-electric/30">
+                    <SelectValue placeholder="Selecione o formato" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-studio-dark border-studio-electric/30">
+                    {dateFormats.map((format) => (
+                      <SelectItem key={format.value} value={format.value}>
+                        {format.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
             <div className="text-xs text-muted-foreground bg-studio-dark p-3 rounded">
               <strong>Estrutura de Pastas:</strong><br />
               {autoDateFolder ? 
-                `${outputPath}2024\\12\\29\\arquivo.wav` : 
+                `${outputPath}${formatExampleDateFolder()}\\arquivo.wav` : 
                 `${outputPath}arquivo.wav`
               }
             </div>
