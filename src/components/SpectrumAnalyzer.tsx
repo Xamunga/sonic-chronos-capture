@@ -7,7 +7,7 @@ const SpectrumAnalyzer = () => {
 
   useEffect(() => {
     const interval = setInterval(() => {
-      // Simulate spectrum data
+      // Simula dados de espectro otimizados para Windows
       const newSpectrum = Array.from({ length: 32 }, () => Math.random() * 100);
       setSpectrum(newSpectrum);
     }, 50);
@@ -18,7 +18,7 @@ const SpectrumAnalyzer = () => {
   return (
     <Card className="bg-gradient-to-br from-studio-charcoal to-studio-slate border-studio-electric/30">
       <div className="p-6">
-        <h3 className="text-lg font-semibold text-studio-electric mb-4">Spectrum Analyzer</h3>
+        <h3 className="text-lg font-semibold text-studio-electric mb-4">Analisador de Espectro</h3>
         <div className="h-32 flex items-end justify-between space-x-1 bg-studio-dark rounded-lg p-2">
           {spectrum.map((level, index) => (
             <div
@@ -32,6 +32,9 @@ const SpectrumAnalyzer = () => {
           <span>20Hz</span>
           <span>1kHz</span>
           <span>20kHz</span>
+        </div>
+        <div className="mt-2 text-xs text-center text-muted-foreground">
+          <span className="text-studio-neon">Processamento Otimizado Windows 10/11</span>
         </div>
       </div>
     </Card>

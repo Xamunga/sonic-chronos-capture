@@ -15,16 +15,16 @@ const AppHeader = () => {
               Gravador Real Time Pro
             </h1>
             <p className="text-sm text-muted-foreground">
-              Professional Audio Recording Suite
+              Suíte Profissional de Gravação de Áudio
             </p>
           </div>
         </div>
         <div className="text-right">
           <div className="text-lg font-semibold text-studio-neon">
-            ALES Sonorization
+            ALES Sonorização
           </div>
           <div className="text-xs text-muted-foreground">
-            Professional Audio Solutions
+            Soluções Profissionais em Áudio
           </div>
         </div>
       </div>
