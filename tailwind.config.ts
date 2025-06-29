@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -61,6 +62,16 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
+				},
+				// Professional audio theme colors
+				studio: {
+					dark: '#0a0a0a',
+					charcoal: '#1a1a1a',
+					slate: '#2a2a2a',
+					electric: '#00d4ff',
+					neon: '#00ff88',
+					warning: '#ff4444',
+					peak: '#ff6b00'
 				}
 			},
 			borderRadius: {
@@ -84,11 +95,21 @@ export default {
 					to: {
 						height: '0'
 					}
+				},
+				'pulse-record': {
+					'0%, 100%': { opacity: '1' },
+					'50%': { opacity: '0.6' }
+				},
+				'vu-bounce': {
+					'0%, 100%': { transform: 'scaleY(0.3)' },
+					'50%': { transform: 'scaleY(1)' }
 				}
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
-				'accordion-up': 'accordion-up 0.2s ease-out'
+				'accordion-up': 'accordion-up 0.2s ease-out',
+				'pulse-record': 'pulse-record 1s ease-in-out infinite',
+				'vu-bounce': 'vu-bounce 0.5s ease-in-out infinite'
 			}
 		}
 	},

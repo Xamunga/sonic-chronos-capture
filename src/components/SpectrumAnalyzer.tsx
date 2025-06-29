@@ -1,0 +1,41 @@
+
+import React, { useState, useEffect } from 'react';
+import { Card } from '@/components/ui/card';
+
+const SpectrumAnalyzer = () => {
+  const [spectrum, setSpectrum] = useState<number[]>(Array(32).fill(0));
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      // Simulate spectrum data
+      const newSpectrum = Array.from({ length: 32 }, () => Math.random() * 100);
+      setSpectrum(newSpectrum);
+    }, 50);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <Card className="bg-gradient-to-br from-studio-charcoal to-studio-slate border-studio-electric/30">
+      <div className="p-6">
+        <h3 className="text-lg font-semibold text-studio-electric mb-4">Spectrum Analyzer</h3>
+        <div className="h-32 flex items-end justify-between space-x-1 bg-studio-dark rounded-lg p-2">
+          {spectrum.map((level, index) => (
+            <div
+              key={index}
+              className="spectrum-bar w-2 rounded-t transition-all duration-75 ease-out"
+              style={{ height: `${level}%` }}
+            />
+          ))}
+        </div>
+        <div className="mt-2 flex justify-between text-xs text-muted-foreground">
+          <span>20Hz</span>
+          <span>1kHz</span>
+          <span>20kHz</span>
+        </div>
+      </div>
+    </Card>
+  );
+};
+
+export default SpectrumAnalyzer;
