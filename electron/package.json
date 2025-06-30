@@ -1,0 +1,71 @@
+
+{
+  "name": "gravador-realtime-pro",
+  "version": "1.0.0",
+  "description": "Suíte Profissional de Gravação de Áudio - ALES Sonorização",
+  "main": "main.js",
+  "author": "ALES Sonorização",
+  "license": "MIT",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder",
+    "dist": "electron-builder --publish=never",
+    "pack": "electron-builder --dir"
+  },
+  "build": {
+    "appId": "com.ales.gravador-realtime-pro",
+    "productName": "Gravador Real Time Pro",
+    "copyright": "Copyright © 2024 ALES Sonorização",
+    "directories": {
+      "output": "dist-electron"
+    },
+    "files": [
+      "../dist/**/*",
+      "main.js",
+      "preload.js",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "assets",
+        "to": "assets",
+        "filter": ["**/*"]
+      }
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64", "ia32"]
+        }
+      ],
+      "icon": "assets/icon.ico",
+      "publisherName": "ALES Sonorização",
+      "requestedExecutionLevel": "asInvoker"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "allowElevation": true,
+      "installerIcon": "assets/icon.ico",
+      "uninstallerIcon": "assets/icon.ico",
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Gravador Real Time Pro",
+      "include": "installer.nsh"
+    },
+    "publish": {
+      "provider": "generic",
+      "url": "https://releases.ales-sonorizacao.com/"
+    }
+  },
+  "dependencies": {
+    "electron-updater": "^6.1.7"
+  },
+  "devDependencies": {
+    "electron": "^28.1.0",
+    "electron-builder": "^24.9.1",
+    "electron-is-dev": "^2.0.0"
+  }
+}
