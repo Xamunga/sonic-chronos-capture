@@ -1,4 +1,3 @@
-
 const { app, BrowserWindow, ipcMain, dialog, shell } = require('electron');
 const path = require('path');
 const { autoUpdater } = require('electron-updater');
@@ -9,6 +8,9 @@ const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged;
 let mainWindow;
 
 function createWindow() {
+  console.log('Criando janela principal...');
+  console.log('Modo desenvolvimento:', isDev);
+  
   // Criar a janela principal
   mainWindow = new BrowserWindow({
     width: 1400,
@@ -31,23 +33,29 @@ function createWindow() {
     ? 'http://localhost:5173' 
     : `file://${path.join(__dirname, '../dist/index.html')}`;
 
+  console.log('Tentando carregar URL:', startUrl);
+  
   mainWindow.loadURL(startUrl);
+
+  // SEMPRE abrir DevTools para debug
+  mainWindow.webContents.openDevTools();
 
   // Mostrar quando estiver pronto
   mainWindow.once('ready-to-show', () => {
+    console.log('Janela pronta para mostrar');
     mainWindow.show();
     
-    // Abrir DevTools apenas em desenvolvimento
-    if (isDev) {
-      mainWindow.webContents.openDevTools();
-    }
+    console.log('🚀 Gravador Real Time Pro - Aplicação carregada');
+  });
+
+  // Log de erros de carregamento
+  mainWindow.webContents.on('did-fail-load', (event, errorCode, errorDescription, validatedURL) => {
+    console.error('Falha ao carregar:', errorCode, errorDescription, validatedURL);
   });
 
   // Otimizações para Windows
   mainWindow.webContents.on('did-frame-finish-load', () => {
-    if (isDev) {
-      console.log('Gravador Real Time Pro - Modo Desenvolvimento');
-    }
+    console.log('Frame carregado com sucesso');
   });
 
   mainWindow.on('closed', () => {
