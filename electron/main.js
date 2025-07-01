@@ -1,8 +1,10 @@
 
 const { app, BrowserWindow, ipcMain, dialog, shell } = require('electron');
 const path = require('path');
-const isDev = require('electron-is-dev');
 const { autoUpdater } = require('electron-updater');
+
+// Verificação nativa para modo de desenvolvimento
+const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged;
 
 let mainWindow;
 
@@ -14,9 +16,10 @@ function createWindow() {
     minWidth: 1200,
     minHeight: 800,
     webPreferences: {
-      nodeIntegration: true,
-      contextIsolation: false,
-      enableRemoteModule: true
+      nodeIntegration: false,
+      contextIsolation: true,
+      enableRemoteModule: false,
+      preload: path.join(__dirname, 'preload.js')
     },
     icon: path.join(__dirname, 'assets/icon.png'),
     titleBarStyle: 'default',
