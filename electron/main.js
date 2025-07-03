@@ -31,9 +31,10 @@ function createWindow() {
   // Carregar a aplicação
   const startUrl = isDev 
     ? 'http://localhost:5173' 
-    : `file://${path.join(__dirname, '../dist/index.html')}`;
+    : `file://${path.join(__dirname, 'dist/index.html')}`;
 
   console.log('Tentando carregar URL:', startUrl);
+  console.log('__dirname:', __dirname);
   
   mainWindow.loadURL(startUrl);
 
