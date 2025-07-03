@@ -29,12 +29,18 @@ function createWindow() {
   });
 
   // Carregar a aplicação
-  const startUrl = isDev 
-    ? 'http://localhost:5173' 
-    : `file://${path.join(__dirname, 'dist/index.html')}`;
+  let startUrl;
+  if (isDev) {
+    startUrl = 'http://localhost:5173';
+  } else {
+    // Na versão empacotada, usar path.resolve baseado no diretório do executável
+    const distPath = path.join(process.resourcesPath, 'app', 'dist', 'index.html');
+    startUrl = `file://${distPath}`;
+  }
 
   console.log('Tentando carregar URL:', startUrl);
   console.log('__dirname:', __dirname);
+  console.log('process.resourcesPath:', process.resourcesPath);
   
   mainWindow.loadURL(startUrl);
 
