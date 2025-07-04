@@ -40,7 +40,7 @@
           "arch": ["x64", "ia32"]
         }
       ],
-      "icon": "assets/icon.ico",
+      
       "publisherName": "ALES Sonorização",
       "requestedExecutionLevel": "asInvoker"
     },
@@ -48,8 +48,6 @@
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
       "allowElevation": true,
-      "installerIcon": "assets/icon.ico",
-      "uninstallerIcon": "assets/icon.ico",
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
       "shortcutName": "Gravador Real Time Pro",
