@@ -34,7 +34,7 @@ function createWindow() {
     startUrl = 'http://localhost:5173';
   } else {
     // Na versão empacotada, usar path.resolve baseado no diretório do executável
-    const distPath = path.join(process.resourcesPath, 'app', 'dist', 'index.html');
+    const distPath = path.join(process.resourcesPath, 'dist', 'index.html');
     startUrl = `file://${distPath}`;
   }
 
