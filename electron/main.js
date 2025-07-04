@@ -35,9 +35,9 @@ function createWindow() {
     mainWindow.loadURL(startUrl);
   } else {
     // Na versão empacotada, usar loadFile para carregar o index.html
-    const indexPath = path.join(process.resourcesPath, 'app', 'index.html');
+    const indexPath = path.join(__dirname, 'index.html');
     console.log('Modo produção - carregando arquivo:', indexPath);
-    console.log('process.resourcesPath:', process.resourcesPath);
+    console.log('Arquivo existe?:', require('fs').existsSync(indexPath));
     console.log('__dirname:', __dirname);
     
     mainWindow.loadFile(indexPath);
