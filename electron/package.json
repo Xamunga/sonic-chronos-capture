@@ -21,7 +21,11 @@
       "output": "dist-electron"
     },
     "files": [
-      "../dist/**/*",
+      {
+        "from": "../dist",
+        "to": ".",
+        "filter": ["**/*"]
+      },
       "main.js",
       "preload.js",
       "package.json"
