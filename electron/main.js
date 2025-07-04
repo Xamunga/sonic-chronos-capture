@@ -29,20 +29,19 @@ function createWindow() {
   });
 
   // Carregar a aplicação
-  let startUrl;
   if (isDev) {
-    startUrl = 'http://localhost:5173';
+    const startUrl = 'http://localhost:5173';
+    console.log('Modo desenvolvimento - carregando URL:', startUrl);
+    mainWindow.loadURL(startUrl);
   } else {
-    // Na versão empacotada, usar path.resolve baseado no diretório do executável
-    const distPath = path.join(process.resourcesPath, 'dist', 'index.html');
-    startUrl = `file://${distPath}`;
+    // Na versão empacotada, usar loadFile para carregar o index.html
+    const indexPath = path.join(process.resourcesPath, 'app', 'index.html');
+    console.log('Modo produção - carregando arquivo:', indexPath);
+    console.log('process.resourcesPath:', process.resourcesPath);
+    console.log('__dirname:', __dirname);
+    
+    mainWindow.loadFile(indexPath);
   }
-
-  console.log('Tentando carregar URL:', startUrl);
-  console.log('__dirname:', __dirname);
-  console.log('process.resourcesPath:', process.resourcesPath);
-  
-  mainWindow.loadURL(startUrl);
 
   // SEMPRE abrir DevTools para debug
   mainWindow.webContents.openDevTools();
