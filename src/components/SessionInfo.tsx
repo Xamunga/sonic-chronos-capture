@@ -4,11 +4,13 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useElectron } from '@/hooks/useElectron';
 
 const SessionInfo = () => {
   const [sessionName, setSessionName] = useState('');
   const [currentDate, setCurrentDate] = useState(new Date());
   const [outputPath, setOutputPath] = useState('C:\\Gravacoes\\');
+  const { selectOutputDirectory } = useElectron();
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -75,7 +77,15 @@ const SessionInfo = () => {
                 className="flex-1 bg-studio-dark border-studio-electric/30 text-studio-electric"
                 placeholder="Caminho do diretório de saída"
               />
-              <Button className="pro-button bg-studio-electric hover:bg-studio-electric/80 text-studio-dark">
+              <Button 
+                className="pro-button bg-studio-electric hover:bg-studio-electric/80 text-studio-dark"
+                onClick={async () => {
+                  const directory = await selectOutputDirectory();
+                  if (directory) {
+                    setOutputPath(directory);
+                  }
+                }}
+              >
                 Procurar
               </Button>
             </div>

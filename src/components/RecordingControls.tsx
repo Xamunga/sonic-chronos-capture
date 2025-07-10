@@ -3,11 +3,14 @@ import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Play, Pause, Monitor } from 'lucide-react';
+import { audioService } from '@/services/electronAudio';
+import { useElectron } from '@/hooks/useElectron';
 
 const RecordingControls = () => {
   const [isRecording, setIsRecording] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
+  const { showSystemMessage } = useElectron();
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -26,23 +29,28 @@ const RecordingControls = () => {
     return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const handleRecord = () => {
+  const handleRecord = async () => {
     if (!isRecording) {
-      setIsRecording(true);
-      setIsPaused(false);
-      console.log('Gravação iniciada - Sistema de buffer duplo ativado');
+      const success = await audioService.startRecording('C:\\Gravacoes\\');
+      if (success) {
+        setIsRecording(true);
+        setIsPaused(false);
+        await showSystemMessage('Gravação', 'Gravação iniciada com sucesso!');
+      }
     } else {
+      audioService.stopRecording();
       setIsRecording(false);
       setIsPaused(false);
       setRecordingTime(0);
-      console.log('Gravação finalizada - Arquivos salvos com segurança');
+      await showSystemMessage('Gravação', 'Gravação finalizada e arquivo salvo!');
     }
   };
 
-  const handlePause = () => {
+  const handlePause = async () => {
     if (isRecording) {
+      audioService.pauseRecording();
       setIsPaused(!isPaused);
-      console.log(isPaused ? 'Gravação retomada' : 'Gravação pausada');
+      await showSystemMessage('Gravação', isPaused ? 'Gravação retomada' : 'Gravação pausada');
     }
   };
 
