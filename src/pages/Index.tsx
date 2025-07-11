@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import AppHeader from '../components/AppHeader';
 import RecordingControls from '../components/RecordingControls';
@@ -10,6 +10,7 @@ import SessionInfo from '../components/SessionInfo';
 import FileManagementSettings from '../components/FileManagementSettings';
 
 const Index = () => {
+  const [outputPath, setOutputPath] = useState('C:\\Gravacoes\\');
   return (
     <div className="min-h-screen bg-gradient-to-br from-studio-dark via-studio-charcoal to-studio-slate p-4">
       <div className="max-w-7xl mx-auto">
@@ -46,7 +47,7 @@ const Index = () => {
           <TabsContent value="monitor" className="space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               <div className="lg:col-span-1">
-                <RecordingControls />
+                <RecordingControls outputPath={outputPath} />
               </div>
               <div className="lg:col-span-2 space-y-6">
                 <VUMeters />
@@ -70,9 +71,9 @@ const Index = () => {
 
           <TabsContent value="session" className="space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <SessionInfo />
+              <SessionInfo outputPath={outputPath} setOutputPath={setOutputPath} />
               <div className="space-y-6">
-                <RecordingControls />
+                <RecordingControls outputPath={outputPath} />
                 <div className="bg-gradient-to-br from-studio-charcoal to-studio-slate border border-studio-electric/30 rounded-lg p-6">
                   <h3 className="text-lg font-semibold text-studio-electric mb-4">Ações Rápidas</h3>
                   <div className="grid grid-cols-2 gap-4">

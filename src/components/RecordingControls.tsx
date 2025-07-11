@@ -6,7 +6,11 @@ import { Play, Pause, Monitor } from 'lucide-react';
 import { audioService } from '@/services/electronAudio';
 import { useElectron } from '@/hooks/useElectron';
 
-const RecordingControls = () => {
+interface RecordingControlsProps {
+  outputPath: string;
+}
+
+const RecordingControls: React.FC<RecordingControlsProps> = ({ outputPath }) => {
   const [isRecording, setIsRecording] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
@@ -31,10 +35,11 @@ const RecordingControls = () => {
 
   const handleRecord = async () => {
     if (!isRecording) {
-      const success = await audioService.startRecording('C:\\Gravacoes\\');
+      const success = await audioService.startRecording(outputPath);
       if (success) {
         setIsRecording(true);
         setIsPaused(false);
+        setRecordingTime(0);
         await showSystemMessage('Gravação', 'Gravação iniciada com sucesso!');
       }
     } else {

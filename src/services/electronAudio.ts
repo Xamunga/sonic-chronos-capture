@@ -7,6 +7,9 @@ export class ElectronAudioService {
   private audioChunks: Blob[] = [];
   private isRecording = false;
   private outputPath = '';
+  private inputDevice = 'default';
+  private outputFormat = 'wav';
+  private sampleRate = 44100;
 
   async requestMicrophonePermission(): Promise<boolean> {
     try {
@@ -34,20 +37,29 @@ export class ElectronAudioService {
         return false;
       }
 
+      // Garantir que o diretório existe
+      await this.ensureDirectoryExists(outputPath);
+
       const hasPermission = await this.requestMicrophonePermission();
       if (!hasPermission) return false;
 
-      const stream = await navigator.mediaDevices.getUserMedia({
+      const constraints: MediaStreamConstraints = {
         audio: {
           echoCancellation: true,
           noiseSuppression: true,
-          sampleRate: 44100,
-          channelCount: 2
+          sampleRate: this.sampleRate,
+          channelCount: 2,
+          deviceId: this.inputDevice !== 'default' ? { exact: this.inputDevice } : undefined
         }
-      });
+      };
 
+      const stream = await navigator.mediaDevices.getUserMedia(constraints);
+
+      const mimeType = this.outputFormat === 'wav' ? 'audio/wav' : 
+                      this.outputFormat === 'mp3' ? 'audio/mp3' : 'audio/webm;codecs=opus';
+      
       this.mediaRecorder = new MediaRecorder(stream, {
-        mimeType: 'audio/webm;codecs=opus'
+        mimeType: mimeType
       });
 
       this.audioChunks = [];
@@ -140,6 +152,41 @@ export class ElectronAudioService {
   getRecordingState(): string {
     if (!this.mediaRecorder) return 'stopped';
     return this.mediaRecorder.state;
+  }
+
+  async getAudioDevices(): Promise<MediaDeviceInfo[]> {
+    try {
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      return devices.filter(device => device.kind === 'audioinput');
+    } catch (error) {
+      console.error('Erro ao obter dispositivos de áudio:', error);
+      return [];
+    }
+  }
+
+  setInputDevice(deviceId: string): void {
+    this.inputDevice = deviceId;
+  }
+
+  setOutputFormat(format: string): void {
+    this.outputFormat = format;
+  }
+
+  setSampleRate(rate: number): void {
+    this.sampleRate = rate;
+  }
+
+  async ensureDirectoryExists(dirPath: string): Promise<void> {
+    try {
+      // No navegador, não podemos criar diretórios
+      // Esta funcionalidade será implementada no Electron
+      console.log(`Verificando diretório: ${dirPath}`);
+      if (window.electronAPI) {
+        // await window.electronAPI.ensureDirectory(dirPath);
+      }
+    } catch (error) {
+      console.error('Erro ao verificar diretório:', error);
+    }
   }
 }
 

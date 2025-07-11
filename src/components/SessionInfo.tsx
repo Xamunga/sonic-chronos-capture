@@ -6,10 +6,14 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useElectron } from '@/hooks/useElectron';
 
-const SessionInfo = () => {
+interface SessionInfoProps {
+  outputPath: string;
+  setOutputPath: (path: string) => void;
+}
+
+const SessionInfo: React.FC<SessionInfoProps> = ({ outputPath, setOutputPath }) => {
   const [sessionName, setSessionName] = useState('');
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [outputPath, setOutputPath] = useState('C:\\Gravacoes\\');
   const { selectOutputDirectory } = useElectron();
 
   useEffect(() => {
