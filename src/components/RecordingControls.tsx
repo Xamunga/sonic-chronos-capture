@@ -1,51 +1,29 @@
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Play, Pause, Monitor } from 'lucide-react';
 import { audioService } from '@/services/electronAudio';
 import { useElectron } from '@/hooks/useElectron';
+import { useAudioRecording } from '@/hooks/useAudioRecording';
 
 interface RecordingControlsProps {
   outputPath: string;
 }
 
 const RecordingControls: React.FC<RecordingControlsProps> = ({ outputPath }) => {
-  const [isRecording, setIsRecording] = useState(false);
-  const [isPaused, setIsPaused] = useState(false);
-  const [recordingTime, setRecordingTime] = useState(0);
   const { showSystemMessage } = useElectron();
-
-  useEffect(() => {
-    let interval: NodeJS.Timeout;
-    if (isRecording && !isPaused) {
-      interval = setInterval(() => {
-        setRecordingTime(prev => prev + 1);
-      }, 1000);
-    }
-    return () => clearInterval(interval);
-  }, [isRecording, isPaused]);
-
-  const formatTime = (seconds: number) => {
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    const secs = seconds % 60;
-    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-  };
+  const { isRecording, isPaused, recordingTime, formatTime, setRecordingTime } = useAudioRecording();
 
   const handleRecord = async () => {
     if (!isRecording) {
       const success = await audioService.startRecording(outputPath);
       if (success) {
-        setIsRecording(true);
-        setIsPaused(false);
         setRecordingTime(0);
         await showSystemMessage('Gravação', 'Gravação iniciada com sucesso!');
       }
     } else {
       audioService.stopRecording();
-      setIsRecording(false);
-      setIsPaused(false);
       setRecordingTime(0);
       await showSystemMessage('Gravação', 'Gravação finalizada e arquivo salvo!');
     }
@@ -54,7 +32,6 @@ const RecordingControls: React.FC<RecordingControlsProps> = ({ outputPath }) => 
   const handlePause = async () => {
     if (isRecording) {
       audioService.pauseRecording();
-      setIsPaused(!isPaused);
       await showSystemMessage('Gravação', isPaused ? 'Gravação retomada' : 'Gravação pausada');
     }
   };

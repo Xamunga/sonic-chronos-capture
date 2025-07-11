@@ -15,6 +15,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // Abrir links externos
   openExternal: (url) => ipcRenderer.invoke('open-external', url),
   
+  // Gerenciamento de arquivos e diretórios
+  ensureDirectory: (dirPath) => ipcRenderer.invoke('ensure-directory', dirPath),
+  saveAudioFile: (filePath, audioData) => ipcRenderer.invoke('save-audio-file', filePath, audioData),
+  
   // Informações do sistema
   platform: process.platform,
   version: process.versions.electron

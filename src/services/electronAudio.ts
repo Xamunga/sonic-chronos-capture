@@ -55,8 +55,20 @@ export class ElectronAudioService {
 
       const stream = await navigator.mediaDevices.getUserMedia(constraints);
 
-      const mimeType = this.outputFormat === 'wav' ? 'audio/wav' : 
-                      this.outputFormat === 'mp3' ? 'audio/mp3' : 'audio/webm;codecs=opus';
+      // Verificar formatos suportados e usar o melhor disponível
+      let mimeType = 'audio/webm;codecs=opus'; // Default mais compatível
+      
+      if (this.outputFormat === 'wav' && MediaRecorder.isTypeSupported('audio/wav')) {
+        mimeType = 'audio/wav';
+      } else if (this.outputFormat === 'mp3' && MediaRecorder.isTypeSupported('audio/mp3')) {
+        mimeType = 'audio/mp3';
+      } else if (MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) {
+        mimeType = 'audio/webm;codecs=opus';
+      } else if (MediaRecorder.isTypeSupported('audio/webm')) {
+        mimeType = 'audio/webm';
+      }
+      
+      console.log(`Usando MIME type: ${mimeType} para formato: ${this.outputFormat}`);
       
       this.mediaRecorder = new MediaRecorder(stream, {
         mimeType: mimeType
@@ -122,27 +134,44 @@ export class ElectronAudioService {
       // Se estiver no Electron, usar a API nativa para salvar
       if (window.electronAPI) {
         const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-        const filename = `gravacao_${timestamp}.webm`;
-        const fullPath = `${this.outputPath}${filename}`;
+        const extension = this.outputFormat === 'wav' ? 'wav' : 
+                         this.outputFormat === 'mp3' ? 'mp3' : 'webm';
+        const filename = `gravacao_${timestamp}.${extension}`;
+        const fullPath = this.outputPath.endsWith('\\') || this.outputPath.endsWith('/') 
+          ? `${this.outputPath}${filename}` 
+          : `${this.outputPath}/${filename}`;
 
-        // Aqui você implementaria a chamada para salvar o arquivo
-        // usando as APIs nativas do Electron
-        console.log(`Arquivo salvo em: ${fullPath}`);
-        toast.success(`Arquivo salvo: ${filename}`);
+        try {
+          await window.electronAPI.saveAudioFile(fullPath, uint8Array);
+          console.log(`Arquivo salvo em: ${fullPath}`);
+          toast.success(`Arquivo salvo: ${filename}`);
+        } catch (error) {
+          console.error('Erro ao salvar via Electron API:', error);
+          // Fallback para download
+          this.downloadAudioFile(audioBlob, filename);
+        }
       } else {
         // Fallback para download no navegador
-        const url = URL.createObjectURL(audioBlob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `gravacao_${Date.now()}.webm`;
-        a.click();
-        URL.revokeObjectURL(url);
+        const extension = this.outputFormat === 'wav' ? 'wav' : 
+                         this.outputFormat === 'mp3' ? 'mp3' : 'webm';
+        const filename = `gravacao_${Date.now()}.${extension}`;
+        this.downloadAudioFile(audioBlob, filename);
       }
 
     } catch (error) {
       console.error('Erro ao salvar gravação:', error);
       toast.error('Erro ao salvar arquivo de áudio');
     }
+  }
+
+  private downloadAudioFile(blob: Blob, filename: string): void {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success(`Download iniciado: ${filename}`);
   }
 
   isCurrentlyRecording(): boolean {
@@ -178,15 +207,30 @@ export class ElectronAudioService {
 
   async ensureDirectoryExists(dirPath: string): Promise<void> {
     try {
-      // No navegador, não podemos criar diretórios
-      // Esta funcionalidade será implementada no Electron
       console.log(`Verificando diretório: ${dirPath}`);
       if (window.electronAPI) {
-        // await window.electronAPI.ensureDirectory(dirPath);
+        await window.electronAPI.ensureDirectory(dirPath);
+        console.log(`Diretório criado/verificado: ${dirPath}`);
+      } else {
+        // No navegador, apenas logar
+        console.log('Modo navegador - diretórios não podem ser criados automaticamente');
       }
     } catch (error) {
-      console.error('Erro ao verificar diretório:', error);
+      console.error('Erro ao verificar/criar diretório:', error);
+      throw error;
     }
+  }
+
+  getInputDevice(): string {
+    return this.inputDevice;
+  }
+
+  getOutputFormat(): string {
+    return this.outputFormat;
+  }
+
+  getSampleRate(): number {
+    return this.sampleRate;
   }
 }
 

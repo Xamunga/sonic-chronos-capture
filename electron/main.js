@@ -1,5 +1,6 @@
 const { app, BrowserWindow, ipcMain, dialog, shell } = require('electron');
 const path = require('path');
+const fs = require('fs').promises;
 const { autoUpdater } = require('electron-updater');
 
 // Verificação nativa para modo de desenvolvimento
@@ -110,6 +111,28 @@ ipcMain.handle('show-message', async (event, options) => {
 
 ipcMain.handle('open-external', async (event, url) => {
   await shell.openExternal(url);
+});
+
+ipcMain.handle('ensure-directory', async (event, dirPath) => {
+  try {
+    await fs.mkdir(dirPath, { recursive: true });
+    console.log(`Diretório criado/verificado: ${dirPath}`);
+    return true;
+  } catch (error) {
+    console.error(`Erro ao criar diretório ${dirPath}:`, error);
+    throw error;
+  }
+});
+
+ipcMain.handle('save-audio-file', async (event, filePath, audioData) => {
+  try {
+    await fs.writeFile(filePath, Buffer.from(audioData));
+    console.log(`Arquivo de áudio salvo: ${filePath}`);
+    return true;
+  } catch (error) {
+    console.error(`Erro ao salvar arquivo ${filePath}:`, error);
+    throw error;
+  }
 });
 
 // Auto-updater events
