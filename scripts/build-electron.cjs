@@ -3,7 +3,13 @@ const { execSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 
-console.log('🚀 Iniciando build do Gravador Real Time Pro...\n');
+console.log('🚀 Iniciando build do Gravador Real Time Pro v1.1...\n');
+console.log('📋 Funcionalidades implementadas:');
+console.log('   ✅ Split automático de arquivos por tempo');
+console.log('   ✅ Criação de subpastas por data');
+console.log('   ✅ VU Meters funcionais em tempo real');
+console.log('   ✅ Analisador de espectro com peak meter');
+console.log('   ✅ Sistema de gravação contínua otimizado\n');
 
 // 1. Build da aplicação React
 console.log('📦 Fazendo build da aplicação React...');

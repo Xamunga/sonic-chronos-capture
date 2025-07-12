@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
+import { audioService } from '@/services/electronAudio';
 
 const VUMeters = () => {
   const [leftLevel, setLeftLevel] = useState(0);
@@ -9,19 +10,33 @@ const VUMeters = () => {
   const [peakRight, setPeakRight] = useState(false);
 
   useEffect(() => {
-    // Simulate audio levels for demonstration
-    const interval = setInterval(() => {
-      const newLeftLevel = Math.random() * 100;
-      const newRightLevel = Math.random() * 100;
-      
-      setLeftLevel(newLeftLevel);
-      setRightLevel(newRightLevel);
-      
-      setPeakLeft(newLeftLevel > 85);
-      setPeakRight(newRightLevel > 85);
+    const handleVolumeUpdate = (left: number, right: number, peak: boolean) => {
+      setLeftLevel(left);
+      setRightLevel(right);
+      setPeakLeft(left > 85);
+      setPeakRight(right > 85);
+    };
+
+    // Registrar callback no audioService
+    audioService.onVolumeUpdate(handleVolumeUpdate);
+
+    // Fallback para demonstração quando não está gravando
+    const fallbackInterval = setInterval(() => {
+      if (!audioService.isCurrentlyRecording()) {
+        const newLeftLevel = Math.random() * 60; // Níveis mais baixos quando não gravando
+        const newRightLevel = Math.random() * 60;
+        
+        setLeftLevel(newLeftLevel);
+        setRightLevel(newRightLevel);
+        setPeakLeft(false);
+        setPeakRight(false);
+      }
     }, 100);
 
-    return () => clearInterval(interval);
+    return () => {
+      audioService.removeVolumeCallback(handleVolumeUpdate);
+      clearInterval(fallbackInterval);
+    };
   }, []);
 
   const VUMeter = ({ level, peak, label }: { level: number; peak: boolean; label: string }) => (

@@ -11,12 +11,11 @@ export const useAudioRecording = () => {
   useEffect(() => {
     const syncStates = () => {
       setIsRecording(audioService.isCurrentlyRecording());
-      const state = audioService.getRecordingState();
-      setIsPaused(state === 'paused');
+      setIsPaused(audioService.isPausedState());
     };
 
     // Verificar estados a cada segundo
-    const interval = setInterval(syncStates, 1000);
+    const interval = setInterval(syncStates, 500); // Mais responsivo
     syncStates(); // Verificação inicial
 
     return () => clearInterval(interval);

@@ -6,10 +6,21 @@ export class ElectronAudioService {
   private mediaRecorder: MediaRecorder | null = null;
   private audioChunks: Blob[] = [];
   private isRecording = false;
+  private isPaused = false;
   private outputPath = '';
   private inputDevice = 'default';
   private outputFormat = 'wav';
   private sampleRate = 44100;
+  private splitEnabled = false;
+  private splitIntervalMinutes = 60;
+  private dateFolderEnabled = false;
+  private dateFolderFormat = 'dd-mm-yyyy';
+  private recordingStartTime = 0;
+  private currentSplitNumber = 1;
+  private audioContext: AudioContext | null = null;
+  private analyser: AnalyserNode | null = null;
+  private volumeCallbacks: ((left: number, right: number, peak: boolean) => void)[] = [];
+  private spectrumCallbacks: ((data: number[]) => void)[] = [];
 
   async requestMicrophonePermission(): Promise<boolean> {
     try {
@@ -37,8 +48,20 @@ export class ElectronAudioService {
         return false;
       }
 
-      // Garantir que o diretório existe
-      await this.ensureDirectoryExists(outputPath);
+      this.recordingStartTime = Date.now();
+      this.currentSplitNumber = 1;
+
+      // Criar pasta com data se habilitado
+      let finalOutputPath = outputPath;
+      if (this.dateFolderEnabled) {
+        const dateFolder = this.formatDateFolder();
+        finalOutputPath = `${outputPath}/${dateFolder}`;
+        await this.ensureDirectoryExists(finalOutputPath);
+      } else {
+        await this.ensureDirectoryExists(outputPath);
+      }
+
+      this.outputPath = finalOutputPath;
 
       const hasPermission = await this.requestMicrophonePermission();
       if (!hasPermission) return false;
@@ -54,6 +77,9 @@ export class ElectronAudioService {
       };
 
       const stream = await navigator.mediaDevices.getUserMedia(constraints);
+
+      // Configurar análise de áudio
+      this.setupAudioAnalysis(stream);
 
       // Verificar formatos suportados e usar o melhor disponível
       let mimeType = 'audio/webm;codecs=opus'; // Default mais compatível
@@ -89,6 +115,12 @@ export class ElectronAudioService {
 
       this.mediaRecorder.start(1000); // Capturar dados a cada segundo
       this.isRecording = true;
+      this.isPaused = false;
+
+      // Configurar split automático se habilitado
+      if (this.splitEnabled) {
+        this.scheduleSplit();
+      }
 
       console.log('Gravação iniciada - Sistema de buffer otimizado ativo');
       toast.success('Gravação iniciada com sucesso');
@@ -106,6 +138,12 @@ export class ElectronAudioService {
       this.mediaRecorder.stop();
       this.mediaRecorder.stream.getTracks().forEach(track => track.stop());
       this.isRecording = false;
+      this.isPaused = false;
+      this.currentSplitNumber = 1;
+      
+      // Limpar contexto de áudio
+      this.cleanupAudioAnalysis();
+      
       console.log('Gravação finalizada');
       toast.success('Gravação finalizada');
     }
@@ -115,10 +153,12 @@ export class ElectronAudioService {
     if (this.mediaRecorder && this.isRecording) {
       if (this.mediaRecorder.state === 'recording') {
         this.mediaRecorder.pause();
+        this.isPaused = true;
         console.log('Gravação pausada');
         toast.info('Gravação pausada');
       } else if (this.mediaRecorder.state === 'paused') {
         this.mediaRecorder.resume();
+        this.isPaused = false;
         console.log('Gravação retomada');
         toast.info('Gravação retomada');
       }
@@ -136,7 +176,15 @@ export class ElectronAudioService {
         const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
         const extension = this.outputFormat === 'wav' ? 'wav' : 
                          this.outputFormat === 'mp3' ? 'mp3' : 'webm';
-        const filename = `gravacao_${timestamp}.${extension}`;
+        
+        // Nome do arquivo com número da parte se split estiver ativo
+        let filename: string;
+        if (this.splitEnabled && this.currentSplitNumber > 1) {
+          filename = `gravacao_${timestamp}_parte${this.currentSplitNumber}.${extension}`;
+        } else {
+          filename = `gravacao_${timestamp}.${extension}`;
+        }
+
         const fullPath = this.outputPath.endsWith('\\') || this.outputPath.endsWith('/') 
           ? `${this.outputPath}${filename}` 
           : `${this.outputPath}/${filename}`;
@@ -231,6 +279,200 @@ export class ElectronAudioService {
 
   getSampleRate(): number {
     return this.sampleRate;
+  }
+
+  // Configurações de split
+  setSplitEnabled(enabled: boolean): void {
+    this.splitEnabled = enabled;
+  }
+
+  setSplitInterval(minutes: number): void {
+    this.splitIntervalMinutes = minutes;
+  }
+
+  getSplitEnabled(): boolean {
+    return this.splitEnabled;
+  }
+
+  getSplitInterval(): number {
+    return this.splitIntervalMinutes;
+  }
+
+  // Configurações de pasta por data
+  setDateFolderEnabled(enabled: boolean): void {
+    this.dateFolderEnabled = enabled;
+  }
+
+  setDateFolderFormat(format: string): void {
+    this.dateFolderFormat = format;
+  }
+
+  getDateFolderEnabled(): boolean {
+    return this.dateFolderEnabled;
+  }
+
+  getDateFolderFormat(): string {
+    return this.dateFolderFormat;
+  }
+
+  private formatDateFolder(): string {
+    const now = new Date();
+    const day = now.getDate().toString().padStart(2, '0');
+    const month = (now.getMonth() + 1).toString().padStart(2, '0');
+    const year = now.getFullYear().toString();
+
+    switch (this.dateFolderFormat) {
+      case 'dd-mm-yyyy':
+        return `${day}-${month}-${year}`;
+      case 'mm-dd-yyyy':
+        return `${month}-${day}-${year}`;
+      case 'yyyy-mm-dd':
+        return `${year}-${month}-${day}`;
+      case 'yyyy/mm/dd':
+        return `${year}/${month}/${day}`;
+      default:
+        return `${day}-${month}-${year}`;
+    }
+  }
+
+  private scheduleSplit(): void {
+    setTimeout(() => {
+      if (this.isRecording && this.splitEnabled) {
+        this.performSplit();
+      }
+    }, this.splitIntervalMinutes * 60 * 1000);
+  }
+
+  private async performSplit(): Promise<void> {
+    if (!this.isRecording || !this.mediaRecorder) return;
+
+    try {
+      // Parar gravação atual
+      this.mediaRecorder.stop();
+      
+      // Aguardar um breve momento para processamento
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Incrementar número da parte
+      this.currentSplitNumber++;
+      
+      // Reiniciar gravação com novo arquivo
+      this.audioChunks = [];
+      const stream = this.mediaRecorder.stream;
+      
+      // Recriar MediaRecorder
+      this.mediaRecorder = new MediaRecorder(stream, {
+        mimeType: this.mediaRecorder.mimeType
+      });
+
+      this.mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          this.audioChunks.push(event.data);
+        }
+      };
+
+      this.mediaRecorder.onstop = () => {
+        this.saveRecording();
+      };
+
+      this.mediaRecorder.start(1000);
+      
+      // Agendar próximo split
+      this.scheduleSplit();
+      
+      toast.info(`Iniciando parte ${this.currentSplitNumber} da gravação`);
+    } catch (error) {
+      console.error('Erro ao fazer split:', error);
+      toast.error('Erro ao dividir arquivo');
+    }
+  }
+
+  // Análise de áudio em tempo real
+  private setupAudioAnalysis(stream: MediaStream): void {
+    try {
+      this.audioContext = new AudioContext();
+      const source = this.audioContext.createMediaStreamSource(stream);
+      this.analyser = this.audioContext.createAnalyser();
+      
+      this.analyser.fftSize = 256;
+      source.connect(this.analyser);
+      
+      this.startAudioAnalysis();
+    } catch (error) {
+      console.error('Erro ao configurar análise de áudio:', error);
+    }
+  }
+
+  private startAudioAnalysis(): void {
+    if (!this.analyser) return;
+
+    const bufferLength = this.analyser.frequencyBinCount;
+    const dataArray = new Uint8Array(bufferLength);
+
+    const analyze = () => {
+      if (!this.analyser || !this.isRecording) return;
+
+      this.analyser.getByteFrequencyData(dataArray);
+      
+      // Calcular níveis de volume (simular stereo)
+      const sum = dataArray.reduce((acc, val) => acc + val, 0);
+      const average = sum / bufferLength;
+      const leftLevel = Math.min(100, (average / 255) * 100);
+      const rightLevel = Math.min(100, ((average + Math.random() * 20 - 10) / 255) * 100);
+      const peak = leftLevel > 85 || rightLevel > 85;
+
+      // Notificar callbacks de volume
+      this.volumeCallbacks.forEach(callback => {
+        callback(leftLevel, rightLevel, peak);
+      });
+
+      // Converter para array para espectro
+      const spectrumData = Array.from(dataArray).map(val => (val / 255) * 100);
+      
+      // Notificar callbacks de espectro
+      this.spectrumCallbacks.forEach(callback => {
+        callback(spectrumData.slice(0, 32));
+      });
+
+      requestAnimationFrame(analyze);
+    };
+
+    analyze();
+  }
+
+  private cleanupAudioAnalysis(): void {
+    if (this.audioContext) {
+      this.audioContext.close();
+      this.audioContext = null;
+    }
+    this.analyser = null;
+  }
+
+  // Callbacks para UI
+  onVolumeUpdate(callback: (left: number, right: number, peak: boolean) => void): void {
+    this.volumeCallbacks.push(callback);
+  }
+
+  onSpectrumUpdate(callback: (data: number[]) => void): void {
+    this.spectrumCallbacks.push(callback);
+  }
+
+  removeVolumeCallback(callback: (left: number, right: number, peak: boolean) => void): void {
+    const index = this.volumeCallbacks.indexOf(callback);
+    if (index > -1) {
+      this.volumeCallbacks.splice(index, 1);
+    }
+  }
+
+  removeSpectrumCallback(callback: (data: number[]) => void): void {
+    const index = this.spectrumCallbacks.indexOf(callback);
+    if (index > -1) {
+      this.spectrumCallbacks.splice(index, 1);
+    }
+  }
+
+  isPausedState(): boolean {
+    return this.isPaused;
   }
 }
 

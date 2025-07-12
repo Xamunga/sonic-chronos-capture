@@ -1,18 +1,31 @@
 
 import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
+import { audioService } from '@/services/electronAudio';
 
 const SpectrumAnalyzer = () => {
   const [spectrum, setSpectrum] = useState<number[]>(Array(32).fill(0));
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      // Simula dados de espectro otimizados para Windows
-      const newSpectrum = Array.from({ length: 32 }, () => Math.random() * 100);
-      setSpectrum(newSpectrum);
+    const handleSpectrumUpdate = (data: number[]) => {
+      setSpectrum(data);
+    };
+
+    // Registrar callback no audioService
+    audioService.onSpectrumUpdate(handleSpectrumUpdate);
+
+    // Fallback para demonstração quando não está gravando
+    const fallbackInterval = setInterval(() => {
+      if (!audioService.isCurrentlyRecording()) {
+        const newSpectrum = Array.from({ length: 32 }, () => Math.random() * 40); // Níveis mais baixos
+        setSpectrum(newSpectrum);
+      }
     }, 50);
 
-    return () => clearInterval(interval);
+    return () => {
+      audioService.removeSpectrumCallback(handleSpectrumUpdate);
+      clearInterval(fallbackInterval);
+    };
   }, []);
 
   return (

@@ -116,3 +116,34 @@
 .pro-button:active {
   background: linear-gradient(145deg, #1a1a1a, #2a2a2a);
 }
+
+/* VU Meter Styles */
+.vu-meter {
+  background: linear-gradient(
+    90deg,
+    hsl(var(--studio-neon)) 0%,
+    hsl(var(--studio-neon)) 60%,
+    #fbbf24 75%,
+    hsl(var(--studio-warning)) 85%,
+    hsl(var(--studio-warning)) 100%
+  );
+  box-shadow: 0 0 10px hsl(var(--studio-neon) / 0.3);
+}
+
+/* Spectrum Analyzer Bars */
+.spectrum-bar {
+  background: linear-gradient(
+    180deg,
+    hsl(var(--studio-warning)) 0%,
+    #fbbf24 30%,
+    hsl(var(--studio-neon)) 60%,
+    hsl(var(--studio-electric)) 100%
+  );
+  box-shadow: 0 0 3px hsl(var(--studio-neon) / 0.5);
+  animation: spectrum-glow 2s ease-in-out infinite alternate;
+}
+
+@keyframes spectrum-glow {
+  0% { box-shadow: 0 0 3px hsl(var(--studio-neon) / 0.3); }
+  100% { box-shadow: 0 0 8px hsl(var(--studio-neon) / 0.7); }
+}
