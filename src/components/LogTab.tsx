@@ -17,6 +17,10 @@ interface LogEntry {
 const LogTab = () => {
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [isAutoSave, setIsAutoSave] = useState(true);
+  const [cpuHistory, setCpuHistory] = useState<{ value: number; timestamp: Date }[]>([]);
+  const [memoryHistory, setMemoryHistory] = useState<{ value: number; timestamp: Date }[]>([]);
+  const [lastCpuWarning, setLastCpuWarning] = useState<Date | null>(null);
+  const [lastMemoryWarning, setLastMemoryWarning] = useState<Date | null>(null);
 
   // Função para adicionar entrada no log
   const addLogEntry = (type: LogEntry['type'], message: string, component?: string) => {
@@ -36,23 +40,73 @@ const LogTab = () => {
     }
   };
 
-  // Simular logs do sistema
+  // Função para verificar se valor está alto por mais de 2 minutos
+  const checkSustainedHighUsage = (history: { value: number; timestamp: Date }[], threshold: number, type: 'CPU' | 'Memory') => {
+    if (history.length === 0) return false;
+    
+    const now = new Date();
+    const twoMinutesAgo = new Date(now.getTime() - 2 * 60 * 1000);
+    
+    // Filtrar apenas valores dos últimos 2 minutos
+    const recentHistory = history.filter(entry => entry.timestamp >= twoMinutesAgo);
+    
+    // Verificar se todos os valores recentes estão acima do threshold
+    const sustainedHigh = recentHistory.length >= 24 && // pelo menos 2 minutos de dados (a cada 5s)
+                          recentHistory.every(entry => entry.value > threshold);
+    
+    if (sustainedHigh) {
+      const lastWarningTime = type === 'CPU' ? lastCpuWarning : lastMemoryWarning;
+      const timeSinceLastWarning = lastWarningTime ? (now.getTime() - lastWarningTime.getTime()) / 1000 / 60 : Infinity;
+      
+      // Só emitir warning se passou mais de 5 minutos desde o último warning
+      if (timeSinceLastWarning > 5) {
+        const avgValue = recentHistory.reduce((sum, entry) => sum + entry.value, 0) / recentHistory.length;
+        addLogEntry('warning', `Uso de ${type} elevado (${avgValue.toFixed(1)}%) por mais de 2 minutos`, 'Monitor');
+        
+        if (type === 'CPU') {
+          setLastCpuWarning(now);
+        } else {
+          setLastMemoryWarning(now);
+        }
+      }
+    }
+  };
+
+  // Monitorar recursos do sistema
   useEffect(() => {
     addLogEntry('info', 'Sistema iniciado com sucesso', 'System');
     
     const interval = setInterval(() => {
-      const messages = [
-        { type: 'info' as const, msg: 'Monitoramento de áudio ativo', comp: 'Audio' },
-        { type: 'success' as const, msg: 'Configurações salvas', comp: 'Settings' },
-        { type: 'warning' as const, msg: 'Uso de CPU elevado detectado', comp: 'Monitor' },
-      ];
+      // Simular dados de CPU e memória (em produção, viria do ResourceMonitor)
+      const cpuValue = Math.random() * 60 + 10;
+      const memoryValue = Math.random() * 40 + 30;
+      const now = new Date();
       
-      const random = messages[Math.floor(Math.random() * messages.length)];
-      addLogEntry(random.type, random.msg, random.comp);
-    }, 10000);
+      // Adicionar aos históricos
+      setCpuHistory(prev => [...prev.slice(-120), { value: cpuValue, timestamp: now }]); // manter últimos 10 minutos
+      setMemoryHistory(prev => [...prev.slice(-120), { value: memoryValue, timestamp: now }]);
+      
+      // Verificar se há uso sustentado alto (threshold: CPU > 80%, Memory > 85%)
+      setTimeout(() => {
+        checkSustainedHighUsage(cpuHistory, 80, 'CPU');
+        checkSustainedHighUsage(memoryHistory, 85, 'Memory');
+      }, 100);
+      
+      // Outros logs ocasionais
+      if (Math.random() < 0.3) {
+        const otherMessages = [
+          { type: 'info' as const, msg: 'Monitoramento de áudio ativo', comp: 'Audio' },
+          { type: 'success' as const, msg: 'Configurações salvas', comp: 'Settings' },
+          { type: 'info' as const, msg: 'Verificação de dispositivos concluída', comp: 'Audio' },
+        ];
+        
+        const random = otherMessages[Math.floor(Math.random() * otherMessages.length)];
+        addLogEntry(random.type, random.msg, random.comp);
+      }
+    }, 5000); // Verificar a cada 5 segundos
 
     return () => clearInterval(interval);
-  }, []);
+  }, [cpuHistory, memoryHistory, lastCpuWarning, lastMemoryWarning]);
 
   const getLogIcon = (type: LogEntry['type']) => {
     switch (type) {
