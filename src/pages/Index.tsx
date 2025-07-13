@@ -49,7 +49,7 @@ const Index = () => {
         </div>
         
         <Tabs defaultValue="audio" className="w-full flex-1 flex flex-col">
-          <TabsList className="grid w-full grid-cols-5 mb-6 bg-muted sticky top-0 z-10">
+          <TabsList className="grid w-full grid-cols-5 mb-6 bg-black sticky top-0 z-10">
             <TabsTrigger value="audio" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
               Áudio
             </TabsTrigger>
