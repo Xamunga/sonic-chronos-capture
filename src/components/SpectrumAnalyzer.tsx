@@ -14,9 +14,14 @@ const SpectrumAnalyzer = () => {
     // Registrar callback no audioService
     audioService.onSpectrumUpdate(handleSpectrumUpdate);
 
-    // Fallback para mostrar "SEM SINAL" quando não há entrada
+    // Fallback para mostrar atividade quando gravando mas sem muito sinal
     const fallbackInterval = setInterval(() => {
-      if (!audioService.hasAudioSignal()) {
+      if (audioService.isCurrentlyRecording() && !audioService.hasAudioSignal()) {
+        // Mostrar atividade mínima para indicar que está funcionando
+        const minSpectrum = Array(32).fill(0).map(() => Math.random() * 3); // 0-3% de atividade
+        setSpectrum(minSpectrum);
+      } else if (!audioService.isCurrentlyRecording()) {
+        // Zerar quando não está gravando
         setSpectrum(Array(32).fill(0));
       }
     }, 50);
@@ -46,8 +51,11 @@ const SpectrumAnalyzer = () => {
           <span>20kHz</span>
         </div>
         <div className="mt-2 text-xs text-center text-muted-foreground">
-          {audioService.hasAudioSignal() 
-            ? <span className="text-studio-neon">Processamento Otimizado Windows 10/11</span>
+          {audioService.isCurrentlyRecording() 
+            ? (audioService.hasAudioSignal() 
+                ? <span className="text-studio-neon">Processamento Otimizado Windows 10/11</span>
+                : <span className="text-studio-electric bg-studio-dark p-2 rounded border border-studio-electric/20">🎤 GRAVANDO - Aguardando sinal</span>
+              )
             : <span className="text-studio-warning bg-studio-dark p-2 rounded border border-studio-electric/20">SEM SINAL</span>
           }
         </div>

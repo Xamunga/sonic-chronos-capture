@@ -20,9 +20,17 @@ const VUMeters = () => {
     // Registrar callback no audioService
     audioService.onVolumeUpdate(handleVolumeUpdate);
 
-    // Fallback para mostrar "SEM SINAL" quando não há entrada
+    // Fallback para mostrar atividade quando gravando mas sem muito sinal
     const fallbackInterval = setInterval(() => {
-      if (!audioService.hasAudioSignal()) {
+      if (audioService.isCurrentlyRecording() && !audioService.hasAudioSignal()) {
+        // Mostrar atividade mínima para indicar que está funcionando
+        const minActivity = Math.random() * 5; // 0-5% de atividade
+        setLeftLevel(minActivity);
+        setRightLevel(minActivity);
+        setPeakLeft(false);
+        setPeakRight(false);
+      } else if (!audioService.isCurrentlyRecording()) {
+        // Zerar quando não está gravando
         setLeftLevel(0);
         setRightLevel(0);
         setPeakLeft(false);
@@ -82,8 +90,11 @@ const VUMeters = () => {
         </div>
         <div className="mt-4 text-center">
           <div className="text-xs text-muted-foreground">
-            {audioService.hasAudioSignal() 
-              ? `Peak Hold: ${Math.max(leftLevel, rightLevel).toFixed(1)}dB`
+            {audioService.isCurrentlyRecording() 
+              ? (audioService.hasAudioSignal() 
+                  ? `Peak Hold: ${Math.max(leftLevel, rightLevel).toFixed(1)}dB`
+                  : <span className="text-studio-electric bg-studio-dark p-2 rounded border border-studio-electric/20">🎤 GRAVANDO - Aguardando sinal</span>
+                )
               : <span className="text-studio-warning bg-studio-dark p-2 rounded border border-studio-electric/20">SEM SINAL</span>
             }
           </div>

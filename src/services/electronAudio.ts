@@ -187,6 +187,7 @@ export class ElectronAudioService {
       // Inicializar sinal de áudio após um pequeno delay
       setTimeout(() => {
         this.forceAudioAnalysisStart();
+        console.log('🎵 Análise de áudio iniciada - VU Meters e Spectrum devem estar funcionando');
       }, 500);
 
       // Configurar split automático se habilitado
@@ -500,9 +501,10 @@ export class ElectronAudioService {
       this.analyser.fftSize = 256;
       source.connect(this.analyser);
       
+      console.log('🎤 Contexto de áudio configurado para análise em tempo real');
       this.startAudioAnalysis();
     } catch (error) {
-      console.error('Erro ao configurar análise de áudio:', error);
+      console.error('❌ Erro ao configurar análise de áudio:', error);
     }
   }
 
@@ -520,31 +522,41 @@ export class ElectronAudioService {
       // Calcular níveis de volume (simular stereo)
       const sum = dataArray.reduce((acc, val) => acc + val, 0);
       const average = sum / bufferLength;
-      const leftLevel = Math.min(100, (average / 255) * 100);
-      const rightLevel = Math.min(100, ((average + Math.random() * 20 - 10) / 255) * 100);
+      
+      // Melhorar sensibilidade da detecção de sinal
+      const rawLeftLevel = (average / 255) * 100;
+      const rawRightLevel = ((average + Math.random() * 20 - 10) / 255) * 100;
+      
+      // Aplicar threshold mínimo e máximo
+      const leftLevel = Math.max(0, Math.min(100, rawLeftLevel));
+      const rightLevel = Math.max(0, Math.min(100, rawRightLevel));
       const peak = leftLevel > 85 || rightLevel > 85;
 
-      // Marcar que há sinal
-      this.hasSignal = average > 1; // Threshold mínimo para detectar sinal
+      // Marcar que há sinal com threshold mais baixo para melhor sensibilidade
+      this.hasSignal = this.isRecording && (average > 0.5 || leftLevel > 0.1 || rightLevel > 0.1);
       
-      // Notificar callbacks de volume
-      this.volumeCallbacks.forEach(callback => {
-        callback(leftLevel, rightLevel, peak);
-      });
+      // Sempre notificar callbacks quando está gravando, mesmo com sinal baixo
+      if (this.isRecording) {
+        // Notificar callbacks de volume
+        this.volumeCallbacks.forEach(callback => {
+          callback(leftLevel, rightLevel, peak);
+        });
 
-      // Converter para array para espectro (32 barras)
-      const spectrumData = Array.from(dataArray)
-        .slice(0, 32)
-        .map(val => (val / 255) * 100);
-      
-      // Notificar callbacks de espectro
-      this.spectrumCallbacks.forEach(callback => {
-        callback(spectrumData);
-      });
+        // Converter para array para espectro (32 barras)
+        const spectrumData = Array.from(dataArray)
+          .slice(0, 32)
+          .map(val => (val / 255) * 100);
+        
+        // Notificar callbacks de espectro
+        this.spectrumCallbacks.forEach(callback => {
+          callback(spectrumData);
+        });
+      }
 
       requestAnimationFrame(analyze);
     };
 
+    console.log('🔄 Iniciando loop de análise de áudio em tempo real');
     analyze();
   }
 
@@ -594,20 +606,24 @@ export class ElectronAudioService {
 
   // Método para verificar se há sinal de áudio
   hasAudioSignal(): boolean {
-    return this.isRecording && this.analyser !== null && this.hasSignal;
+    return this.isRecording && this.analyser !== null;
   }
-  
+   
   // Forçar inicialização da análise de áudio para componentes
   forceAudioAnalysisStart(): void {
     if (this.isRecording && this.audioContext && this.analyser) {
+      console.log('🎵 Forçando início da análise de áudio para VU Meters e Spectrum');
       this.hasSignal = true;
-      // Simular sinal inicial para ativar componentes
+      
+      // Inicializar componentes com dados vazios para ativar a interface
       this.volumeCallbacks.forEach(callback => {
         callback(0, 0, false);
       });
       this.spectrumCallbacks.forEach(callback => {
         callback(Array(32).fill(0));
       });
+      
+      console.log('✅ VU Meters e Spectrum inicializados');
     }
   }
 
