@@ -85,11 +85,11 @@ const DebugTab = () => {
     if (electronAPI) {
       const info = {
         isElectron: true,
-        nodeVersion: process?.versions?.node || 'N/A',
-        chromeVersion: process?.versions?.chrome || 'N/A',
-        electronVersion: process?.versions?.electron || 'N/A',
-        platform: process?.platform || 'N/A',
-        arch: process?.arch || 'N/A',
+        nodeVersion: electronAPI?.platform?.nodeVersion || 'N/A',
+        chromeVersion: electronAPI?.platform?.chromeVersion || 'N/A', 
+        electronVersion: electronAPI?.version || 'N/A',
+        platform: electronAPI?.platform || navigator.platform,
+        arch: 'N/A',
         availableAPIs: Object.keys(electronAPI)
       };
       setElectronInfo(info);

@@ -9,7 +9,7 @@ import { logSystem, LogEntry } from '@/utils/logSystem';
 
 const LogTab = () => {
   const [logs, setLogs] = useState<LogEntry[]>([]);
-  const [isAutoSave, setIsAutoSave] = useState(true);
+  const [isAutoSave, setIsAutoSave] = useState(false); // Desabilitado por padrão
   const [cpuHistory, setCpuHistory] = useState<{ value: number; timestamp: Date }[]>([]);
   const [memoryHistory, setMemoryHistory] = useState<{ value: number; timestamp: Date }[]>([]);
   const [lastCpuWarning, setLastCpuWarning] = useState<Date | null>(null);

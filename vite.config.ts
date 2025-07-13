@@ -20,4 +20,18 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  define: {
+    // Fix para erro "process is not defined" no build
+    'process.env': {},
+    'process.platform': JSON.stringify(process.platform),
+    'process.versions': JSON.stringify(process.versions),
+  },
+  build: {
+    rollupOptions: {
+      external: [],
+      output: {
+        globals: {}
+      }
+    }
+  }
 }));

@@ -570,51 +570,80 @@ export class ElectronAudioService {
   }
 
   private startAudioAnalysis(): void {
-    if (!this.analyser) return;
+    if (!this.analyser) {
+      console.error('❌ startAudioAnalysis: analyser não disponível');
+      logSystem.error('Análise de áudio não pode ser iniciada - analyser indisponível', 'Audio');
+      return;
+    }
 
     const bufferLength = this.analyser.frequencyBinCount;
     const dataArray = new Uint8Array(bufferLength);
+    let analysisCounter = 0;
+
+    console.log('🎵 Iniciando análise de áudio em tempo real');
+    logSystem.info('Análise de áudio em tempo real iniciada', 'Audio');
 
     const analyze = () => {
       if (!this.analyser || !this.isRecording) return;
 
-      this.analyser.getByteFrequencyData(dataArray);
-      
-      // Calcular níveis de volume (simular stereo)
-      const sum = dataArray.reduce((acc, val) => acc + val, 0);
-      const average = sum / bufferLength;
-      
-      // Melhorar sensibilidade da detecção de sinal
-      const rawLeftLevel = (average / 255) * 100;
-      const rawRightLevel = ((average + Math.random() * 20 - 10) / 255) * 100;
-      
-      // Aplicar threshold mínimo e máximo
-      const leftLevel = Math.max(0, Math.min(100, rawLeftLevel));
-      const rightLevel = Math.max(0, Math.min(100, rawRightLevel));
-      const peak = leftLevel > 85 || rightLevel > 85;
-
-      // Marcar que há sinal com threshold mais baixo para melhor sensibilidade
-      this.hasSignal = this.isRecording && (average > 0.5 || leftLevel > 0.1 || rightLevel > 0.1);
-      
-      // Sempre notificar callbacks quando está gravando, mesmo com sinal baixo
-      if (this.isRecording) {
-        // Notificar callbacks de volume
-        this.volumeCallbacks.forEach(callback => {
-          callback(leftLevel, rightLevel, peak);
-        });
-
-        // Converter para array para espectro (32 barras)
-        const spectrumData = Array.from(dataArray)
-          .slice(0, 32)
-          .map(val => (val / 255) * 100);
+      try {
+        this.analyser.getByteFrequencyData(dataArray);
         
-        // Notificar callbacks de espectro
-        this.spectrumCallbacks.forEach(callback => {
-          callback(spectrumData);
-        });
-      }
+        // Calcular níveis de volume (simular stereo)
+        const sum = dataArray.reduce((acc, val) => acc + val, 0);
+        const average = sum / bufferLength;
+        
+        // Melhorar sensibilidade da detecção de sinal - amplificar valores baixos
+        const multiplier = 5; // Amplificar para melhorar detecção
+        const rawLeftLevel = Math.min(100, (average / 255) * 100 * multiplier);
+        const rawRightLevel = Math.min(100, ((average + Math.random() * 10 - 5) / 255) * 100 * multiplier);
+        
+        // Aplicar threshold mínimo e máximo
+        const leftLevel = Math.max(0, Math.min(100, rawLeftLevel));
+        const rightLevel = Math.max(0, Math.min(100, rawRightLevel));
+        const peak = leftLevel > 85 || rightLevel > 85;
 
-      requestAnimationFrame(analyze);
+        // Log periódico para debug (a cada 60 execuções = ~2 segundos)
+        if (analysisCounter % 60 === 0) {
+          console.log(`🎛️ Análise: avg=${average.toFixed(1)} L=${leftLevel.toFixed(1)}dB R=${rightLevel.toFixed(1)}dB callbacks=${this.volumeCallbacks.length}/${this.spectrumCallbacks.length}`);
+          logSystem.info(`Níveis: L=${leftLevel.toFixed(1)}dB R=${rightLevel.toFixed(1)}dB`, 'Audio');
+        }
+        analysisCounter++;
+
+        // Marcar que há sinal com threshold mais baixo para melhor sensibilidade
+        this.hasSignal = this.isRecording && (average > 0.1 || leftLevel > 0.5 || rightLevel > 0.5);
+        
+        // Sempre notificar callbacks quando está gravando, mesmo com sinal baixo
+        if (this.isRecording) {
+          // Notificar callbacks de volume
+          if (this.volumeCallbacks.length > 0) {
+            this.volumeCallbacks.forEach(callback => {
+              callback(leftLevel, rightLevel, peak);
+            });
+          } else if (analysisCounter % 120 === 0) {
+            console.warn('⚠️ Nenhum callback para VU Meters registrado');
+          }
+
+          // Converter para array para espectro (32 barras)
+          const spectrumData = Array.from(dataArray)
+            .slice(0, 32)
+            .map(val => Math.min(100, (val / 255) * 100 * multiplier));
+          
+          // Notificar callbacks de espectro
+          if (this.spectrumCallbacks.length > 0) {
+            this.spectrumCallbacks.forEach(callback => {
+              callback(spectrumData);
+            });
+          } else if (analysisCounter % 120 === 0) {
+            console.warn('⚠️ Nenhum callback para Spectrum Analyzer registrado');
+          }
+        }
+
+        requestAnimationFrame(analyze);
+      } catch (error) {
+        console.error('❌ Erro durante análise de áudio:', error);
+        logSystem.error(`Erro durante análise de áudio: ${error}`, 'Audio');
+      }
     };
 
     console.log('🔄 Iniciando loop de análise de áudio em tempo real');
@@ -632,16 +661,21 @@ export class ElectronAudioService {
   // Callbacks para UI
   onVolumeUpdate(callback: (left: number, right: number, peak: boolean) => void): void {
     this.volumeCallbacks.push(callback);
+    console.log(`📊 Callback VU Meters registrado. Total: ${this.volumeCallbacks.length}`);
+    logSystem.info(`Callback VU Meters registrado. Total: ${this.volumeCallbacks.length}`, 'Audio');
   }
 
   onSpectrumUpdate(callback: (data: number[]) => void): void {
     this.spectrumCallbacks.push(callback);
+    console.log(`📈 Callback Spectrum registrado. Total: ${this.spectrumCallbacks.length}`);
+    logSystem.info(`Callback Spectrum registrado. Total: ${this.spectrumCallbacks.length}`, 'Audio');
   }
 
   removeVolumeCallback(callback: (left: number, right: number, peak: boolean) => void): void {
     const index = this.volumeCallbacks.indexOf(callback);
     if (index > -1) {
       this.volumeCallbacks.splice(index, 1);
+      console.log(`📊 Callback VU Meters removido. Total: ${this.volumeCallbacks.length}`);
     }
   }
 
@@ -649,6 +683,7 @@ export class ElectronAudioService {
     const index = this.spectrumCallbacks.indexOf(callback);
     if (index > -1) {
       this.spectrumCallbacks.splice(index, 1);
+      console.log(`📈 Callback Spectrum removido. Total: ${this.spectrumCallbacks.length}`);
     }
   }
 
