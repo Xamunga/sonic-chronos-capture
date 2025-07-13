@@ -15,6 +15,7 @@ const FileManagementSettings = () => {
   const [dateFormat, setDateFormat] = useState('dd-mm-yyyy');
   const [dateFolderEnabled, setDateFolderEnabled] = useState(false);
   const [autoDelete, setAutoDelete] = useState(false);
+  const [autoDeleteDays, setAutoDeleteDays] = useState(30);
   const [splitEnabled, setSplitEnabled] = useState(false);
   const [splitInterval, setSplitInterval] = useState('5');
   const [fileNamePattern, setFileNamePattern] = useState('timestamp');
@@ -23,10 +24,25 @@ const FileManagementSettings = () => {
 
   // Sincronizar com audioService na inicialização
   useEffect(() => {
-    setDateFolderEnabled(audioService.getDateFolderEnabled());
-    setDateFormat(audioService.getDateFolderFormat());
-    setSplitEnabled(audioService.getSplitEnabled());
-    setSplitInterval(audioService.getSplitInterval().toString());
+    const loadSettings = () => {
+      setDateFolderEnabled(audioService.getDateFolderEnabled());
+      setDateFormat(audioService.getDateFolderFormat());
+      setSplitEnabled(audioService.getSplitEnabled());
+      setSplitInterval(audioService.getSplitInterval().toString());
+      setFileNamePattern(audioService.getFileNameFormat());
+      
+      // Carregar configurações de limpeza automática
+      const savedSettings = localStorage.getItem('audioSettings');
+      if (savedSettings) {
+        const parsed = JSON.parse(savedSettings);
+        setAutoDelete(parsed.autoDelete || false);
+        setAutoDeleteDays(parsed.autoDeleteDays || 30);
+        setOutputPath(parsed.outputPath || 'C:\\Gravacoes\\');
+        setCustomTitle(parsed.customTitle || '');
+      }
+    };
+    
+    loadSettings();
   }, []);
 
   const dateFormats = [
@@ -112,6 +128,65 @@ const FileManagementSettings = () => {
     toast.success(`Intervalo de divisão: ${interval} minutos`);
   };
 
+  const handleAutoDeleteToggle = (enabled: boolean) => {
+    setAutoDelete(enabled);
+    toast.success(enabled ? 'Limpeza automática ativada' : 'Limpeza automática desativada');
+  };
+
+  const handleAutoDeleteDaysChange = (days: string) => {
+    const numDays = parseInt(days);
+    setAutoDeleteDays(numDays);
+  };
+
+  const handleOutputPathChange = (path: string) => {
+    setOutputPath(path);
+  };
+
+  const handleSaveSettings = () => {
+    try {
+      // Salvar todas as configurações no audioService e localStorage
+      const settings = {
+        outputPath,
+        dateFolderEnabled,
+        dateFolderFormat: dateFormat,
+        splitEnabled,
+        splitIntervalMinutes: parseInt(splitInterval),
+        fileNameFormat: fileNamePattern,
+        customTitle,
+        autoDelete,
+        autoDeleteDays,
+        outputFormat: audioService.getOutputFormat(),
+        mp3Bitrate: audioService.getMp3Bitrate(),
+        sampleRate: audioService.getSampleRate()
+      };
+      
+      localStorage.setItem('audioSettings', JSON.stringify(settings));
+      audioService.saveSettings();
+      
+      toast.success('Configurações salvas com sucesso!');
+    } catch (error) {
+      console.error('Erro ao salvar configurações:', error);
+      toast.error('Erro ao salvar configurações');
+    }
+  };
+
+  const selectDirectory = async () => {
+    if (window.electronAPI && window.electronAPI.selectDirectory) {
+      try {
+        const result = await window.electronAPI.selectDirectory();
+        if (typeof result === 'string' && result) {
+          setOutputPath(result);
+          toast.success(`Diretório selecionado: ${result}`);
+        }
+      } catch (error) {
+        console.error('Erro ao selecionar diretório:', error);
+        toast.error('Erro ao selecionar diretório');
+      }
+    } else {
+      toast.warning('Seleção de diretório disponível apenas no modo desktop');
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Configurações de Diretório */}
@@ -123,6 +198,25 @@ const FileManagementSettings = () => {
           </div>
           
           <div className="space-y-4">
+            {/* Seletor de Diretório Principal */}
+            <div className="space-y-2">
+              <Label className="text-sm font-medium text-studio-electric">Diretório Principal</Label>
+              <div className="flex space-x-2">
+                <Input
+                  value={outputPath}
+                  onChange={(e) => handleOutputPathChange(e.target.value)}
+                  placeholder="C:\Gravacoes\"
+                  className="flex-1"
+                />
+                <Button onClick={selectDirectory} variant="outline" size="sm">
+                  <FolderOpen className="w-4 h-4" />
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Pasta onde os arquivos serão salvos
+              </p>
+            </div>
+            
             <div className="flex items-center justify-between">
               <Label htmlFor="date-folders" className="text-sm font-medium text-studio-electric">
                 Organizar por Data
@@ -151,7 +245,7 @@ const FileManagementSettings = () => {
                     ))}
                   </SelectContent>
                 </Select>
-                <p className="text-xs text-primary">
+                <p className="text-xs text-studio-electric">
                   Pasta criada: {formatExampleDateFolder()}
                 </p>
               </div>
@@ -277,7 +371,7 @@ const FileManagementSettings = () => {
               </div>
               <Switch 
                 checked={autoDelete}
-                onCheckedChange={setAutoDelete}
+                onCheckedChange={handleAutoDeleteToggle}
               />
             </div>
             
@@ -288,7 +382,8 @@ const FileManagementSettings = () => {
                   type="number"
                   min="1"
                   max="365"
-                  defaultValue="30"
+                  value={autoDeleteDays}
+                  onChange={(e) => handleAutoDeleteDaysChange(e.target.value)}
                   className="w-24"
                 />
                 <p className="text-xs text-destructive">
@@ -319,7 +414,7 @@ const FileManagementSettings = () => {
             </div>
             <div>
               <span className="text-muted-foreground">Formato de Data:</span>
-              <span className="ml-2 font-semibold text-foreground">
+              <span className="ml-2 font-semibold text-studio-electric">
                 {dateFormat}
               </span>
             </div>
@@ -336,7 +431,7 @@ const FileManagementSettings = () => {
       {/* Botão Salvar */}
       <Card className="bg-gradient-to-br from-studio-charcoal to-studio-slate border-studio-electric/30">
         <div className="p-6 text-center">
-          <Button onClick={() => audioService.saveSettings()} className="w-full">
+          <Button onClick={handleSaveSettings} className="w-full">
             Salvar Configurações
           </Button>
           <p className="text-xs text-muted-foreground mt-2">

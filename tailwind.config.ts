@@ -63,15 +63,14 @@ export default {
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
 				},
-				// Professional audio theme colors
+				// Professional audio theme colors using HSL from CSS variables
 				studio: {
-					dark: '#0a0a0a',
-					charcoal: '#1a1a1a',
-					slate: '#2a2a2a',
-					electric: '#00d4ff',
-					neon: '#00ff88',
-					warning: '#ff4444',
-					peak: '#ff6b00'
+					dark: 'hsl(var(--studio-dark))',
+					charcoal: 'hsl(var(--studio-charcoal))',
+					slate: 'hsl(var(--studio-slate))',
+					electric: 'hsl(var(--studio-electric))',
+					neon: 'hsl(var(--studio-neon))',
+					warning: 'hsl(var(--studio-warning))'
 				}
 			},
 			borderRadius: {

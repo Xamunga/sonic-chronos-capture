@@ -14,10 +14,13 @@ function createWindow() {
   
   // Criar a janela principal
   mainWindow = new BrowserWindow({
-    width: 1400,
-    height: 900,
+    width: 1200,
+    height: 530,
     minWidth: 1200,
-    minHeight: 800,
+    minHeight: 530,
+    maxWidth: 1200,
+    maxHeight: 530,
+    resizable: false,
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
@@ -44,8 +47,10 @@ function createWindow() {
     mainWindow.loadFile(indexPath);
   }
 
-  // SEMPRE abrir DevTools para debug
-  mainWindow.webContents.openDevTools();
+  // Abrir DevTools apenas em desenvolvimento
+  if (isDev) {
+    mainWindow.webContents.openDevTools();
+  }
 
   // Mostrar quando estiver pronto
   mainWindow.once('ready-to-show', () => {
@@ -94,10 +99,20 @@ app.on('window-all-closed', () => {
 
 // IPC Handlers para funcionalidades nativas
 ipcMain.handle('select-directory', async () => {
-  const result = await dialog.showOpenDialog(mainWindow, {
-    properties: ['openDirectory']
-  });
-  return result.filePaths[0];
+  try {
+    const result = await dialog.showOpenDialog(mainWindow, {
+      properties: ['openDirectory'],
+      title: 'Selecionar Diretório de Gravação'
+    });
+    
+    if (!result.canceled && result.filePaths.length > 0) {
+      return result.filePaths[0];
+    }
+    return null;
+  } catch (error) {
+    console.error('Erro ao selecionar diretório:', error);
+    return null;
+  }
 });
 
 ipcMain.handle('show-save-dialog', async (event, options) => {

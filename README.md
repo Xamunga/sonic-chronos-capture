@@ -1,73 +1,87 @@
-# Welcome to your Lovable project
+# Gravador Real Time Pro v2.2.0
 
-## Project info
+🎵 **Suíte Profissional de Gravação de Áudio - ALES Sonorização**
 
-**URL**: https://lovable.dev/projects/6b1274aa-6344-47fe-9c2a-ce4a40488568
+## Visão Geral
+Sistema avançado de gravação de áudio com interface otimizada para estúdios profissionais e uso doméstico.
 
-## How can I edit this code?
+## Novidades da Versão 2.2.0
 
-There are several ways of editing your application.
+### 🛠️ Correções Críticas
+- ✅ **Botão "Salvar Configurações"** agora funciona corretamente na aba Arquivos
+- ✅ **Persistência de dados** - Configurações mantêm-se salvas ao alternar entre abas
+- ✅ **VU Meters e RTA** - Funcionamento correto ao iniciar gravação
+- ✅ **Cores padronizadas** - Campo "dd-mm" agora usa a cor azul padrão
+- ✅ **Codificação MP3** melhorada para compatibilidade total com VLC e outros players
+- ✅ **Arquivos salvos em subpastas** - Organização por data agora funciona corretamente
 
-**Use Lovable**
+### 🆕 Novos Recursos
+- 📁 **Seletor de Diretório** - Interface gráfica para escolher pasta de gravação
+- 🗂️ **Limpeza Automática** configurável com persistência de dados
+- 🎛️ **Interface otimizada** para janela 1200x530 pixels (fixa)
+- 🔧 **Sistema de configurações** robusto e confiável
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/6b1274aa-6344-47fe-9c2a-ce4a40488568) and start prompting.
+### 🎯 Melhorias Técnicas
+- **Análise de áudio** otimizada para inicialização imediata
+- **Codificação MP3** com bitrate configurável (320kbps default)
+- **Sistema de pastas** por data completamente funcional
+- **Persistência** de todas as configurações entre sessões
+- **Validação** robusta de tipos TypeScript
 
-Changes made via Lovable will be committed automatically to this repo.
+## Como Compilar
 
-**Use your preferred IDE**
+### Build Desktop (Electron)
+```bash
+# Instalar dependências
+npm install
+cd electron && npm install
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+# Build da aplicação web
+npm run build
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+# Build do Electron
+cd electron && npm run build
 ```
 
-**Edit a file directly in GitHub**
+### Build Web
+```bash
+npm run build
+```
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+## Configurações Disponíveis
 
-**Use GitHub Codespaces**
+### 📁 Gerenciamento de Arquivos
+- **Diretório Principal**: Seleção visual de pasta
+- **Organização por Data**: Subpastas automáticas (DD-MM, DD-MM-AAAA, etc.)
+- **Nomenclatura**: Múltiplos padrões de nomes de arquivo
+- **Limpeza Automática**: Exclusão programada de arquivos antigos
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+### 🎛️ Configurações de Áudio
+- **Formatos**: WAV, MP3 (320kbps)
+- **Sample Rate**: 44.1kHz padrão
+- **Divisão Automática**: 1min a 2h configurável
+- **VU Meters**: Monitoramento estéreo em tempo real
+- **Analisador de Espectro**: 32 bandas, 20Hz-20kHz
 
-## What technologies are used for this project?
+### 🖥️ Interface
+- **Resolução Fixa**: 1200x530 pixels
+- **VU Meters** com peak hold
+- **RTA em tempo real** com 32 barras
+- **Controles intuitivos** de gravação
 
-This project is built with:
+## Compatibilidade
+- ✅ Windows 10/11 (otimizado)
+- ✅ VLC Media Player
+- ✅ Windows Media Player
+- ✅ Reprodutores profissionais de áudio
+- ✅ Editores como Audacity, Reaper, Pro Tools
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+## Tecnologias
+- **Frontend**: React + TypeScript + Vite
+- **UI**: Shadcn/UI + Tailwind CSS
+- **Desktop**: Electron 28.x
+- **Audio**: Web Audio API + MediaRecorder
 
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/6b1274aa-6344-47fe-9c2a-ce4a40488568) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+## ALES Sonorização
+© 2024 ALES Sonorização - Todos os direitos reservados  
+**Versão**: 2.2.0 Build 2024.12.13

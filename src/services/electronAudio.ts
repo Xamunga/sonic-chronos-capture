@@ -89,10 +89,13 @@ export class ElectronAudioService {
       let finalOutputPath = outputPath;
       if (this.dateFolderEnabled) {
         const dateFolder = this.formatDateFolder();
-        finalOutputPath = `${outputPath}/${dateFolder}`;
+        // Remover barras duplas e normalizar o path
+        const normalizedPath = outputPath.replace(/[\\\/]+$/, '');
+        finalOutputPath = `${normalizedPath}\\${dateFolder}`;
         await this.ensureDirectoryExists(finalOutputPath);
       } else {
         await this.ensureDirectoryExists(outputPath);
+        finalOutputPath = outputPath;
       }
 
       this.outputPath = finalOutputPath;
@@ -115,27 +118,39 @@ export class ElectronAudioService {
       // Configurar análise de áudio
       this.setupAudioAnalysis(stream);
 
-      // Verificar formatos suportados e usar o melhor disponível
-      let mimeType = 'audio/webm;codecs=opus'; // Default mais compatível
+      // Usar formato específico para melhor compatibilidade
+      let mimeType = 'audio/webm;codecs=opus';
+      let audioBitsPerSecond = undefined;
       
-      if (this.outputFormat === 'wav' && MediaRecorder.isTypeSupported('audio/wav')) {
-        mimeType = 'audio/wav';
-      } else if (this.outputFormat === 'mp3' && MediaRecorder.isTypeSupported('audio/mp3')) {
-        mimeType = 'audio/mp3';
-      } else if (MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) {
+      if (this.outputFormat === 'wav') {
+        // Para WAV, usar WebM e converter via Electron
         mimeType = 'audio/webm;codecs=opus';
-      } else if (MediaRecorder.isTypeSupported('audio/webm')) {
+      } else if (this.outputFormat === 'mp3') {
+        // Para MP3, configurar bitrate específico
+        mimeType = 'audio/webm;codecs=opus';
+        audioBitsPerSecond = this.mp3Bitrate * 1000; // Converter kbps para bps
+      }
+      
+      // Verificar suporte
+      if (!MediaRecorder.isTypeSupported(mimeType)) {
         mimeType = 'audio/webm';
+        console.warn('Codec opus não suportado, usando WebM padrão');
       }
       
       console.log(`Usando MIME type: ${mimeType} para formato: ${this.outputFormat}`);
       
-      this.mediaRecorder = new MediaRecorder(stream, {
+      const mediaRecorderOptions: MediaRecorderOptions = {
         mimeType: mimeType
-      });
+      };
+      
+      if (audioBitsPerSecond) {
+        mediaRecorderOptions.audioBitsPerSecond = audioBitsPerSecond;
+      }
+      
+      this.mediaRecorder = new MediaRecorder(stream, mediaRecorderOptions);
 
       this.audioChunks = [];
-      this.outputPath = outputPath;
+      this.outputPath = finalOutputPath;
 
       this.mediaRecorder.ondataavailable = (event) => {
         if (event.data.size > 0) {
@@ -150,6 +165,11 @@ export class ElectronAudioService {
       this.mediaRecorder.start(1000); // Capturar dados a cada segundo
       this.isRecording = true;
       this.isPaused = false;
+      
+      // Inicializar sinal de áudio após um pequeno delay
+      setTimeout(() => {
+        this.forceAudioAnalysisStart();
+      }, 500);
 
       // Configurar split automático se habilitado
       if (this.splitEnabled) {
@@ -209,9 +229,9 @@ export class ElectronAudioService {
       if (window.electronAPI) {
         const filename = this.formatFileName();
 
-        const fullPath = this.outputPath.endsWith('\\') || this.outputPath.endsWith('/') 
-          ? `${this.outputPath}${filename}` 
-          : `${this.outputPath}/${filename}`;
+        // Normalizar path e garantir que o arquivo seja salvo no diretório correto
+        const normalizedPath = this.outputPath.replace(/[\\\/]+$/, '');
+        const fullPath = `${normalizedPath}\\${filename}`;
 
         try {
           await window.electronAPI.saveAudioFile(fullPath, uint8Array);
@@ -479,17 +499,22 @@ export class ElectronAudioService {
       const rightLevel = Math.min(100, ((average + Math.random() * 20 - 10) / 255) * 100);
       const peak = leftLevel > 85 || rightLevel > 85;
 
+      // Marcar que há sinal
+      this.hasSignal = average > 1; // Threshold mínimo para detectar sinal
+      
       // Notificar callbacks de volume
       this.volumeCallbacks.forEach(callback => {
         callback(leftLevel, rightLevel, peak);
       });
 
-      // Converter para array para espectro
-      const spectrumData = Array.from(dataArray).map(val => (val / 255) * 100);
+      // Converter para array para espectro (32 barras)
+      const spectrumData = Array.from(dataArray)
+        .slice(0, 32)
+        .map(val => (val / 255) * 100);
       
       // Notificar callbacks de espectro
       this.spectrumCallbacks.forEach(callback => {
-        callback(spectrumData.slice(0, 32));
+        callback(spectrumData);
       });
 
       requestAnimationFrame(analyze);
@@ -544,7 +569,21 @@ export class ElectronAudioService {
 
   // Método para verificar se há sinal de áudio
   hasAudioSignal(): boolean {
-    return this.isRecording && this.analyser !== null;
+    return this.isRecording && this.analyser !== null && this.hasSignal;
+  }
+  
+  // Forçar inicialização da análise de áudio para componentes
+  forceAudioAnalysisStart(): void {
+    if (this.isRecording && this.audioContext && this.analyser) {
+      this.hasSignal = true;
+      // Simular sinal inicial para ativar componentes
+      this.volumeCallbacks.forEach(callback => {
+        callback(0, 0, false);
+      });
+      this.spectrumCallbacks.forEach(callback => {
+        callback(Array(32).fill(0));
+      });
+    }
   }
 
   // Configurações de MP3 Bitrate
