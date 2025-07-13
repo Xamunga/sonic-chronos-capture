@@ -131,7 +131,7 @@ const ResourceMonitor = () => {
             </div>
           )}
 
-          <Button onClick={saveSettings} className="w-full">
+          <Button onClick={saveSettings} className="w-full font-bold">
             Salvar Configurações
           </Button>
         </div>

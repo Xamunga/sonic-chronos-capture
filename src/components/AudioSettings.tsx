@@ -108,7 +108,7 @@ const AudioSettings = () => {
           <Button onClick={() => {
             audioService.saveSettings();
             loadDevices();
-          }} className="w-full mt-6">
+          }} className="w-full mt-6 font-bold">
             Salvar Configurações
           </Button>
         </div>

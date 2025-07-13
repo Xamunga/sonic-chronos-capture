@@ -432,7 +432,7 @@ const FileManagementSettings = () => {
       {/* Botão Salvar */}
       <Card className="bg-gradient-to-br from-studio-charcoal to-studio-slate border-studio-electric/30">
         <div className="p-6 text-center">
-          <Button onClick={handleSaveSettings} className="w-full">
+          <Button onClick={handleSaveSettings} className="w-full font-bold">
             Salvar Configurações
           </Button>
           <p className="text-xs text-white mt-2">
