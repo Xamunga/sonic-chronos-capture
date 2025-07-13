@@ -206,7 +206,7 @@ const FileManagementSettings = () => {
                   value={outputPath}
                   onChange={(e) => handleOutputPathChange(e.target.value)}
                   placeholder="C:\Gravacoes\"
-                  className="flex-1 bg-muted/50"
+                  className="flex-1 bg-muted/50 border-studio-electric font-bold"
                 />
                 <Button onClick={selectDirectory} variant="outline" size="sm">
                   <FolderOpen className="w-4 h-4" />
@@ -231,7 +231,7 @@ const FileManagementSettings = () => {
               <div className="space-y-2">
                 <Label className="text-xs text-studio-electric">Formato da Pasta</Label>
                 <Select value={dateFormat} onValueChange={handleDateFormatChange}>
-                  <SelectTrigger className="bg-muted/50">
+                  <SelectTrigger className="bg-muted/50 border-studio-electric font-bold">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -279,7 +279,7 @@ const FileManagementSettings = () => {
               <div className="space-y-2">
                 <Label className="text-xs text-studio-electric">Intervalo (minutos)</Label>
                 <Select value={splitInterval} onValueChange={handleSplitIntervalChange}>
-                  <SelectTrigger className="bg-muted/50">
+                  <SelectTrigger className="bg-muted/50 border-studio-electric font-bold">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -318,7 +318,7 @@ const FileManagementSettings = () => {
                 value={customTitle}
                 onChange={(e) => setCustomTitle(e.target.value)}
                 placeholder="Ex: Sessao, Podcast, Entrevista"
-                className="bg-muted/50"
+                className="bg-muted/50 border-studio-electric font-bold"
               />
             </div>
             
@@ -328,7 +328,7 @@ const FileManagementSettings = () => {
                 setFileNamePattern(value);
                 audioService.setFileNameFormat(value);
               }}>
-                <SelectTrigger className="bg-muted/50">
+                <SelectTrigger className="bg-muted/50 border-studio-electric font-bold">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -385,7 +385,7 @@ const FileManagementSettings = () => {
                   max="365"
                   value={autoDeleteDays}
                   onChange={(e) => handleAutoDeleteDaysChange(e.target.value)}
-                  className="w-24 bg-muted/50"
+                  className="w-24 bg-muted/50 border-studio-electric font-bold"
                 />
                 <p className="text-xs text-destructive">
                   ⚠️ Arquivos excluídos não poderão ser recuperados
