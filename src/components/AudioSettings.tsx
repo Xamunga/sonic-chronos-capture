@@ -36,7 +36,7 @@ const AudioSettings = () => {
         
         <div className="space-y-4">
           <div>
-            <Label htmlFor="input-device" className="text-sm font-medium text-foreground">
+            <Label htmlFor="input-device" className="text-sm font-medium text-studio-electric">
               Dispositivo de Entrada
             </Label>
             <Select value={inputDevice} onValueChange={setInputDevice}>
@@ -55,7 +55,7 @@ const AudioSettings = () => {
           </div>
 
           <div>
-            <Label htmlFor="format" className="text-sm font-medium text-foreground">
+            <Label htmlFor="format" className="text-sm font-medium text-studio-electric">
               Formato de Áudio
             </Label>
             <Select value={format} onValueChange={handleFormatChange}>
@@ -71,7 +71,7 @@ const AudioSettings = () => {
 
           {format === 'mp3' && (
             <div>
-              <Label htmlFor="mp3-bitrate" className="text-sm font-medium text-foreground">
+              <Label htmlFor="mp3-bitrate" className="text-sm font-medium text-studio-electric">
                 Qualidade MP3
               </Label>
               <Select value={bitrate.toString()} onValueChange={handleBitrateChange}>
@@ -89,7 +89,7 @@ const AudioSettings = () => {
           )}
 
           <div>
-            <Label htmlFor="sample-rate" className="text-sm font-medium text-foreground">
+            <Label htmlFor="sample-rate" className="text-sm font-medium text-studio-electric">
               Taxa de Amostragem
             </Label>
             <Select value={sampleRate} onValueChange={setSampleRate}>

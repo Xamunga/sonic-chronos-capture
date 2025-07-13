@@ -51,8 +51,8 @@ const ResourceMonitor = () => {
   }) => (
     <div className="space-y-2">
       <div className="flex items-center space-x-2">
-        <Icon className="w-4 h-4 text-foreground" />
-        <span className="text-sm font-medium text-foreground">{label}</span>
+        <Icon className="w-4 h-4 text-studio-electric" />
+        <span className="text-sm font-medium text-studio-electric">{label}</span>
         <span className="text-sm font-mono text-muted-foreground ml-auto">
           {value.toFixed(1)}%
         </span>

@@ -124,7 +124,7 @@ const FileManagementSettings = () => {
           
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <Label htmlFor="date-folders" className="text-sm font-medium text-foreground">
+              <Label htmlFor="date-folders" className="text-sm font-medium text-studio-electric">
                 Organizar por Data
               </Label>
               <Switch 
@@ -135,7 +135,7 @@ const FileManagementSettings = () => {
             </div>
             {dateFolderEnabled && (
               <div className="space-y-2">
-                <Label className="text-xs text-muted-foreground">Formato da Pasta</Label>
+                <Label className="text-xs text-studio-electric">Formato da Pasta</Label>
                 <Select value={dateFormat} onValueChange={handleDateFormatChange}>
                   <SelectTrigger>
                     <SelectValue />
@@ -172,7 +172,7 @@ const FileManagementSettings = () => {
           
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <Label htmlFor="auto-split" className="text-sm font-medium text-foreground">
+              <Label htmlFor="auto-split" className="text-sm font-medium text-studio-electric">
                 Divisão Automática
               </Label>
               <Switch 
@@ -183,7 +183,7 @@ const FileManagementSettings = () => {
             </div>
             {splitEnabled && (
               <div className="space-y-2">
-                <Label className="text-xs text-muted-foreground">Intervalo (minutos)</Label>
+                <Label className="text-xs text-studio-electric">Intervalo (minutos)</Label>
                 <Select value={splitInterval} onValueChange={handleSplitIntervalChange}>
                   <SelectTrigger>
                     <SelectValue />
@@ -219,7 +219,7 @@ const FileManagementSettings = () => {
           
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label className="text-xs text-muted-foreground">Título Personalizado (opcional)</Label>
+              <Label className="text-xs text-studio-electric">Título Personalizado (opcional)</Label>
               <Input
                 value={customTitle}
                 onChange={(e) => setCustomTitle(e.target.value)}
@@ -228,7 +228,7 @@ const FileManagementSettings = () => {
             </div>
             
             <div className="space-y-2">
-              <Label className="text-xs text-muted-foreground">Padrão de Nomenclatura</Label>
+              <Label className="text-xs text-studio-electric">Padrão de Nomenclatura</Label>
               <Select value={fileNamePattern} onValueChange={(value) => {
                 setFileNamePattern(value);
                 audioService.setFileNameFormat(value);
@@ -268,7 +268,7 @@ const FileManagementSettings = () => {
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <Label className="text-sm font-medium text-foreground">
+                <Label className="text-sm font-medium text-studio-electric">
                   Excluir Arquivos Antigos
                 </Label>
                 <p className="text-xs text-muted-foreground">
@@ -283,7 +283,7 @@ const FileManagementSettings = () => {
             
             {autoDelete && (
               <div className="space-y-2">
-                <Label className="text-xs text-muted-foreground">Manter arquivos por (dias)</Label>
+                <Label className="text-xs text-studio-electric">Manter arquivos por (dias)</Label>
                 <Input
                   type="number"
                   min="1"
