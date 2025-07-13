@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Copy, RefreshCw, Bug, Monitor, Headphones, Settings, Folder } from 'lucide-react';
+import { Copy, RefreshCw, Bug, Monitor, Headphones, Settings, Folder, Download } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const DebugTab = () => {
@@ -165,6 +165,62 @@ const DebugTab = () => {
     copyToClipboard(fullReport, 'Relatório Completo');
   };
 
+  const exportFullReportToFile = () => {
+    const fullReport = {
+      reportGenerated: new Date().toISOString(),
+      systemInfo,
+      audioDevices,
+      appState,
+      electronInfo,
+      performanceMetrics,
+      consoleErrors: [], // Placeholder para erros do console
+      networkRequests: [], // Placeholder para requisições de rede
+    };
+
+    // Gerar conteúdo formatado do arquivo
+    const reportContent = `RELATÓRIO COMPLETO DE DEBUG
+===========================================
+Gerado em: ${new Date().toLocaleString('pt-BR')}
+
+=== INFORMAÇÕES DO SISTEMA ===
+${JSON.stringify(systemInfo, null, 2)}
+
+=== DISPOSITIVOS DE ÁUDIO ===
+${JSON.stringify(audioDevices, null, 2)}
+
+=== ESTADO DA APLICAÇÃO ===
+${JSON.stringify(appState, null, 2)}
+
+=== INFORMAÇÕES DO ELECTRON ===
+${JSON.stringify(electronInfo, null, 2)}
+
+=== MÉTRICAS DE PERFORMANCE ===
+${JSON.stringify(performanceMetrics, null, 2)}
+
+=== ERROS DO CONSOLE ===
+${JSON.stringify([], null, 2)}
+
+=== REQUISIÇÕES DE REDE ===
+${JSON.stringify([], null, 2)}
+
+===========================================
+Fim do relatório`;
+
+    // Criar e baixar o arquivo
+    const blob = new Blob([reportContent], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `debug-report-${new Date().toISOString().split('T')[0]}-${new Date().toTimeString().split(' ')[0].replace(/:/g, '-')}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+
+    toast({
+      title: "Relatório exportado!",
+      description: "Arquivo de debug completo foi baixado",
+    });
+  };
+
   const DebugSection = ({ title, data, icon: Icon, onCopy }: any) => (
     <Card className="bg-gradient-to-br from-studio-charcoal to-studio-slate border-studio-electric/30">
       <div className="p-6">
@@ -201,9 +257,13 @@ const DebugTab = () => {
                 <RefreshCw className="h-4 w-4 mr-2" />
                 Atualizar
               </Button>
-              <Button variant="default" size="sm" onClick={generateFullReport} className="font-bold">
+              <Button variant="outline" size="sm" onClick={generateFullReport} className="bg-muted/50 border-studio-electric font-bold">
                 <Copy className="h-4 w-4 mr-2" />
-                Copiar Relatório Completo
+                Copiar Relatório
+              </Button>
+              <Button variant="default" size="sm" onClick={exportFullReportToFile} className="font-bold">
+                <Download className="h-4 w-4 mr-2" />
+                Baixar Arquivo Completo
               </Button>
             </div>
           </div>
