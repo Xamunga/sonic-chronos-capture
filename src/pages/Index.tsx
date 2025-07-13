@@ -37,7 +37,7 @@ const Index = () => {
             <div className="bg-gradient-to-br from-studio-charcoal to-studio-slate border-studio-electric/30 rounded-lg p-6 text-center border flex flex-col justify-center h-[113px]">
               <div className="text-studio-electric font-mono text-2xl font-bold mb-2">
                 <span>{currentTime.toLocaleDateString('pt-BR')}</span>
-                <span style={{ marginLeft: '0.6em' }}>{currentTime.toLocaleTimeString('pt-BR')}</span>
+                <span style={{ marginLeft: '0.8em' }}>{currentTime.toLocaleTimeString('pt-BR')}</span>
               </div>
               <div className="text-sm text-muted-foreground bg-black p-2 rounded border border-studio-electric/20 text-white" style={{ textShadow: '0 0 3px hsl(195 100% 50%), 0 0 6px hsl(195 100% 50%)' }}>Data e Hora Atual</div>
             </div>
