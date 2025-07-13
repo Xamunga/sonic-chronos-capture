@@ -1,5 +1,6 @@
 
 import { toast } from "sonner";
+import { logSystem } from '@/utils/logSystem';
 
 // Interface para funcionalidades de áudio nativas no Electron
 export class ElectronAudioService {
@@ -518,6 +519,7 @@ export class ElectronAudioService {
       if (this.noiseSuppressionEnabled) {
         currentNode = this.createNoiseProcessingChain(this.audioContext, currentNode);
         console.log('🔇 Supressão de ruído ativada - filtros aplicados');
+        logSystem.info('Filtros de supressão de ruído aplicados na gravação', 'Audio');
       }
       
       this.analyser = this.audioContext.createAnalyser();
@@ -528,6 +530,7 @@ export class ElectronAudioService {
       this.startAudioAnalysis();
     } catch (error) {
       console.error('❌ Erro ao configurar análise de áudio:', error);
+      logSystem.error(`Erro ao configurar análise de áudio: ${error}`, 'Audio');
     }
   }
 
@@ -561,6 +564,7 @@ export class ElectronAudioService {
       
     } catch (error) {
       console.error('❌ Erro ao criar filtros de ruído:', error);
+      logSystem.error(`Erro ao criar filtros de supressão de ruído: ${error}`, 'Audio');
       return sourceNode; // Fallback para nó original
     }
   }
@@ -696,6 +700,8 @@ export class ElectronAudioService {
   // Configurações do Noise Gate
   setNoiseSuppressionEnabled(enabled: boolean): void {
     this.noiseSuppressionEnabled = enabled;
+    console.log(`Supressão de ruído: ${enabled ? 'habilitada' : 'desabilitada'}`);
+    logSystem.info(`Supressão de ruído ${enabled ? 'habilitada' : 'desabilitada'}`, 'Audio');
   }
 
   getNoiseSuppressionEnabled(): boolean {
@@ -704,6 +710,8 @@ export class ElectronAudioService {
 
   setNoiseThreshold(threshold: number): void {
     this.noiseThreshold = threshold;
+    console.log(`Threshold de ruído ajustado para: ${threshold}dB`);
+    logSystem.info(`Threshold de ruído ajustado para: ${threshold}dB`, 'Audio');
   }
 
   getNoiseThreshold(): number {
