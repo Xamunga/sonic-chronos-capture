@@ -228,7 +228,7 @@ const FileManagementSettings = () => {
               />
             </div>
             {dateFolderEnabled && (
-              <div className="space-y-2">
+              <div className="space-y-2 p-4 bg-muted/50 rounded-lg">
                 <Label className="text-xs text-studio-electric">Formato da Pasta</Label>
                 <Select value={dateFormat} onValueChange={handleDateFormatChange}>
                   <SelectTrigger>
@@ -276,7 +276,7 @@ const FileManagementSettings = () => {
               />
             </div>
             {splitEnabled && (
-              <div className="space-y-2">
+              <div className="space-y-2 p-4 bg-muted/50 rounded-lg">
                 <Label className="text-xs text-studio-electric">Intervalo (minutos)</Label>
                 <Select value={splitInterval} onValueChange={handleSplitIntervalChange}>
                   <SelectTrigger>
@@ -312,7 +312,7 @@ const FileManagementSettings = () => {
           </div>
           
           <div className="space-y-4">
-            <div className="space-y-2">
+            <div className="space-y-2 p-4 bg-muted/50 rounded-lg">
               <Label className="text-xs text-studio-electric">Título Personalizado (opcional)</Label>
               <Input
                 value={customTitle}
@@ -321,7 +321,7 @@ const FileManagementSettings = () => {
               />
             </div>
             
-            <div className="space-y-2">
+            <div className="space-y-2 p-4 bg-muted/50 rounded-lg">
               <Label className="text-xs text-studio-electric">Padrão de Nomenclatura</Label>
               <Select value={fileNamePattern} onValueChange={(value) => {
                 setFileNamePattern(value);
@@ -376,7 +376,7 @@ const FileManagementSettings = () => {
             </div>
             
             {autoDelete && (
-              <div className="space-y-2">
+              <div className="space-y-2 p-4 bg-muted/50 rounded-lg">
                 <Label className="text-xs text-studio-electric">Manter arquivos por (dias)</Label>
                 <Input
                   type="number"
@@ -399,7 +399,7 @@ const FileManagementSettings = () => {
       <Card className="bg-gradient-to-br from-studio-charcoal to-studio-slate border-studio-electric/30">
         <div className="p-6">
           <h3 className="text-lg font-semibold text-studio-electric mb-4">Resumo das Configurações</h3>
-          <div className="grid grid-cols-2 gap-4 text-sm">
+          <div className="grid grid-cols-2 gap-4 text-sm p-4 bg-muted/50 rounded-lg">
             <div>
               <span className="text-muted-foreground">Pastas por Data:</span>
               <span className={`ml-2 font-semibold ${dateFolderEnabled ? 'text-primary' : 'text-destructive'}`}>
