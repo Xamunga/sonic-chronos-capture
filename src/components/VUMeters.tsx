@@ -84,7 +84,7 @@ const VUMeters = () => {
           <div className="text-xs text-muted-foreground">
             {audioService.hasAudioSignal() 
               ? `Peak Hold: ${Math.max(leftLevel, rightLevel).toFixed(1)}dB`
-              : 'SEM SINAL'
+              : <span className="text-studio-warning">SEM SINAL</span>
             }
           </div>
         </div>
