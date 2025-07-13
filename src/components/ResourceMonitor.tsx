@@ -53,11 +53,11 @@ const ResourceMonitor = () => {
       <div className="flex items-center space-x-2">
         <Icon className="w-4 h-4 text-studio-electric" />
         <span className="text-sm font-medium text-studio-electric">{label}</span>
-        <span className="text-sm font-mono text-muted-foreground ml-auto">
+        <span className="text-sm font-mono text-white border border-studio-electric bg-black/50 px-2 py-1 rounded ml-auto">
           {value.toFixed(1)}%
         </span>
       </div>
-      <div className="w-full bg-muted rounded-full h-3 overflow-hidden">
+      <div className="w-full bg-muted rounded-full h-4 overflow-hidden border border-border">
         <div 
           className={`h-full transition-all duration-300 ${color}`}
           style={{ width: `${Math.min(100, value)}%` }}
@@ -109,19 +109,19 @@ const ResourceMonitor = () => {
                 value={cpuUsage} 
                 label="Uso de CPU" 
                 icon={Cpu}
-                color="bg-studio-electric"
+                color="bg-red-500"
               />
               <ResourceBar 
                 value={memoryUsage} 
                 label="Uso de Memória RAM" 
                 icon={MemoryStick}
-                color="bg-studio-electric"
+                color="bg-green-500"
               />
               <ResourceBar 
                 value={diskSpace} 
                 label="Espaço em Disco Usado" 
                 icon={HardDrive}
-                color="bg-studio-electric"
+                color="bg-yellow-500"
               />
             </div>
           ) : (
