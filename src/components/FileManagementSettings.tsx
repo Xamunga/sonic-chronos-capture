@@ -403,25 +403,25 @@ const FileManagementSettings = () => {
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div>
               <span className="text-white">Pastas por Data:</span>
-              <span className={`ml-2 font-semibold ${dateFolderEnabled ? 'text-primary' : 'text-destructive'}`}>
+              <span className={`ml-2 font-bold ${dateFolderEnabled ? 'text-studio-electric' : 'text-destructive'}`}>
                 {dateFolderEnabled ? 'Ativado' : 'Desativado'}
               </span>
             </div>
             <div>
               <span className="text-white">Divisão Automática:</span>
-              <span className={`ml-2 font-semibold ${splitEnabled ? 'text-primary' : 'text-destructive'}`}>
+              <span className={`ml-2 font-bold ${splitEnabled ? 'text-studio-electric' : 'text-destructive'}`}>
                 {splitEnabled ? `${splitInterval}min` : 'Desativado'}
               </span>
             </div>
             <div>
               <span className="text-white">Formato de Data:</span>
-              <span className="ml-2 font-semibold text-studio-electric">
+              <span className="ml-2 font-bold text-studio-electric">
                 {dateFormat}
               </span>
             </div>
             <div>
               <span className="text-white">Limpeza Auto:</span>
-              <span className={`ml-2 font-semibold ${autoDelete ? 'text-primary' : 'text-destructive'}`}>
+              <span className={`ml-2 font-bold ${autoDelete ? 'text-studio-electric' : 'text-destructive'}`}>
                 {autoDelete ? 'Ativado' : 'Desativado'}
               </span>
             </div>
