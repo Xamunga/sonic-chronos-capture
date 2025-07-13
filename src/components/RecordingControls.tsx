@@ -102,8 +102,10 @@ const RecordingControls: React.FC<RecordingControlsProps> = ({ outputPath }) => 
         </div>
 
         <div className="mt-4 text-xs text-center text-muted-foreground">
-          Sistema de Buffer Duplo: <span className="text-studio-neon">ATIVO</span><br />
-          Proteção contra Perda de Áudio: <span className="text-studio-neon">100%</span>
+          <div className="bg-studio-dark p-2 rounded border border-studio-electric/20">
+            Sistema de Buffer Duplo: <span className="text-studio-neon">ATIVO</span><br />
+            Proteção contra Perda de Áudio: <span className="text-studio-neon">100%</span>
+          </div>
         </div>
       </div>
     </Card>
