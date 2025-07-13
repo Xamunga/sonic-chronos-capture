@@ -212,7 +212,7 @@ const FileManagementSettings = () => {
                   <FolderOpen className="w-4 h-4" />
                 </Button>
               </div>
-              <p className="text-xs text-white border border-white rounded px-2 py-1 inline-block">
+              <p className="text-xs text-white border border-white">
                 Pasta onde os arquivos serão salvos
               </p>
             </div>
@@ -245,7 +245,7 @@ const FileManagementSettings = () => {
                     ))}
                   </SelectContent>
                 </Select>
-                <p className="text-xs text-white border border-white rounded px-2 py-1 inline-block">
+                <p className="text-xs text-white border border-white">
                   Pasta criada: {formatExampleDateFolder()}
                 </p>
               </div>
@@ -292,7 +292,7 @@ const FileManagementSettings = () => {
                     <SelectItem value="120">2 horas</SelectItem>
                   </SelectContent>
                 </Select>
-                <p className="text-xs text-white border border-white rounded px-2 py-1 inline-block">
+                <p className="text-xs text-white border border-white">
                   Divisão a cada: {splitInterval} minutos
                 </p>
               </div>
@@ -342,7 +342,7 @@ const FileManagementSettings = () => {
                   ))}
                 </SelectContent>
               </Select>
-              <p className="text-xs text-white border border-white rounded px-2 py-1 inline-block">
+              <p className="text-xs text-white border border-white">
                 Arquivo criado: {formatExampleFileName()}
               </p>
             </div>
@@ -366,7 +366,7 @@ const FileManagementSettings = () => {
                 <Label className="text-sm font-medium text-studio-electric">
                   Excluir Arquivos Antigos
                 </Label>
-                <p className="text-xs text-white border border-white rounded px-2 py-1 inline-block">
+                <p className="text-xs text-white border border-white">
                   Remove automaticamente arquivos mais antigos
                 </p>
               </div>
@@ -402,25 +402,25 @@ const FileManagementSettings = () => {
           <h3 className="text-lg font-semibold text-studio-electric mb-4">Resumo das Configurações</h3>
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div>
-              <span className="text-white border border-white rounded px-2 py-1">Pastas por Data:</span>
+              <span className="text-white border border-white">Pastas por Data:</span>
               <span className={`ml-2 font-semibold ${dateFolderEnabled ? 'text-primary' : 'text-destructive'}`}>
                 {dateFolderEnabled ? 'Ativado' : 'Desativado'}
               </span>
             </div>
             <div>
-              <span className="text-white border border-white rounded px-2 py-1">Divisão Automática:</span>
+              <span className="text-white border border-white">Divisão Automática:</span>
               <span className={`ml-2 font-semibold ${splitEnabled ? 'text-primary' : 'text-destructive'}`}>
                 {splitEnabled ? `${splitInterval}min` : 'Desativado'}
               </span>
             </div>
             <div>
-              <span className="text-white border border-white rounded px-2 py-1">Formato de Data:</span>
+              <span className="text-white border border-white">Formato de Data:</span>
               <span className="ml-2 font-semibold text-studio-electric">
                 {dateFormat}
               </span>
             </div>
             <div>
-              <span className="text-white border border-white rounded px-2 py-1">Limpeza Auto:</span>
+              <span className="text-white border border-white">Limpeza Auto:</span>
               <span className={`ml-2 font-semibold ${autoDelete ? 'text-primary' : 'text-destructive'}`}>
                 {autoDelete ? 'Ativado' : 'Desativado'}
               </span>
