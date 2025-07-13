@@ -24,7 +24,7 @@ const Index = () => {
     return () => clearInterval(interval);
   }, []);
   return (
-    <div className="min-h-screen bg-background px-2 py-2" style={{ width: '1200px', maxHeight: '530px' }}>
+    <div className="min-h-screen bg-background p-1" style={{ width: '100%', maxHeight: '530px' }}>
       <div className="w-full min-h-full flex flex-col">
         <AppHeader />
         
