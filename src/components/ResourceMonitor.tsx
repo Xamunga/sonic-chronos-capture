@@ -5,6 +5,7 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Cpu, HardDrive, MemoryStick } from 'lucide-react';
+import { logSystem } from '@/utils/logSystem';
 
 const ResourceMonitor = () => {
   const [isMonitoring, setIsMonitoring] = useState(true);
@@ -28,6 +29,7 @@ const ResourceMonitor = () => {
       updateInterval
     };
     localStorage.setItem('resourceMonitorSettings', JSON.stringify(settings));
+    logSystem.success('Configurações de monitoramento salvas', 'Monitor');
   };
 
   useEffect(() => {

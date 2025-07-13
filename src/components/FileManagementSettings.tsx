@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { FolderOpen, FileText, Clock, Trash2 } from 'lucide-react';
 import { audioService } from '@/services/electronAudio';
 import { toast } from 'sonner';
+import { logSystem } from '@/utils/logSystem';
 
 const FileManagementSettings = () => {
   const [outputPath, setOutputPath] = useState('C:\\Gravacoes\\');
@@ -164,6 +165,7 @@ const FileManagementSettings = () => {
       audioService.saveSettings();
       
       toast.success('Configurações salvas com sucesso!');
+      logSystem.success('Configurações de arquivos salvas', 'Files');
     } catch (error) {
       console.error('Erro ao salvar configurações:', error);
       toast.error('Erro ao salvar configurações');

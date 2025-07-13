@@ -1,18 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Download, Trash2, FileText, AlertCircle, CheckCircle, Info } from 'lucide-react';
-
-interface LogEntry {
-  id: string;
-  timestamp: Date;
-  type: 'error' | 'success' | 'info' | 'warning';
-  message: string;
-  component?: string;
-}
+import { logSystem, LogEntry } from '@/utils/logSystem';
 
 const LogTab = () => {
   const [logs, setLogs] = useState<LogEntry[]>([]);
@@ -22,23 +15,23 @@ const LogTab = () => {
   const [lastCpuWarning, setLastCpuWarning] = useState<Date | null>(null);
   const [lastMemoryWarning, setLastMemoryWarning] = useState<Date | null>(null);
 
-  // Função para adicionar entrada no log
-  const addLogEntry = (type: LogEntry['type'], message: string, component?: string) => {
-    const entry: LogEntry = {
-      id: Date.now().toString(),
-      timestamp: new Date(),
-      type,
-      message,
-      component
+  // Registrar listener para receber logs de outros componentes
+  useEffect(() => {
+    const handleLogEntry = (entry: LogEntry) => {
+      setLogs(prev => [entry, ...prev].slice(0, 1000));
+      
+      // Auto-salvar se habilitado
+      if (isAutoSave) {
+        saveToFile([entry, ...logs]);
+      }
     };
+
+    logSystem.addListener(handleLogEntry);
     
-    setLogs(prev => [entry, ...prev].slice(0, 1000)); // Manter apenas últimas 1000 entradas
-    
-    // Auto-salvar se habilitado
-    if (isAutoSave) {
-      saveToFile([entry, ...logs]);
-    }
-  };
+    return () => {
+      logSystem.removeListener(handleLogEntry);
+    };
+  }, [isAutoSave, logs]);
 
   // Função para verificar se valor está alto por mais de 2 minutos
   const checkSustainedHighUsage = (history: { value: number; timestamp: Date }[], threshold: number, type: 'CPU' | 'Memory') => {
@@ -61,7 +54,7 @@ const LogTab = () => {
       // Só emitir warning se passou mais de 5 minutos desde o último warning
       if (timeSinceLastWarning > 5) {
         const avgValue = recentHistory.reduce((sum, entry) => sum + entry.value, 0) / recentHistory.length;
-        addLogEntry('warning', `Uso de ${type} elevado (${avgValue.toFixed(1)}%) por mais de 2 minutos`, 'Monitor');
+        logSystem.warning(`Uso de ${type} elevado (${avgValue.toFixed(1)}%) por mais de 2 minutos`, 'Monitor');
         
         if (type === 'CPU') {
           setLastCpuWarning(now);
@@ -74,7 +67,7 @@ const LogTab = () => {
 
   // Monitorar recursos do sistema
   useEffect(() => {
-    addLogEntry('info', 'Sistema iniciado com sucesso', 'System');
+    logSystem.info('Sistema iniciado com sucesso', 'System');
     
     const interval = setInterval(() => {
       // Simular dados de CPU e memória (em produção, viria do ResourceMonitor)
@@ -96,12 +89,11 @@ const LogTab = () => {
       if (Math.random() < 0.3) {
         const otherMessages = [
           { type: 'info' as const, msg: 'Monitoramento de áudio ativo', comp: 'Audio' },
-          { type: 'success' as const, msg: 'Configurações salvas', comp: 'Settings' },
           { type: 'info' as const, msg: 'Verificação de dispositivos concluída', comp: 'Audio' },
         ];
         
         const random = otherMessages[Math.floor(Math.random() * otherMessages.length)];
-        addLogEntry(random.type, random.msg, random.comp);
+        logSystem.addLog(random.type, random.msg, random.comp);
       }
     }, 5000); // Verificar a cada 5 segundos
 

@@ -5,6 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Button } from '@/components/ui/button';
 import { audioService } from '@/services/electronAudio';
 import { useAudioRecording } from '@/hooks/useAudioRecording';
+import { logSystem } from '@/utils/logSystem';
 
 const AudioSettings = () => {
   const [inputDevice, setInputDevice] = useState('default');
@@ -108,6 +109,7 @@ const AudioSettings = () => {
           <Button onClick={() => {
             audioService.saveSettings();
             loadDevices();
+            logSystem.success('Configurações de áudio salvas', 'Audio');
           }} className="w-full mt-6 font-bold">
             Salvar Configurações
           </Button>
