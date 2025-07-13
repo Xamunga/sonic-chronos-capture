@@ -90,7 +90,7 @@ const Index = () => {
 
         <footer className="mt-4 text-center text-xs text-muted-foreground">
           <div className="bg-muted/50 rounded-lg p-2 border border-border">
-            Gravador Real Time Pro v2.2 | ALES Sonorização
+            Gravador Real Time Pro v2.3 | ALES Sonorização
           </div>
         </footer>
       </div>

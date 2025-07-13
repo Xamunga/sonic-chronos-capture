@@ -1,11 +1,11 @@
-# Gravador Real Time Pro v2.2.0
+# Gravador Real Time Pro v2.3.0
 
 🎵 **Suíte Profissional de Gravação de Áudio - ALES Sonorização**
 
 ## Visão Geral
 Sistema avançado de gravação de áudio com interface otimizada para estúdios profissionais e uso doméstico.
 
-## Novidades da Versão 2.2.0
+## Novidades da Versão 2.3.0
 
 ### 🛠️ Correções Críticas
 - ✅ **Botão "Salvar Configurações"** agora funciona corretamente na aba Arquivos
@@ -84,4 +84,4 @@ npm run build
 
 ## ALES Sonorização
 © 2024 ALES Sonorização - Todos os direitos reservados  
-**Versão**: 2.2.0 Build 2024.12.13
+**Versão**: 2.3.0 Build 2024.07.13
