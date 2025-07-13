@@ -1,87 +1,53 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import { Slider } from '@/components/ui/slider';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
 import { audioService } from '@/services/electronAudio';
+import { useAudioRecording } from '@/hooks/useAudioRecording';
 
 const AudioSettings = () => {
   const [inputDevice, setInputDevice] = useState('default');
-  const [outputFormat, setOutputFormat] = useState('wav');
+  const [format, setFormat] = useState('wav');
   const [sampleRate, setSampleRate] = useState('44100');
-  const [inputGain, setInputGain] = useState([50]);
-  const [availableDevices, setAvailableDevices] = useState<MediaDeviceInfo[]>([]);
+  const [bitrate, setBitrate] = useState(320);
+  const { devices, loadDevices } = useAudioRecording();
 
   useEffect(() => {
-    // Carregar dispositivos disponíveis
-    const loadDevices = async () => {
-      try {
-        const devices = await audioService.getAudioDevices();
-        setAvailableDevices(devices);
-        console.log('Dispositivos de áudio encontrados:', devices);
-      } catch (error) {
-        console.error('Erro ao carregar dispositivos:', error);
-      }
-    };
-
-    // Carregar configurações atuais do audioService
-    setInputDevice(audioService.getInputDevice());
-    setOutputFormat(audioService.getOutputFormat());
-    setSampleRate(audioService.getSampleRate().toString());
-
-    loadDevices();
+    setFormat(audioService.getOutputFormat());
+    setBitrate(audioService.getMp3Bitrate());
   }, []);
 
-  const handleInputDeviceChange = (deviceId: string) => {
-    setInputDevice(deviceId);
-    audioService.setInputDevice(deviceId);
-    console.log('Dispositivo de entrada alterado para:', deviceId);
+  const handleFormatChange = (value: string) => {
+    setFormat(value);
+    audioService.setOutputFormat(value);
   };
 
-  const handleOutputFormatChange = (format: string) => {
-    setOutputFormat(format);
-    audioService.setOutputFormat(format);
-    console.log('Formato de saída alterado para:', format);
+  const handleBitrateChange = (value: string) => {
+    const newBitrate = Number(value);
+    setBitrate(newBitrate);
+    audioService.setMp3Bitrate(newBitrate);
   };
-
-  const handleSampleRateChange = (rate: string) => {
-    setSampleRate(rate);
-    audioService.setSampleRate(parseInt(rate));
-    console.log('Taxa de amostragem alterada para:', rate);
-  };
-
-  const formats = [
-    { value: 'wav', label: 'WAV (Sem Compressão)' },
-    { value: 'mp3', label: 'MP3 (320kbps)' },
-    { value: 'flac', label: 'FLAC (Sem Perdas)' },
-  ];
-
-  const sampleRates = [
-    { value: '44100', label: '44.1 kHz (Qualidade CD)' },
-    { value: '48000', label: '48 kHz (Profissional)' },
-    { value: '96000', label: '96 kHz (Alta Resolução)' },
-  ];
 
   return (
-    <Card className="bg-gradient-to-br from-studio-charcoal to-studio-slate border-studio-electric/30">
+    <Card className="bg-background border-border">
       <div className="p-6">
-        <h3 className="text-lg font-semibold text-studio-electric mb-4">Configurações de Áudio</h3>
+        <h3 className="text-lg font-semibold text-foreground mb-4">Configurações de Áudio</h3>
         
-        <div className="space-y-6">
+        <div className="space-y-4">
           <div>
-            <Label htmlFor="input-device" className="text-sm font-medium text-studio-electric">
+            <Label htmlFor="input-device" className="text-sm font-medium text-foreground">
               Dispositivo de Entrada
             </Label>
-            <Select value={inputDevice} onValueChange={handleInputDeviceChange}>
-              <SelectTrigger className="mt-2 bg-studio-dark border-studio-electric/30">
-                <SelectValue placeholder="Selecione dispositivo de entrada" />
+            <Select value={inputDevice} onValueChange={setInputDevice}>
+              <SelectTrigger id="input-device" className="mt-2">
+                <SelectValue placeholder="Selecione o dispositivo" />
               </SelectTrigger>
-              <SelectContent className="bg-studio-dark border-studio-electric/30">
-                <SelectItem value="default">Entrada de Áudio Padrão</SelectItem>
-                {availableDevices.map((device) => (
-                  <SelectItem key={device.deviceId} value={device.deviceId}>
-                    {device.label || `Dispositivo ${device.deviceId.substring(0, 8)}...`}
+              <SelectContent>
+                <SelectItem value="default">Dispositivo Padrão</SelectItem>
+                {devices.map((device, index) => (
+                  <SelectItem key={index} value={device.deviceId || `device-${index}`}>
+                    {device.label || `Dispositivo ${index + 1}`}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -89,65 +55,62 @@ const AudioSettings = () => {
           </div>
 
           <div>
-            <Label htmlFor="output-format" className="text-sm font-medium text-studio-electric">
-              Formato de Saída
+            <Label htmlFor="format" className="text-sm font-medium text-foreground">
+              Formato de Áudio
             </Label>
-            <Select value={outputFormat} onValueChange={handleOutputFormatChange}>
-              <SelectTrigger className="mt-2 bg-studio-dark border-studio-electric/30">
-                <SelectValue placeholder="Selecione formato" />
+            <Select value={format} onValueChange={handleFormatChange}>
+              <SelectTrigger id="format" className="mt-2">
+                <SelectValue />
               </SelectTrigger>
-              <SelectContent className="bg-studio-dark border-studio-electric/30">
-                {formats.map((format) => (
-                  <SelectItem key={format.value} value={format.value}>
-                    {format.label}
-                  </SelectItem>
-                ))}
+              <SelectContent>
+                <SelectItem value="wav">WAV (sem compressão)</SelectItem>
+                <SelectItem value="mp3">MP3</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
+          {format === 'mp3' && (
+            <div>
+              <Label htmlFor="mp3-bitrate" className="text-sm font-medium text-foreground">
+                Qualidade MP3
+              </Label>
+              <Select value={bitrate.toString()} onValueChange={handleBitrateChange}>
+                <SelectTrigger id="mp3-bitrate" className="mt-2">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="96">96 kbps (Qualidade Básica)</SelectItem>
+                  <SelectItem value="128">128 kbps (Qualidade Padrão)</SelectItem>
+                  <SelectItem value="256">256 kbps (Qualidade Alta)</SelectItem>
+                  <SelectItem value="320">320 kbps (Qualidade Máxima)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
           <div>
-            <Label htmlFor="sample-rate" className="text-sm font-medium text-studio-electric">
+            <Label htmlFor="sample-rate" className="text-sm font-medium text-foreground">
               Taxa de Amostragem
             </Label>
-            <Select value={sampleRate} onValueChange={handleSampleRateChange}>
-              <SelectTrigger className="mt-2 bg-studio-dark border-studio-electric/30">
-                <SelectValue placeholder="Selecione taxa de amostragem" />
+            <Select value={sampleRate} onValueChange={setSampleRate}>
+              <SelectTrigger id="sample-rate" className="mt-2">
+                <SelectValue />
               </SelectTrigger>
-              <SelectContent className="bg-studio-dark border-studio-electric/30">
-                {sampleRates.map((rate) => (
-                  <SelectItem key={rate.value} value={rate.value}>
-                    {rate.label}
-                  </SelectItem>
-                ))}
+              <SelectContent>
+                <SelectItem value="22050">22.05 kHz</SelectItem>
+                <SelectItem value="44100">44.1 kHz (CD Quality)</SelectItem>
+                <SelectItem value="48000">48 kHz (Professional)</SelectItem>
+                <SelectItem value="96000">96 kHz (Hi-Res)</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
-          <div>
-            <Label htmlFor="input-gain" className="text-sm font-medium text-studio-electric">
-              Ganho de Entrada: {inputGain[0]}%
-            </Label>
-            <Slider
-              id="input-gain"
-              min={0}
-              max={100}
-              step={1}
-              value={inputGain}
-              onValueChange={setInputGain}
-              className="mt-2"
-            />
-          </div>
-        </div>
-
-        <div className="mt-6 pt-4 border-t border-studio-electric/20">
-          <div className="flex justify-between text-xs text-muted-foreground">
-            <span>Status: Pronto</span>
-            <span>Buffer: 512 amostras</span>
-          </div>
-          <div className="mt-2 text-xs text-center">
-            <span className="text-studio-neon">Otimizado para Windows 10/11 • Drivers ASIO</span>
-          </div>
+          <Button onClick={() => {
+            audioService.saveSettings();
+            loadDevices();
+          }} className="w-full mt-6">
+            Salvar Configurações
+          </Button>
         </div>
       </div>
     </Card>

@@ -1,50 +1,54 @@
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Professional Audio Theme */
+/* Light Theme */
 
 @layer base {
   :root {
-    --background: 218 20% 8%;
-    --foreground: 0 0% 95%;
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
 
-    --card: 218 20% 12%;
-    --card-foreground: 0 0% 95%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
 
-    --popover: 218 20% 12%;
-    --popover-foreground: 0 0% 95%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
 
-    --primary: 195 100% 50%;
-    --primary-foreground: 218 20% 8%;
+    --primary: 221.2 83.2% 53.3%;
+    --primary-foreground: 210 40% 98%;
 
-    --secondary: 218 15% 20%;
-    --secondary-foreground: 0 0% 95%;
+    --secondary: 210 40% 96%;
+    --secondary-foreground: 222.2 84% 4.9%;
 
-    --muted: 218 15% 15%;
-    --muted-foreground: 215 20% 65%;
+    --muted: 210 40% 96%;
+    --muted-foreground: 215.4 16.3% 46.9%;
 
-    --accent: 140 100% 50%;
-    --accent-foreground: 218 20% 8%;
+    --accent: 210 40% 96%;
+    --accent-foreground: 222.2 84% 4.9%;
 
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 0 0% 98%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
 
-    --border: 218 15% 25%;
-    --input: 218 15% 25%;
-    --ring: 195 100% 50%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 221.2 83.2% 53.3%;
+
+    --chart-1: 12 76% 61%;
+    --chart-2: 173 58% 39%;
+    --chart-3: 197 37% 24%;
+    --chart-4: 43 74% 66%;
+    --chart-5: 27 87% 67%;
 
     --radius: 0.5rem;
 
-    --sidebar-background: 218 20% 10%;
-    --sidebar-foreground: 0 0% 90%;
-    --sidebar-primary: 195 100% 50%;
-    --sidebar-primary-foreground: 218 20% 8%;
-    --sidebar-accent: 218 15% 18%;
-    --sidebar-accent-foreground: 0 0% 90%;
-    --sidebar-border: 218 15% 22%;
-    --sidebar-ring: 195 100% 50%;
+    /* Studio Colors - Removidas do tema escuro */
+    --studio-dark: 218 20% 8%;
+    --studio-charcoal: 218 20% 12%;
+    --studio-slate: 218 15% 20%;
+    --studio-electric: 195 100% 50%;
+    --studio-neon: 140 100% 50%;
+    --studio-warning: 38 92% 50%;
   }
 }
 
@@ -52,125 +56,80 @@
   * {
     @apply border-border;
   }
-
   body {
-    @apply bg-background text-foreground font-mono;
-    background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%);
+    @apply bg-background text-foreground;
   }
-
-  /* Custom scrollbar for professional look */
-  ::-webkit-scrollbar {
-    width: 8px;
-  }
-
-  ::-webkit-scrollbar-track {
-    @apply bg-studio-charcoal;
-  }
-
-  ::-webkit-scrollbar-thumb {
-    @apply bg-studio-electric/30 rounded-full;
-  }
-
-  ::-webkit-scrollbar-thumb:hover {
-    @apply bg-studio-electric/50;
-  }
-}
-
-/* Professional VU Meter styles */
-.vu-meter {
-  background: linear-gradient(to top, 
-    #00ff88 0%, 
-    #00ff88 60%, 
-    #ffff00 80%, 
-    #ff4444 100%);
-  transition: height 0.1s ease-out;
-}
-
-/* Spectrum analyzer bars */
-.spectrum-bar {
-  background: linear-gradient(to top, 
-    #00d4ff 0%, 
-    #00ff88 50%, 
-    #ff6b00 100%);
-  transition: height 0.05s ease-out;
-}
-
-/* Recording indicator pulse */
-.recording-pulse {
-  box-shadow: 0 0 10px #ff4444, 0 0 20px #ff4444, 0 0 30px #ff4444;
-}
-
-/* Professional button styles */
-.pro-button {
-  background: linear-gradient(145deg, #2a2a2a, #1a1a1a);
-  border: 1px solid #00d4ff;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.1);
-  transition: all 0.2s ease;
-}
-
-.pro-button:hover {
-  background: linear-gradient(145deg, #3a3a3a, #2a2a2a);
-  box-shadow: 0 0 15px rgba(0, 212, 255, 0.3);
-}
-
-.pro-button:active {
-  background: linear-gradient(145deg, #1a1a1a, #2a2a2a);
 }
 
 /* VU Meter Styles */
 .vu-meter {
-  background: linear-gradient(
-    90deg,
-    hsl(var(--studio-neon)) 0%,
-    hsl(var(--studio-neon)) 60%,
-    #fbbf24 75%,
-    hsl(var(--studio-warning)) 85%,
-    hsl(var(--studio-warning)) 100%
-  );
-  box-shadow: 0 0 10px hsl(var(--studio-neon) / 0.3);
+  background: linear-gradient(90deg, 
+    hsl(var(--chart-2)) 0%, 
+    hsl(var(--chart-4)) 60%, 
+    hsl(var(--destructive)) 85%);
+  border-radius: 4px;
 }
 
-/* Spectrum Analyzer Bars */
+/* Spectrum Analyzer Styles */
 .spectrum-bar {
-  background: linear-gradient(
-    180deg,
-    hsl(var(--studio-warning)) 0%,
-    #fbbf24 30%,
-    hsl(var(--studio-neon)) 60%,
-    hsl(var(--studio-electric)) 100%
-  );
-  box-shadow: 0 0 3px hsl(var(--studio-neon) / 0.5);
-  animation: spectrum-glow 2s ease-in-out infinite alternate;
+  background: linear-gradient(180deg, 
+    hsl(var(--chart-2)) 0%, 
+    hsl(var(--chart-4)) 50%, 
+    hsl(var(--destructive)) 80%);
+  transition: height 0.1s ease-out;
+  min-height: 2px;
 }
 
-@keyframes spectrum-glow {
-  0% { box-shadow: 0 0 3px hsl(var(--studio-neon) / 0.3); }
-  100% { box-shadow: 0 0 8px hsl(var(--studio-neon) / 0.7); }
+/* Control Buttons */
+.control-button {
+  @apply rounded-lg border-2 transition-all duration-200 shadow-lg;
 }
 
-/* Animações dos botões */
-@keyframes button-glow {
-  0%, 100% {
-    box-shadow: 0 0 5px currentColor;
+.control-button.record {
+  @apply bg-red-600 hover:bg-red-500 border-red-400;
+}
+
+.control-button.record.active {
+  @apply bg-green-600 hover:bg-green-500 border-green-400;
+}
+
+.control-button.pause {
+  @apply bg-yellow-600 hover:bg-yellow-500 border-yellow-400;
+}
+
+.control-button:disabled {
+  @apply opacity-30 cursor-not-allowed;
+}
+
+/* Pro Button Styles */
+.pro-button {
+  @apply bg-secondary hover:bg-secondary/80 border border-border transition-all duration-200;
+}
+
+/* Responsive adjustments */
+@media (max-width: 800px) {
+  .spectrum-bar {
+    width: 4px;
   }
-  50% {
-    box-shadow: 0 0 20px currentColor, 0 0 30px currentColor;
+}
+
+/* Animation utilities */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
-.recording-button {
-  animation: button-glow 2s infinite;
+.animate-fade-in {
+  animation: fade-in 0.3s ease-out;
 }
 
-/* Responsividade melhorada */
-.responsive-grid {
-  display: grid;
-  gap: 1.5rem;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-}
-
-@media (max-width: 768px) {
-  .responsive-grid {
-    grid-template-columns: 1fr;
-  }
+/* Focus styles */
+:focus-visible {
+  @apply outline-none ring-2 ring-ring ring-offset-2;
 }

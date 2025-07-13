@@ -7,7 +7,7 @@ import RecordingControls from '../components/RecordingControls';
 import VUMeters from '../components/VUMeters';
 import SpectrumAnalyzer from '../components/SpectrumAnalyzer';
 import AudioSettings from '../components/AudioSettings';
-import SessionInfo from '../components/SessionInfo';
+import ResourceMonitor from '../components/ResourceMonitor';
 import FileManagementSettings from '../components/FileManagementSettings';
 
 const Index = () => {
@@ -24,107 +24,56 @@ const Index = () => {
     return () => clearInterval(interval);
   }, []);
   return (
-    <div className="min-h-screen bg-gradient-to-br from-studio-dark via-studio-charcoal to-studio-slate p-4">
-      <div className="max-w-7xl mx-auto min-h-[calc(100vh-2rem)] flex flex-col">
+    <div className="min-h-screen bg-background p-2" style={{ maxWidth: '800px', maxHeight: '600px' }}>
+      <div className="max-w-full mx-auto min-h-full flex flex-col">
         <AppHeader />
         
-        <Tabs defaultValue="monitor" className="w-full flex-1 flex flex-col">
-          <TabsList className="grid w-full grid-cols-4 mb-6 bg-studio-charcoal border-studio-electric/30 sticky top-0 z-10">
-            <TabsTrigger 
-              value="monitor" 
-              className="data-[state=active]:bg-studio-electric data-[state=active]:text-studio-dark text-studio-electric"
-            >
-              Monitor em Tempo Real
+        {/* Monitor Principal - Sem abas */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
+          <div className="space-y-4">
+            <RecordingControls outputPath={outputPath} />
+            <div className="bg-card border border-border rounded-lg p-3 text-center">
+              <div className="text-foreground font-mono text-base">
+                {currentTime.toLocaleString('pt-BR')}
+              </div>
+              <div className="text-xs text-muted-foreground">Data e Hora Atual</div>
+            </div>
+          </div>
+          <div className="space-y-4">
+            <VUMeters />
+            <SpectrumAnalyzer />
+          </div>
+        </div>
+        
+        <Tabs defaultValue="audio" className="w-full flex-1 flex flex-col">
+          <TabsList className="grid w-full grid-cols-3 mb-6 bg-muted sticky top-0 z-10">
+            <TabsTrigger value="audio" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              Áudio
             </TabsTrigger>
-            <TabsTrigger 
-              value="settings" 
-              className="data-[state=active]:bg-studio-electric data-[state=active]:text-studio-dark text-studio-electric"
-            >
-              Configurações de Áudio
+            <TabsTrigger value="files" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              Arquivos
             </TabsTrigger>
-            <TabsTrigger 
-              value="files" 
-              className="data-[state=active]:bg-studio-electric data-[state=active]:text-studio-dark text-studio-electric"
-            >
-              Gerenciamento de Arquivos
-            </TabsTrigger>
-            <TabsTrigger 
-              value="session" 
-              className="data-[state=active]:bg-studio-electric data-[state=active]:text-studio-dark text-studio-electric"
-            >
-              Informações da Sessão
+            <TabsTrigger value="resources" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              Recursos
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="monitor" className="space-y-6 flex-1">
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 h-full">
-              <div className="space-y-6">
-                <RecordingControls outputPath={outputPath} />
-                <div className="bg-gradient-to-br from-studio-charcoal to-studio-slate border border-studio-electric/30 rounded-lg p-4 text-center">
-                  <div className="text-studio-electric font-mono text-lg">
-                    {currentTime.toLocaleString('pt-BR')}
-                  </div>
-                  <div className="text-xs text-muted-foreground">Data e Hora Atual</div>
-                </div>
-              </div>
-              <div className="space-y-6">
-                <VUMeters />
-                <SpectrumAnalyzer />
-              </div>
-            </div>
+          <TabsContent value="audio" className="space-y-4">
+            <AudioSettings />
           </TabsContent>
 
-          <TabsContent value="settings" className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <AudioSettings />
-              <div className="space-y-6">
-                <VUMeters />
-              </div>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="files" className="space-y-6">
+          <TabsContent value="files" className="space-y-4">
             <FileManagementSettings />
           </TabsContent>
 
-          <TabsContent value="session" className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <SessionInfo outputPath={outputPath} setOutputPath={setOutputPath} />
-              <div className="space-y-6">
-                <RecordingControls outputPath={outputPath} />
-                <div className="bg-gradient-to-br from-studio-charcoal to-studio-slate border border-studio-electric/30 rounded-lg p-6">
-                  <h3 className="text-lg font-semibold text-studio-electric mb-4">Ações Rápidas</h3>
-                  <div className="grid grid-cols-2 gap-4">
-                    <button className="pro-button p-4 text-center rounded-lg">
-                      <div className="text-studio-neon font-semibold">Divisão Automática</div>
-                      <div className="text-xs text-muted-foreground">Ativar/Desativar</div>
-                    </button>
-                    <button className="pro-button p-4 text-center rounded-lg">
-                      <div className="text-studio-neon font-semibold">Detecção de Silêncio</div>
-                      <div className="text-xs text-muted-foreground">Configurar</div>
-                    </button>
-                    <button className="pro-button p-4 text-center rounded-lg">
-                      <div className="text-studio-neon font-semibold">Backup Configurações</div>
-                      <div className="text-xs text-muted-foreground">Exportar/Importar</div>
-                    </button>
-                    <button className="pro-button p-4 text-center rounded-lg">
-                      <div className="text-studio-neon font-semibold">Ver Logs</div>
-                      <div className="text-xs text-muted-foreground">Status do Sistema</div>
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
+          <TabsContent value="resources" className="space-y-4">
+            <ResourceMonitor />
           </TabsContent>
         </Tabs>
 
-        <footer className="mt-8 text-center text-xs text-muted-foreground">
-          <div className="bg-studio-charcoal/50 rounded-lg p-4 border border-studio-electric/20">
-            Gravador Real Time Pro v1.0 | ALES Sonorização | Suíte Profissional de Gravação de Áudio
-            <br />
-            Otimizado para Windows 10/11 | Suporte USB Multi-canal | Gravação Contínua 24/7
-            <br />
-            <span className="text-studio-neon">Sistema de Buffer Duplo • Zero Perda de Áudio • Divisão Sem Gaps</span>
+        <footer className="mt-4 text-center text-xs text-muted-foreground">
+          <div className="bg-muted/50 rounded-lg p-2 border border-border">
+            Gravador Real Time Pro v2.1 | ALES Sonorização
           </div>
         </footer>
       </div>

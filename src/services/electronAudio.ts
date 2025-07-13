@@ -10,6 +10,7 @@ export class ElectronAudioService {
   private outputPath = '';
   private inputDevice = 'default';
   private outputFormat = 'wav';
+  private mp3Bitrate = 320;
   private sampleRate = 44100;
   private splitEnabled = false;
   private splitIntervalMinutes = 5;
@@ -22,6 +23,38 @@ export class ElectronAudioService {
   private analyser: AnalyserNode | null = null;
   private volumeCallbacks: ((left: number, right: number, peak: boolean) => void)[] = [];
   private spectrumCallbacks: ((data: number[]) => void)[] = [];
+  private hasSignal = false;
+
+  constructor() {
+    this.loadSettings();
+  }
+
+  private loadSettings() {
+    const settings = localStorage.getItem('audioSettings');
+    if (settings) {
+      const parsed = JSON.parse(settings);
+      this.outputFormat = parsed.outputFormat || 'wav';
+      this.mp3Bitrate = parsed.mp3Bitrate || 320;
+      this.splitEnabled = parsed.splitEnabled || false;
+      this.splitIntervalMinutes = parsed.splitIntervalMinutes || 5;
+      this.dateFolderEnabled = parsed.dateFolderEnabled || false;
+      this.dateFolderFormat = parsed.dateFolderFormat || 'dd-mm';
+      this.fileNameFormat = parsed.fileNameFormat || 'timestamp';
+    }
+  }
+
+  saveSettings() {
+    const settings = {
+      outputFormat: this.outputFormat,
+      mp3Bitrate: this.mp3Bitrate,
+      splitEnabled: this.splitEnabled,
+      splitIntervalMinutes: this.splitIntervalMinutes,
+      dateFolderEnabled: this.dateFolderEnabled,
+      dateFolderFormat: this.dateFolderFormat,
+      fileNameFormat: this.fileNameFormat
+    };
+    localStorage.setItem('audioSettings', JSON.stringify(settings));
+  }
 
   async requestMicrophonePermission(): Promise<boolean> {
     try {
@@ -512,6 +545,15 @@ export class ElectronAudioService {
   // Método para verificar se há sinal de áudio
   hasAudioSignal(): boolean {
     return this.isRecording && this.analyser !== null;
+  }
+
+  // Configurações de MP3 Bitrate
+  setMp3Bitrate(bitrate: number): void {
+    this.mp3Bitrate = bitrate;
+  }
+
+  getMp3Bitrate(): number {
+    return this.mp3Bitrate;
   }
 }
 

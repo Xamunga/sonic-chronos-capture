@@ -3,13 +3,16 @@ const { execSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 
-console.log('🚀 Iniciando build do Gravador Real Time Pro v1.1...\n');
-console.log('📋 Funcionalidades implementadas:');
-console.log('   ✅ Split automático de arquivos por tempo');
-console.log('   ✅ Criação de subpastas por data');
-console.log('   ✅ VU Meters funcionais em tempo real');
-console.log('   ✅ Analisador de espectro com peak meter');
-console.log('   ✅ Sistema de gravação contínua otimizado\n');
+console.log('🚀 Iniciando build do Gravador Real Time Pro v2.1...\n');
+console.log('📋 Correções e melhorias implementadas:');
+console.log('   ✅ Contador de tempo corrigido (não reseta ao trocar abas)');
+console.log('   ✅ VU Meter e RTA funcionais durante gravação');
+console.log('   ✅ Múltiplas opções de bitrate MP3 (96, 128, 256, 320 kbps)');
+console.log('   ✅ Persistência completa de configurações');
+console.log('   ✅ Monitor de Recursos (CPU, RAM, Disco)');
+console.log('   ✅ Tamanho inicial da janela reduzido');
+console.log('   ✅ Tema claro por padrão');
+console.log('   ✅ Versão corrigida no instalador\n');
 
 // 1. Build da aplicação React
 console.log('📦 Fazendo build da aplicação React...');
@@ -52,16 +55,21 @@ console.log('🎉 Build concluído com sucesso!');
 console.log('📁 Instalador disponível em: electron/dist-electron/');
 console.log('🚀 Gravador Real Time Pro está pronto para distribuição!');
 
-// Changelog v1.0.3
-console.log('\n=== CHANGELOG v1.0.3 ===');
-console.log('✅ Divisão automática de arquivos implementada (intervalo configurável 1-120min, padrão 5min)');
-console.log('✅ Subpastas automáticas por data no formato dd-mm (padrão)');
-console.log('✅ Novos formatos de nomeação: hh-mm-ss-seq e dd-mm-hh-mm-ss-seq');
-console.log('✅ Fallback "SEM SINAL" no VU Meter e RTA quando sem entrada de áudio');
-console.log('✅ Interface responsiva otimizada para 1/4 da tela');
-console.log('✅ Botões redesenhados: retangulares com cantos arredondados');
-console.log('✅ Ícones clássicos: círculo (gravar), quadrado (parar), II (pausar)');
-console.log('✅ Comportamento visual dinâmico dos botões (vermelho/verde)');
-console.log('✅ Data e hora em tempo real na interface principal');
-console.log('✅ Layout otimizado para tela sem rolagem');
+// Changelog v2.1.0
+console.log('\n=== CHANGELOG v2.1.0 ===');
+console.log('🔧 CORREÇÕES:');
+console.log('✅ Contador de tempo não reseta mais ao trocar abas');
+console.log('✅ VU Meter e RTA funcionam corretamente durante gravação');
+console.log('✅ hasAudioSignal() corrigida para detecção real de sinal');
+console.log('✅ Tamanho inicial da janela reduzido para 800x600px');
+console.log('✅ Tema claro aplicado por padrão');
+console.log('✅ Versão corrigida no instalador (2.1.0)');
+console.log('');
+console.log('🆕 NOVOS RECURSOS:');
+console.log('✅ Múltiplas opções de bitrate MP3: 96, 128, 256, 320 kbps');
+console.log('✅ Persistência completa de configurações com localStorage');
+console.log('✅ Monitor de Recursos substituindo Informações da Sessão');
+console.log('✅ Monitor de CPU, RAM e Espaço em Disco');
+console.log('✅ Botão "Salvar Configurações" em todas as seções');
+console.log('✅ Interface reorganizada com monitor principal sempre visível');
 console.log('========================\n');

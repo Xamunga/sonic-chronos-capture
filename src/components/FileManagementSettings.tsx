@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
+import { Button } from '@/components/ui/button';
 import { FolderOpen, FileText, Clock, Trash2 } from 'lucide-react';
 import { audioService } from '@/services/electronAudio';
 import { toast } from 'sonner';
@@ -114,45 +115,43 @@ const FileManagementSettings = () => {
   return (
     <div className="space-y-6">
       {/* Configurações de Diretório */}
-      <Card className="bg-gradient-to-br from-studio-charcoal to-studio-slate border-studio-electric/30">
+      <Card className="bg-background border-border">
         <div className="p-6">
           <div className="flex items-center space-x-2 mb-4">
-            <FolderOpen className="w-5 h-5 text-studio-electric" />
-            <h3 className="text-lg font-semibold text-studio-electric">Configurações de Diretório</h3>
+            <FolderOpen className="w-5 h-5 text-foreground" />
+            <h3 className="text-lg font-semibold text-foreground">Configurações de Diretório</h3>
           </div>
           
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <Label htmlFor="date-folders" className="text-sm font-medium text-studio-electric">
+              <Label htmlFor="date-folders" className="text-sm font-medium text-foreground">
                 Organizar por Data
               </Label>
               <Switch 
                 id="date-folders" 
                 checked={dateFolderEnabled}
                 onCheckedChange={handleDateFolderToggle}
-                className="data-[state=checked]:bg-studio-electric"
               />
             </div>
             {dateFolderEnabled && (
               <div className="space-y-2">
                 <Label className="text-xs text-muted-foreground">Formato da Pasta</Label>
                 <Select value={dateFormat} onValueChange={handleDateFormatChange}>
-                  <SelectTrigger className="bg-studio-dark border-studio-electric/30 text-studio-electric">
+                  <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent className="bg-studio-charcoal border-studio-electric/30">
+                  <SelectContent>
                     {dateFormats.map((format) => (
                       <SelectItem 
                         key={format.value} 
                         value={format.value}
-                        className="text-studio-electric hover:bg-studio-electric/20"
                       >
                         {format.label}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
-                <p className="text-xs text-studio-neon">
+                <p className="text-xs text-primary">
                   Pasta criada: {formatExampleDateFolder()}
                 </p>
               </div>
@@ -161,46 +160,45 @@ const FileManagementSettings = () => {
         </div>
       </Card>
 
-      <Separator className="bg-studio-electric/20" />
+      <Separator />
 
       {/* Configurações de Divisão de Arquivos */}
-      <Card className="bg-gradient-to-br from-studio-charcoal to-studio-slate border-studio-electric/30">
+      <Card className="bg-background border-border">
         <div className="p-6">
           <div className="flex items-center space-x-2 mb-4">
-            <Clock className="w-5 h-5 text-studio-electric" />
-            <h3 className="text-lg font-semibold text-studio-electric">Divisão Automática de Arquivos</h3>
+            <Clock className="w-5 h-5 text-foreground" />
+            <h3 className="text-lg font-semibold text-foreground">Divisão Automática de Arquivos</h3>
           </div>
           
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <Label htmlFor="auto-split" className="text-sm font-medium text-studio-electric">
+              <Label htmlFor="auto-split" className="text-sm font-medium text-foreground">
                 Divisão Automática
               </Label>
               <Switch 
                 id="auto-split" 
                 checked={splitEnabled}
                 onCheckedChange={handleSplitToggle}
-                className="data-[state=checked]:bg-studio-electric"
               />
             </div>
             {splitEnabled && (
               <div className="space-y-2">
                 <Label className="text-xs text-muted-foreground">Intervalo (minutos)</Label>
                 <Select value={splitInterval} onValueChange={handleSplitIntervalChange}>
-                  <SelectTrigger className="bg-studio-dark border-studio-electric/30 text-studio-electric">
+                  <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent className="bg-studio-charcoal border-studio-electric/30">
-                    <SelectItem value="1" className="text-studio-electric hover:bg-studio-electric/20">1 minuto</SelectItem>
-                    <SelectItem value="5" className="text-studio-electric hover:bg-studio-electric/20">5 minutos</SelectItem>
-                    <SelectItem value="10" className="text-studio-electric hover:bg-studio-electric/20">10 minutos</SelectItem>
-                    <SelectItem value="15" className="text-studio-electric hover:bg-studio-electric/20">15 minutos</SelectItem>
-                    <SelectItem value="30" className="text-studio-electric hover:bg-studio-electric/20">30 minutos</SelectItem>
-                    <SelectItem value="60" className="text-studio-electric hover:bg-studio-electric/20">1 hora</SelectItem>
-                    <SelectItem value="120" className="text-studio-electric hover:bg-studio-electric/20">2 horas</SelectItem>
+                  <SelectContent>
+                    <SelectItem value="1">1 minuto</SelectItem>
+                    <SelectItem value="5">5 minutos</SelectItem>
+                    <SelectItem value="10">10 minutos</SelectItem>
+                    <SelectItem value="15">15 minutos</SelectItem>
+                    <SelectItem value="30">30 minutos</SelectItem>
+                    <SelectItem value="60">1 hora</SelectItem>
+                    <SelectItem value="120">2 horas</SelectItem>
                   </SelectContent>
                 </Select>
-                <p className="text-xs text-studio-neon">
+                <p className="text-xs text-primary">
                   Divisão a cada: {splitInterval} minutos
                 </p>
               </div>
@@ -209,14 +207,14 @@ const FileManagementSettings = () => {
         </div>
       </Card>
 
-      <Separator className="bg-studio-electric/20" />
+      <Separator />
 
       {/* Configurações de Nomenclatura */}
-      <Card className="bg-gradient-to-br from-studio-charcoal to-studio-slate border-studio-electric/30">
+      <Card className="bg-background border-border">
         <div className="p-6">
           <div className="flex items-center space-x-2 mb-4">
-            <FileText className="w-5 h-5 text-studio-electric" />
-            <h3 className="text-lg font-semibold text-studio-electric">Nomenclatura de Arquivos</h3>
+            <FileText className="w-5 h-5 text-foreground" />
+            <h3 className="text-lg font-semibold text-foreground">Nomenclatura de Arquivos</h3>
           </div>
           
           <div className="space-y-4">
@@ -226,7 +224,6 @@ const FileManagementSettings = () => {
                 value={customTitle}
                 onChange={(e) => setCustomTitle(e.target.value)}
                 placeholder="Ex: Sessao, Podcast, Entrevista"
-                className="bg-studio-dark border-studio-electric/30 text-studio-electric"
               />
             </div>
             
@@ -236,22 +233,21 @@ const FileManagementSettings = () => {
                 setFileNamePattern(value);
                 audioService.setFileNameFormat(value);
               }}>
-                <SelectTrigger className="bg-studio-dark border-studio-electric/30 text-studio-electric">
+                <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="bg-studio-charcoal border-studio-electric/30">
+                <SelectContent>
                   {fileNamePatterns.map((pattern) => (
                     <SelectItem 
                       key={pattern.value} 
                       value={pattern.value}
-                      className="text-studio-electric hover:bg-studio-electric/20"
                     >
                       {pattern.label}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-              <p className="text-xs text-studio-neon">
+              <p className="text-xs text-primary">
                 Arquivo criado: {formatExampleFileName()}
               </p>
             </div>
@@ -259,20 +255,20 @@ const FileManagementSettings = () => {
         </div>
       </Card>
 
-      <Separator className="bg-studio-electric/20" />
+      <Separator />
 
       {/* Limpeza Automática */}
-      <Card className="bg-gradient-to-br from-studio-charcoal to-studio-slate border-studio-electric/30">
+      <Card className="bg-background border-border">
         <div className="p-6">
           <div className="flex items-center space-x-2 mb-4">
-            <Trash2 className="w-5 h-5 text-studio-electric" />
-            <h3 className="text-lg font-semibold text-studio-electric">Limpeza Automática</h3>
+            <Trash2 className="w-5 h-5 text-foreground" />
+            <h3 className="text-lg font-semibold text-foreground">Limpeza Automática</h3>
           </div>
           
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <Label className="text-sm font-medium text-studio-electric">
+                <Label className="text-sm font-medium text-foreground">
                   Excluir Arquivos Antigos
                 </Label>
                 <p className="text-xs text-muted-foreground">
@@ -282,7 +278,6 @@ const FileManagementSettings = () => {
               <Switch 
                 checked={autoDelete}
                 onCheckedChange={setAutoDelete}
-                className="data-[state=checked]:bg-studio-electric"
               />
             </div>
             
@@ -294,9 +289,9 @@ const FileManagementSettings = () => {
                   min="1"
                   max="365"
                   defaultValue="30"
-                  className="w-24 bg-studio-dark border-studio-electric/30 text-studio-electric"
+                  className="w-24"
                 />
-                <p className="text-xs text-studio-warning">
+                <p className="text-xs text-destructive">
                   ⚠️ Arquivos excluídos não poderão ser recuperados
                 </p>
               </div>
@@ -306,35 +301,47 @@ const FileManagementSettings = () => {
       </Card>
 
       {/* Status das Configurações */}
-      <Card className="bg-gradient-to-br from-studio-charcoal to-studio-slate border-studio-electric/30">
+      <Card className="bg-background border-border">
         <div className="p-6">
-          <h3 className="text-lg font-semibold text-studio-electric mb-4">Resumo das Configurações</h3>
+          <h3 className="text-lg font-semibold text-foreground mb-4">Resumo das Configurações</h3>
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div>
               <span className="text-muted-foreground">Pastas por Data:</span>
-              <span className={`ml-2 font-semibold ${dateFolderEnabled ? 'text-studio-neon' : 'text-studio-warning'}`}>
+              <span className={`ml-2 font-semibold ${dateFolderEnabled ? 'text-primary' : 'text-destructive'}`}>
                 {dateFolderEnabled ? 'Ativado' : 'Desativado'}
               </span>
             </div>
             <div>
               <span className="text-muted-foreground">Divisão Automática:</span>
-              <span className={`ml-2 font-semibold ${splitEnabled ? 'text-studio-neon' : 'text-studio-warning'}`}>
+              <span className={`ml-2 font-semibold ${splitEnabled ? 'text-primary' : 'text-destructive'}`}>
                 {splitEnabled ? `${splitInterval}min` : 'Desativado'}
               </span>
             </div>
             <div>
               <span className="text-muted-foreground">Formato de Data:</span>
-              <span className="ml-2 font-semibold text-studio-electric">
+              <span className="ml-2 font-semibold text-foreground">
                 {dateFormat}
               </span>
             </div>
             <div>
               <span className="text-muted-foreground">Limpeza Auto:</span>
-              <span className={`ml-2 font-semibold ${autoDelete ? 'text-studio-neon' : 'text-studio-warning'}`}>
+              <span className={`ml-2 font-semibold ${autoDelete ? 'text-primary' : 'text-destructive'}`}>
                 {autoDelete ? 'Ativado' : 'Desativado'}
               </span>
             </div>
           </div>
+        </div>
+      </Card>
+
+      {/* Botão Salvar */}
+      <Card className="bg-background border-border">
+        <div className="p-6 text-center">
+          <Button onClick={() => audioService.saveSettings()} className="w-full">
+            Salvar Configurações
+          </Button>
+          <p className="text-xs text-muted-foreground mt-2">
+            Todas as configurações serão salvas permanentemente
+          </p>
         </div>
       </Card>
     </div>

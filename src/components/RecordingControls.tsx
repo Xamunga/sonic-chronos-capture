@@ -55,7 +55,7 @@ const RecordingControls: React.FC<RecordingControlsProps> = ({ outputPath }) => 
             `}
           >
             {isRecording ? (
-              <Square className="w-8 h-8 text-white fill-white" />
+              <Square className="w-8 h-8 text-white" />
             ) : (
               <Circle className="w-8 h-8 text-white fill-white" />
             )}
