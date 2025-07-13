@@ -14,11 +14,10 @@ const SpectrumAnalyzer = () => {
     // Registrar callback no audioService
     audioService.onSpectrumUpdate(handleSpectrumUpdate);
 
-    // Fallback para demonstração quando não está gravando
+    // Fallback para mostrar "SEM SINAL" quando não há entrada
     const fallbackInterval = setInterval(() => {
-      if (!audioService.isCurrentlyRecording()) {
-        const newSpectrum = Array.from({ length: 32 }, () => Math.random() * 40); // Níveis mais baixos
-        setSpectrum(newSpectrum);
+      if (!audioService.hasAudioSignal()) {
+        setSpectrum(Array(32).fill(0));
       }
     }, 50);
 
@@ -47,7 +46,10 @@ const SpectrumAnalyzer = () => {
           <span>20kHz</span>
         </div>
         <div className="mt-2 text-xs text-center text-muted-foreground">
-          <span className="text-studio-neon">Processamento Otimizado Windows 10/11</span>
+          {audioService.hasAudioSignal() 
+            ? <span className="text-studio-neon">Processamento Otimizado Windows 10/11</span>
+            : <span className="text-studio-warning">SEM SINAL</span>
+          }
         </div>
       </div>
     </Card>

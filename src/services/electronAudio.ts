@@ -12,9 +12,10 @@ export class ElectronAudioService {
   private outputFormat = 'wav';
   private sampleRate = 44100;
   private splitEnabled = false;
-  private splitIntervalMinutes = 60;
+  private splitIntervalMinutes = 5;
   private dateFolderEnabled = false;
-  private dateFolderFormat = 'dd-mm-yyyy';
+  private dateFolderFormat = 'dd-mm';
+  private fileNameFormat = 'timestamp';
   private recordingStartTime = 0;
   private currentSplitNumber = 1;
   private audioContext: AudioContext | null = null;
@@ -173,17 +174,7 @@ export class ElectronAudioService {
 
       // Se estiver no Electron, usar a API nativa para salvar
       if (window.electronAPI) {
-        const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-        const extension = this.outputFormat === 'wav' ? 'wav' : 
-                         this.outputFormat === 'mp3' ? 'mp3' : 'webm';
-        
-        // Nome do arquivo com número da parte se split estiver ativo
-        let filename: string;
-        if (this.splitEnabled && this.currentSplitNumber > 1) {
-          filename = `gravacao_${timestamp}_parte${this.currentSplitNumber}.${extension}`;
-        } else {
-          filename = `gravacao_${timestamp}.${extension}`;
-        }
+        const filename = this.formatFileName();
 
         const fullPath = this.outputPath.endsWith('\\') || this.outputPath.endsWith('/') 
           ? `${this.outputPath}${filename}` 
@@ -322,6 +313,8 @@ export class ElectronAudioService {
     const year = now.getFullYear().toString();
 
     switch (this.dateFolderFormat) {
+      case 'dd-mm':
+        return `${day}-${month}`;
       case 'dd-mm-yyyy':
         return `${day}-${month}-${year}`;
       case 'mm-dd-yyyy':
@@ -331,8 +324,40 @@ export class ElectronAudioService {
       case 'yyyy/mm/dd':
         return `${year}/${month}/${day}`;
       default:
-        return `${day}-${month}-${year}`;
+        return `${day}-${month}`;
     }
+  }
+
+  private formatFileName(): string {
+    const now = new Date();
+    const day = now.getDate().toString().padStart(2, '0');
+    const month = (now.getMonth() + 1).toString().padStart(2, '0');
+    const year = now.getFullYear().toString();
+    const hours = now.getHours().toString().padStart(2, '0');
+    const minutes = now.getMinutes().toString().padStart(2, '0');
+    const seconds = now.getSeconds().toString().padStart(2, '0');
+
+    const extension = this.outputFormat === 'wav' ? 'wav' : 
+                     this.outputFormat === 'mp3' ? 'mp3' : 'webm';
+
+    let baseName: string;
+    switch (this.fileNameFormat) {
+      case 'hh-mm-ss-seq':
+        baseName = `${hours}${minutes}${seconds}_${this.currentSplitNumber.toString().padStart(3, '0')}`;
+        break;
+      case 'dd-mm-hh-mm-ss-seq':
+        baseName = `${day}-${month}-${hours}${minutes}${seconds}_${this.currentSplitNumber.toString().padStart(3, '0')}`;
+        break;
+      case 'timestamp':
+      default:
+        const timestamp = now.toISOString().replace(/[:.]/g, '-').slice(0, 19);
+        baseName = this.splitEnabled && this.currentSplitNumber > 1 
+          ? `gravacao_${timestamp}_parte${this.currentSplitNumber}`
+          : `gravacao_${timestamp}`;
+        break;
+    }
+
+    return `${baseName}.${extension}`;
   }
 
   private scheduleSplit(): void {
@@ -473,6 +498,20 @@ export class ElectronAudioService {
 
   isPausedState(): boolean {
     return this.isPaused;
+  }
+
+  // Configurações de formato de nome
+  setFileNameFormat(format: string): void {
+    this.fileNameFormat = format;
+  }
+
+  getFileNameFormat(): string {
+    return this.fileNameFormat;
+  }
+
+  // Método para verificar se há sinal de áudio
+  hasAudioSignal(): boolean {
+    return this.isRecording && this.analyser !== null;
   }
 }
 

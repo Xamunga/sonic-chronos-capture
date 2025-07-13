@@ -51,3 +51,17 @@ try {
 console.log('🎉 Build concluído com sucesso!');
 console.log('📁 Instalador disponível em: electron/dist-electron/');
 console.log('🚀 Gravador Real Time Pro está pronto para distribuição!');
+
+// Changelog v1.0.3
+console.log('\n=== CHANGELOG v1.0.3 ===');
+console.log('✅ Divisão automática de arquivos implementada (intervalo configurável 1-120min, padrão 5min)');
+console.log('✅ Subpastas automáticas por data no formato dd-mm (padrão)');
+console.log('✅ Novos formatos de nomeação: hh-mm-ss-seq e dd-mm-hh-mm-ss-seq');
+console.log('✅ Fallback "SEM SINAL" no VU Meter e RTA quando sem entrada de áudio');
+console.log('✅ Interface responsiva otimizada para 1/4 da tela');
+console.log('✅ Botões redesenhados: retangulares com cantos arredondados');
+console.log('✅ Ícones clássicos: círculo (gravar), quadrado (parar), II (pausar)');
+console.log('✅ Comportamento visual dinâmico dos botões (vermelho/verde)');
+console.log('✅ Data e hora em tempo real na interface principal');
+console.log('✅ Layout otimizado para tela sem rolagem');
+console.log('========================\n');

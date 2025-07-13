@@ -15,8 +15,9 @@ const FileManagementSettings = () => {
   const [dateFolderEnabled, setDateFolderEnabled] = useState(false);
   const [autoDelete, setAutoDelete] = useState(false);
   const [splitEnabled, setSplitEnabled] = useState(false);
-  const [splitInterval, setSplitInterval] = useState('60');
+  const [splitInterval, setSplitInterval] = useState('5');
   const [fileNamePattern, setFileNamePattern] = useState('timestamp');
+  const [fileNameFormat, setFileNameFormat] = useState('timestamp');
   const [customTitle, setCustomTitle] = useState('');
 
   // Sincronizar com audioService na inicialização
@@ -28,6 +29,7 @@ const FileManagementSettings = () => {
   }, []);
 
   const dateFormats = [
+    { value: 'dd-mm', label: 'DD-MM (31-12)', example: '31-12' },
     { value: 'dd-mm-yyyy', label: 'DD-MM-AAAA (31-12-2024)', example: '31-12-2024' },
     { value: 'mm-dd-yyyy', label: 'MM-DD-AAAA (12-31-2024)', example: '12-31-2024' },
     { value: 'yyyy-mm-dd', label: 'AAAA-MM-DD (2024-12-31)', example: '2024-12-31' },
@@ -36,6 +38,8 @@ const FileManagementSettings = () => {
 
   const fileNamePatterns = [
     { value: 'timestamp', label: 'Data/Hora (2024-12-31_14-30-15)', example: 'gravacao_2024-12-31_14-30-15.wav' },
+    { value: 'hh-mm-ss-seq', label: 'hh-mm-ss-sequência (150520_001)', example: '150520_001.wav' },
+    { value: 'dd-mm-hh-mm-ss-seq', label: 'dd-mm-hh-mm-ss-sequência (10-07-150520_001)', example: '10-07-150520_001.wav' },
     { value: 'custom-timestamp', label: 'Título + Data/Hora', example: 'Sessao_2024-12-31_14-30-15.wav' },
     { value: 'sequence', label: 'Sequencial (001, 002, 003)', example: 'gravacao_001.wav' },
     { value: 'custom', label: 'Personalizado', example: 'CustomName.wav' }
@@ -67,6 +71,8 @@ const FileManagementSettings = () => {
     const year = now.getFullYear().toString();
 
     switch (dateFormat) {
+      case 'dd-mm':
+        return `${day}-${month}`;
       case 'dd-mm-yyyy':
         return `${day}-${month}-${year}`;
       case 'mm-dd-yyyy':
@@ -76,7 +82,7 @@ const FileManagementSettings = () => {
       case 'yyyy/mm/dd':
         return `${year}/${month}/${day}`;
       default:
-        return `${day}-${month}-${year}`;
+        return `${day}-${month}`;
     }
   };
 
@@ -185,12 +191,13 @@ const FileManagementSettings = () => {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="bg-studio-charcoal border-studio-electric/30">
+                    <SelectItem value="1" className="text-studio-electric hover:bg-studio-electric/20">1 minuto</SelectItem>
+                    <SelectItem value="5" className="text-studio-electric hover:bg-studio-electric/20">5 minutos</SelectItem>
+                    <SelectItem value="10" className="text-studio-electric hover:bg-studio-electric/20">10 minutos</SelectItem>
                     <SelectItem value="15" className="text-studio-electric hover:bg-studio-electric/20">15 minutos</SelectItem>
                     <SelectItem value="30" className="text-studio-electric hover:bg-studio-electric/20">30 minutos</SelectItem>
                     <SelectItem value="60" className="text-studio-electric hover:bg-studio-electric/20">1 hora</SelectItem>
                     <SelectItem value="120" className="text-studio-electric hover:bg-studio-electric/20">2 horas</SelectItem>
-                    <SelectItem value="180" className="text-studio-electric hover:bg-studio-electric/20">3 horas</SelectItem>
-                    <SelectItem value="360" className="text-studio-electric hover:bg-studio-electric/20">6 horas</SelectItem>
                   </SelectContent>
                 </Select>
                 <p className="text-xs text-studio-neon">
@@ -225,7 +232,10 @@ const FileManagementSettings = () => {
             
             <div className="space-y-2">
               <Label className="text-xs text-muted-foreground">Padrão de Nomenclatura</Label>
-              <Select value={fileNamePattern} onValueChange={setFileNamePattern}>
+              <Select value={fileNamePattern} onValueChange={(value) => {
+                setFileNamePattern(value);
+                audioService.setFileNameFormat(value);
+              }}>
                 <SelectTrigger className="bg-studio-dark border-studio-electric/30 text-studio-electric">
                   <SelectValue />
                 </SelectTrigger>

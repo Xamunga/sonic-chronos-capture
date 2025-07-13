@@ -2,7 +2,7 @@
 import React from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Play, Pause, Monitor } from 'lucide-react';
+import { Play, Pause, Square, Circle } from 'lucide-react';
 import { audioService } from '@/services/electronAudio';
 import { useElectron } from '@/hooks/useElectron';
 import { useAudioRecording } from '@/hooks/useAudioRecording';
@@ -41,28 +41,38 @@ const RecordingControls: React.FC<RecordingControlsProps> = ({ outputPath }) => 
       <div className="p-6">
         <h3 className="text-lg font-semibold text-studio-electric mb-4">Controles de Gravação</h3>
         
-        <div className="flex items-center justify-center space-x-4 mb-6">
+        <div className="flex items-center justify-center space-x-6 mb-6">
+          {/* Botão Gravar/Parar */}
           <Button
             onClick={handleRecord}
-            className={`pro-button w-16 h-16 rounded-full ${
-              isRecording 
-                ? 'bg-studio-warning hover:bg-studio-warning/80 recording-pulse animate-pulse-record' 
-                : 'bg-studio-neon hover:bg-studio-neon/80'
-            }`}
+            className={`
+              w-20 h-20 rounded-lg 
+              ${isRecording 
+                ? 'bg-green-600 hover:bg-green-500 border-2 border-green-400' 
+                : 'bg-red-600 hover:bg-red-500 border-2 border-red-400'
+              }
+              transition-all duration-200 flex flex-col items-center justify-center shadow-lg
+            `}
           >
             {isRecording ? (
-              <Monitor className="w-6 h-6 text-white" />
+              <Square className="w-8 h-8 text-white fill-white" />
             ) : (
-              <Play className="w-6 h-6 text-studio-dark" />
+              <Circle className="w-8 h-8 text-white fill-white" />
             )}
           </Button>
           
+          {/* Botão Pausar */}
           <Button
             onClick={handlePause}
             disabled={!isRecording}
-            className="pro-button w-12 h-12 rounded-full bg-studio-electric hover:bg-studio-electric/80 disabled:opacity-30"
+            className="
+              w-16 h-16 rounded-lg 
+              bg-yellow-600 hover:bg-yellow-500 border-2 border-yellow-400
+              disabled:opacity-30 disabled:cursor-not-allowed
+              transition-all duration-200 flex flex-col items-center justify-center shadow-lg
+            "
           >
-            <Pause className="w-4 h-4 text-studio-dark" />
+            <Pause className="w-6 h-6 text-white" />
           </Button>
         </div>
 
@@ -70,8 +80,12 @@ const RecordingControls: React.FC<RecordingControlsProps> = ({ outputPath }) => 
           <div className="text-3xl font-mono font-bold text-studio-electric mb-2">
             {formatTime(recordingTime)}
           </div>
-          <div className="text-sm text-muted-foreground">
-            {isRecording ? (isPaused ? 'PAUSADO' : 'GRAVANDO') : 'PRONTO'}
+          <div className={`text-lg font-bold ${
+            isRecording 
+              ? (isPaused ? 'text-yellow-400' : 'text-green-400') 
+              : 'text-red-400'
+          }`}>
+            {isRecording ? (isPaused ? 'PAUSADO' : 'GRAVANDO') : 'PARADO'}
           </div>
         </div>
 

@@ -147,3 +147,30 @@
   0% { box-shadow: 0 0 3px hsl(var(--studio-neon) / 0.3); }
   100% { box-shadow: 0 0 8px hsl(var(--studio-neon) / 0.7); }
 }
+
+/* Animações dos botões */
+@keyframes button-glow {
+  0%, 100% {
+    box-shadow: 0 0 5px currentColor;
+  }
+  50% {
+    box-shadow: 0 0 20px currentColor, 0 0 30px currentColor;
+  }
+}
+
+.recording-button {
+  animation: button-glow 2s infinite;
+}
+
+/* Responsividade melhorada */
+.responsive-grid {
+  display: grid;
+  gap: 1.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+}
+
+@media (max-width: 768px) {
+  .responsive-grid {
+    grid-template-columns: 1fr;
+  }
+}
