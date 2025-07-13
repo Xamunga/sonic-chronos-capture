@@ -115,11 +115,11 @@ const FileManagementSettings = () => {
   return (
     <div className="space-y-6">
       {/* Configurações de Diretório */}
-      <Card className="bg-background border-border">
+      <Card className="bg-gradient-to-br from-studio-charcoal to-studio-slate border-studio-electric/30">
         <div className="p-6">
           <div className="flex items-center space-x-2 mb-4">
-            <FolderOpen className="w-5 h-5 text-foreground" />
-            <h3 className="text-lg font-semibold text-foreground">Configurações de Diretório</h3>
+            <FolderOpen className="w-5 h-5 text-studio-electric" />
+            <h3 className="text-lg font-semibold text-studio-electric">Configurações de Diretório</h3>
           </div>
           
           <div className="space-y-4">
@@ -163,11 +163,11 @@ const FileManagementSettings = () => {
       <Separator />
 
       {/* Configurações de Divisão de Arquivos */}
-      <Card className="bg-background border-border">
+      <Card className="bg-gradient-to-br from-studio-charcoal to-studio-slate border-studio-electric/30">
         <div className="p-6">
           <div className="flex items-center space-x-2 mb-4">
-            <Clock className="w-5 h-5 text-foreground" />
-            <h3 className="text-lg font-semibold text-foreground">Divisão Automática de Arquivos</h3>
+            <Clock className="w-5 h-5 text-studio-electric" />
+            <h3 className="text-lg font-semibold text-studio-electric">Divisão Automática de Arquivos</h3>
           </div>
           
           <div className="space-y-4">
@@ -210,11 +210,11 @@ const FileManagementSettings = () => {
       <Separator />
 
       {/* Configurações de Nomenclatura */}
-      <Card className="bg-background border-border">
+      <Card className="bg-gradient-to-br from-studio-charcoal to-studio-slate border-studio-electric/30">
         <div className="p-6">
           <div className="flex items-center space-x-2 mb-4">
-            <FileText className="w-5 h-5 text-foreground" />
-            <h3 className="text-lg font-semibold text-foreground">Nomenclatura de Arquivos</h3>
+            <FileText className="w-5 h-5 text-studio-electric" />
+            <h3 className="text-lg font-semibold text-studio-electric">Nomenclatura de Arquivos</h3>
           </div>
           
           <div className="space-y-4">
@@ -258,11 +258,11 @@ const FileManagementSettings = () => {
       <Separator />
 
       {/* Limpeza Automática */}
-      <Card className="bg-background border-border">
+      <Card className="bg-gradient-to-br from-studio-charcoal to-studio-slate border-studio-electric/30">
         <div className="p-6">
           <div className="flex items-center space-x-2 mb-4">
-            <Trash2 className="w-5 h-5 text-foreground" />
-            <h3 className="text-lg font-semibold text-foreground">Limpeza Automática</h3>
+            <Trash2 className="w-5 h-5 text-studio-electric" />
+            <h3 className="text-lg font-semibold text-studio-electric">Limpeza Automática</h3>
           </div>
           
           <div className="space-y-4">
@@ -301,9 +301,9 @@ const FileManagementSettings = () => {
       </Card>
 
       {/* Status das Configurações */}
-      <Card className="bg-background border-border">
+      <Card className="bg-gradient-to-br from-studio-charcoal to-studio-slate border-studio-electric/30">
         <div className="p-6">
-          <h3 className="text-lg font-semibold text-foreground mb-4">Resumo das Configurações</h3>
+          <h3 className="text-lg font-semibold text-studio-electric mb-4">Resumo das Configurações</h3>
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div>
               <span className="text-muted-foreground">Pastas por Data:</span>
@@ -334,7 +334,7 @@ const FileManagementSettings = () => {
       </Card>
 
       {/* Botão Salvar */}
-      <Card className="bg-background border-border">
+      <Card className="bg-gradient-to-br from-studio-charcoal to-studio-slate border-studio-electric/30">
         <div className="p-6 text-center">
           <Button onClick={() => audioService.saveSettings()} className="w-full">
             Salvar Configurações

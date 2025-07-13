@@ -67,9 +67,9 @@ const ResourceMonitor = () => {
   );
 
   return (
-    <Card className="bg-background border-border">
+    <Card className="bg-gradient-to-br from-studio-charcoal to-studio-slate border-studio-electric/30">
       <div className="p-6">
-        <h3 className="text-lg font-semibold text-foreground mb-4">Monitor de Recursos</h3>
+        <h3 className="text-lg font-semibold text-studio-electric mb-4">Monitor de Recursos</h3>
         
         <div className="space-y-6">
           {/* Controles */}
