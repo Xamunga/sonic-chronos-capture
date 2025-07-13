@@ -32,8 +32,8 @@ const Index = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
           <div className="space-y-4">
             <RecordingControls outputPath={outputPath} />
-            <div className="bg-background border border-border rounded-lg p-3 text-center">
-              <div className="text-foreground font-mono text-base">
+            <div className="bg-gradient-to-br from-studio-charcoal to-studio-slate border-studio-electric/30 rounded-lg p-3 text-center border">
+              <div className="text-studio-electric font-mono text-base">
                 {currentTime.toLocaleString('pt-BR')}
               </div>
               <div className="text-xs text-muted-foreground">Data e Hora Atual</div>
