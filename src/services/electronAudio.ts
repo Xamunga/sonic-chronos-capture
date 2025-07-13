@@ -21,9 +21,16 @@ export class ElectronAudioService {
   private currentSplitNumber = 1;
   private audioContext: AudioContext | null = null;
   private analyser: AnalyserNode | null = null;
+  private noiseGateNode: AudioWorkletNode | null = null;
   private volumeCallbacks: ((left: number, right: number, peak: boolean) => void)[] = [];
   private spectrumCallbacks: ((data: number[]) => void)[] = [];
   private hasSignal = false;
+  
+  // Configurações do Noise Gate
+  private noiseSuppressionEnabled = false;
+  private noiseThreshold = -35; // dB
+  private noiseGateAttack = 50; // ms
+  private noiseGateRelease = 200; // ms
 
   constructor() {
     this.loadSettings();
@@ -40,6 +47,10 @@ export class ElectronAudioService {
       this.dateFolderEnabled = parsed.dateFolderEnabled || false;
       this.dateFolderFormat = parsed.dateFolderFormat || 'dd-mm';
       this.fileNameFormat = parsed.fileNameFormat || 'timestamp';
+      this.noiseSuppressionEnabled = parsed.noiseSuppressionEnabled || false;
+      this.noiseThreshold = parsed.noiseThreshold || -35;
+      this.noiseGateAttack = parsed.noiseGateAttack || 50;
+      this.noiseGateRelease = parsed.noiseGateRelease || 200;
       
       console.log('📋 Configurações carregadas:', {
         dateFolderEnabled: this.dateFolderEnabled,
@@ -58,7 +69,11 @@ export class ElectronAudioService {
       splitIntervalMinutes: this.splitIntervalMinutes,
       dateFolderEnabled: this.dateFolderEnabled,
       dateFolderFormat: this.dateFolderFormat,
-      fileNameFormat: this.fileNameFormat
+      fileNameFormat: this.fileNameFormat,
+      noiseSuppressionEnabled: this.noiseSuppressionEnabled,
+      noiseThreshold: this.noiseThreshold,
+      noiseGateAttack: this.noiseGateAttack,
+      noiseGateRelease: this.noiseGateRelease
     };
     localStorage.setItem('audioSettings', JSON.stringify(settings));
   }
@@ -496,15 +511,57 @@ export class ElectronAudioService {
     try {
       this.audioContext = new AudioContext();
       const source = this.audioContext.createMediaStreamSource(stream);
-      this.analyser = this.audioContext.createAnalyser();
       
+      // Criar filtros de ruído se habilitado
+      let currentNode: AudioNode = source;
+      
+      if (this.noiseSuppressionEnabled) {
+        currentNode = this.createNoiseProcessingChain(this.audioContext, currentNode);
+        console.log('🔇 Supressão de ruído ativada - filtros aplicados');
+      }
+      
+      this.analyser = this.audioContext.createAnalyser();
       this.analyser.fftSize = 256;
-      source.connect(this.analyser);
+      currentNode.connect(this.analyser);
       
       console.log('🎤 Contexto de áudio configurado para análise em tempo real');
       this.startAudioAnalysis();
     } catch (error) {
       console.error('❌ Erro ao configurar análise de áudio:', error);
+    }
+  }
+
+  private createNoiseProcessingChain(audioContext: AudioContext, sourceNode: AudioNode): AudioNode {
+    try {
+      // Filtro High-Pass para remover ruído de baixa frequência
+      const highPassFilter = audioContext.createBiquadFilter();
+      highPassFilter.type = 'highpass';
+      highPassFilter.frequency.setValueAtTime(80, audioContext.currentTime);
+      highPassFilter.Q.setValueAtTime(1, audioContext.currentTime);
+      
+      // Filtro Notch para remover ruído elétrico de 60Hz
+      const notchFilter60Hz = audioContext.createBiquadFilter();
+      notchFilter60Hz.type = 'notch';
+      notchFilter60Hz.frequency.setValueAtTime(60, audioContext.currentTime);
+      notchFilter60Hz.Q.setValueAtTime(10, audioContext.currentTime);
+      
+      // Filtro Notch para remover ruído elétrico de 50Hz (Europa)
+      const notchFilter50Hz = audioContext.createBiquadFilter();
+      notchFilter50Hz.type = 'notch';
+      notchFilter50Hz.frequency.setValueAtTime(50, audioContext.currentTime);
+      notchFilter50Hz.Q.setValueAtTime(10, audioContext.currentTime);
+      
+      // Conectar filtros em série
+      sourceNode.connect(highPassFilter);
+      highPassFilter.connect(notchFilter60Hz);
+      notchFilter60Hz.connect(notchFilter50Hz);
+      
+      console.log(`🎛️ Cadeia de filtros criada - Threshold: ${this.noiseThreshold}dB`);
+      return notchFilter50Hz;
+      
+    } catch (error) {
+      console.error('❌ Erro ao criar filtros de ruído:', error);
+      return sourceNode; // Fallback para nó original
     }
   }
 
@@ -634,6 +691,39 @@ export class ElectronAudioService {
 
   getMp3Bitrate(): number {
     return this.mp3Bitrate;
+  }
+
+  // Configurações do Noise Gate
+  setNoiseSuppressionEnabled(enabled: boolean): void {
+    this.noiseSuppressionEnabled = enabled;
+  }
+
+  getNoiseSuppressionEnabled(): boolean {
+    return this.noiseSuppressionEnabled;
+  }
+
+  setNoiseThreshold(threshold: number): void {
+    this.noiseThreshold = threshold;
+  }
+
+  getNoiseThreshold(): number {
+    return this.noiseThreshold;
+  }
+
+  setNoiseGateAttack(attack: number): void {
+    this.noiseGateAttack = attack;
+  }
+
+  getNoiseGateAttack(): number {
+    return this.noiseGateAttack;
+  }
+
+  setNoiseGateRelease(release: number): void {
+    this.noiseGateRelease = release;
+  }
+
+  getNoiseGateRelease(): number {
+    return this.noiseGateRelease;
   }
 }
 
