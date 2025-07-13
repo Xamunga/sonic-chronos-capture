@@ -109,19 +109,19 @@ const ResourceMonitor = () => {
                 value={cpuUsage} 
                 label="Uso de CPU" 
                 icon={Cpu}
-                color="bg-blue-500"
+                color="bg-studio-electric"
               />
               <ResourceBar 
                 value={memoryUsage} 
                 label="Uso de Memória RAM" 
                 icon={MemoryStick}
-                color="bg-green-500"
+                color="bg-studio-electric"
               />
               <ResourceBar 
                 value={diskSpace} 
                 label="Espaço em Disco Usado" 
                 icon={HardDrive}
-                color="bg-orange-500"
+                color="bg-studio-electric"
               />
             </div>
           ) : (
