@@ -50,19 +50,19 @@ const Index = () => {
         
         <Tabs defaultValue="audio" className="w-full flex-1 flex flex-col">
           <TabsList className="grid w-full grid-cols-5 mb-6 bg-black sticky top-0 z-10">
-            <TabsTrigger value="audio" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+            <TabsTrigger value="audio" className="data-[state=active]:bg-studio-electric data-[state=active]:text-black">
               Áudio
             </TabsTrigger>
-            <TabsTrigger value="files" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+            <TabsTrigger value="files" className="data-[state=active]:bg-studio-electric data-[state=active]:text-black">
               Arquivos
             </TabsTrigger>
-            <TabsTrigger value="resources" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+            <TabsTrigger value="resources" className="data-[state=active]:bg-studio-electric data-[state=active]:text-black">
               Recursos
             </TabsTrigger>
-            <TabsTrigger value="log" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+            <TabsTrigger value="log" className="data-[state=active]:bg-studio-electric data-[state=active]:text-black">
               Log
             </TabsTrigger>
-            <TabsTrigger value="debug" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+            <TabsTrigger value="debug" className="data-[state=active]:bg-studio-electric data-[state=active]:text-black">
               Debug
             </TabsTrigger>
           </TabsList>
