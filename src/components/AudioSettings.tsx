@@ -46,7 +46,7 @@ const AudioSettings = () => {
               <SelectContent>
                 <SelectItem value="default">Dispositivo Padrão</SelectItem>
                 {devices.map((device, index) => (
-                  <SelectItem key={index} value={device.deviceId || `device-${index}`}>
+                  <SelectItem key={index} value={device.deviceId && device.deviceId !== '' ? device.deviceId : `device-${index}`}>
                     {device.label || `Dispositivo ${index + 1}`}
                   </SelectItem>
                 ))}
