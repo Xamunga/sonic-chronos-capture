@@ -102,7 +102,7 @@ const RecordingControls: React.FC<RecordingControlsProps> = ({ outputPath }) => 
         </div>
 
         <div className="mt-4 text-xs text-center text-muted-foreground">
-          <div className="bg-black p-2 rounded border border-studio-electric/20 font-bold text-white" style={{ textShadow: '0 0 2px hsl(var(--studio-electric))' }}>
+          <div className="bg-black p-2 rounded border border-studio-electric/20 font-bold text-white" style={{ textShadow: '0 0 3px hsl(195 100% 50%), 0 0 6px hsl(195 100% 50%)' }}>
             Sistema de Buffer Duplo: <span className="text-studio-neon">ATIVO</span><br />
             Proteção contra Perda de Áudio: <span className="text-studio-neon">100%</span>
           </div>
