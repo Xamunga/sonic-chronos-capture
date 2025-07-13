@@ -38,7 +38,7 @@ const Index = () => {
               <div className="text-studio-electric font-mono text-2xl font-bold mb-2">
                 {currentTime.toLocaleString('pt-BR')}
               </div>
-              <div className="text-sm text-muted-foreground bg-black p-2 rounded border border-studio-electric/20 font-bold text-white" style={{ textShadow: '0 0 3px hsl(195 100% 50%), 0 0 6px hsl(195 100% 50%)' }}>Data e Hora Atual</div>
+              <div className="text-sm text-muted-foreground bg-black p-2 rounded border border-studio-electric/20 text-white" style={{ textShadow: '0 0 3px hsl(195 100% 50%), 0 0 6px hsl(195 100% 50%)' }}>Data e Hora Atual</div>
             </div>
           </div>
           <div className="space-y-4">
