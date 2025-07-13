@@ -206,7 +206,7 @@ const FileManagementSettings = () => {
                   value={outputPath}
                   onChange={(e) => handleOutputPathChange(e.target.value)}
                   placeholder="C:\Gravacoes\"
-                  className="flex-1"
+                  className="flex-1 bg-muted/50"
                 />
                 <Button onClick={selectDirectory} variant="outline" size="sm">
                   <FolderOpen className="w-4 h-4" />
@@ -228,10 +228,10 @@ const FileManagementSettings = () => {
               />
             </div>
             {dateFolderEnabled && (
-              <div className="space-y-2 p-4 bg-muted/50 rounded-lg">
+              <div className="space-y-2">
                 <Label className="text-xs text-studio-electric">Formato da Pasta</Label>
                 <Select value={dateFormat} onValueChange={handleDateFormatChange}>
-                  <SelectTrigger>
+                  <SelectTrigger className="bg-muted/50">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -276,10 +276,10 @@ const FileManagementSettings = () => {
               />
             </div>
             {splitEnabled && (
-              <div className="space-y-2 p-4 bg-muted/50 rounded-lg">
+              <div className="space-y-2">
                 <Label className="text-xs text-studio-electric">Intervalo (minutos)</Label>
                 <Select value={splitInterval} onValueChange={handleSplitIntervalChange}>
-                  <SelectTrigger>
+                  <SelectTrigger className="bg-muted/50">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -312,22 +312,23 @@ const FileManagementSettings = () => {
           </div>
           
           <div className="space-y-4">
-            <div className="space-y-2 p-4 bg-muted/50 rounded-lg">
+            <div className="space-y-2">
               <Label className="text-xs text-studio-electric">Título Personalizado (opcional)</Label>
               <Input
                 value={customTitle}
                 onChange={(e) => setCustomTitle(e.target.value)}
                 placeholder="Ex: Sessao, Podcast, Entrevista"
+                className="bg-muted/50"
               />
             </div>
             
-            <div className="space-y-2 p-4 bg-muted/50 rounded-lg">
+            <div className="space-y-2">
               <Label className="text-xs text-studio-electric">Padrão de Nomenclatura</Label>
               <Select value={fileNamePattern} onValueChange={(value) => {
                 setFileNamePattern(value);
                 audioService.setFileNameFormat(value);
               }}>
-                <SelectTrigger>
+                <SelectTrigger className="bg-muted/50">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -376,7 +377,7 @@ const FileManagementSettings = () => {
             </div>
             
             {autoDelete && (
-              <div className="space-y-2 p-4 bg-muted/50 rounded-lg">
+              <div className="space-y-2">
                 <Label className="text-xs text-studio-electric">Manter arquivos por (dias)</Label>
                 <Input
                   type="number"
@@ -384,7 +385,7 @@ const FileManagementSettings = () => {
                   max="365"
                   value={autoDeleteDays}
                   onChange={(e) => handleAutoDeleteDaysChange(e.target.value)}
-                  className="w-24"
+                  className="w-24 bg-muted/50"
                 />
                 <p className="text-xs text-destructive">
                   ⚠️ Arquivos excluídos não poderão ser recuperados
@@ -399,7 +400,7 @@ const FileManagementSettings = () => {
       <Card className="bg-gradient-to-br from-studio-charcoal to-studio-slate border-studio-electric/30">
         <div className="p-6">
           <h3 className="text-lg font-semibold text-studio-electric mb-4">Resumo das Configurações</h3>
-          <div className="grid grid-cols-2 gap-4 text-sm p-4 bg-muted/50 rounded-lg">
+          <div className="grid grid-cols-2 gap-4 text-sm">
             <div>
               <span className="text-muted-foreground">Pastas por Data:</span>
               <span className={`ml-2 font-semibold ${dateFolderEnabled ? 'text-primary' : 'text-destructive'}`}>
