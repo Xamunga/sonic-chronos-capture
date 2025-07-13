@@ -4,8 +4,9 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Copy, RefreshCw, Bug, Monitor, Headphones, Settings, Folder, Download } from 'lucide-react';
+import { Copy, RefreshCw, Bug, Monitor, Headphones, Settings, Folder, Download, FileText } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { logSystem } from '@/utils/logSystem';
 
 const DebugTab = () => {
   const [systemInfo, setSystemInfo] = useState<any>({});
@@ -13,6 +14,7 @@ const DebugTab = () => {
   const [appState, setAppState] = useState<any>({});
   const [electronInfo, setElectronInfo] = useState<any>({});
   const [performanceMetrics, setPerformanceMetrics] = useState<any>({});
+  const [debugLogsPath, setDebugLogsPath] = useState<string>('');
   const { toast } = useToast();
 
   // Coleta informações do sistema
@@ -116,6 +118,18 @@ const DebugTab = () => {
     }
   };
 
+  // Carregar caminho dos logs de debug
+  const loadDebugLogsPath = async () => {
+    try {
+      const path = await logSystem.getDebugLogsPath();
+      if (path) {
+        setDebugLogsPath(path);
+      }
+    } catch (error) {
+      console.error('Erro ao carregar caminho dos logs:', error);
+    }
+  };
+
   // Atualiza todas as informações
   const refreshAllData = () => {
     collectSystemInfo();
@@ -123,6 +137,7 @@ const DebugTab = () => {
     collectAppState();
     collectElectronInfo();
     collectPerformanceMetrics();
+    loadDebugLogsPath();
   };
 
   useEffect(() => {
@@ -221,6 +236,31 @@ Fim do relatório`;
     });
   };
 
+  const openDebugLogsFolder = async () => {
+    const electronAPI = (window as any).electronAPI;
+    if (electronAPI && debugLogsPath) {
+      try {
+        await electronAPI.openExternal(debugLogsPath);
+        toast({
+          title: "Pasta aberta!",
+          description: "Pasta de logs de debug foi aberta no explorador",
+        });
+      } catch (error) {
+        toast({
+          title: "Erro",
+          description: "Não foi possível abrir a pasta de logs",
+          variant: "destructive"
+        });
+      }
+    } else {
+      toast({
+        title: "Indisponível",
+        description: "Funcionalidade disponível apenas no modo desktop",
+        variant: "destructive"
+      });
+    }
+  };
+
   const DebugSection = ({ title, data, icon: Icon, onCopy }: any) => (
     <Card className="bg-gradient-to-br from-studio-charcoal to-studio-slate border-studio-electric/30">
       <div className="p-6">
@@ -263,13 +303,25 @@ Fim do relatório`;
               </Button>
               <Button variant="default" size="sm" onClick={exportFullReportToFile} className="font-bold">
                 <Download className="h-4 w-4 mr-2" />
-                Baixar Arquivo Completo
+                Baixar Arquivo
               </Button>
+              {debugLogsPath && (
+                <Button variant="outline" size="sm" onClick={openDebugLogsFolder} className="bg-muted/50 border-studio-electric font-bold">
+                  <Folder className="h-4 w-4 mr-2" />
+                  Logs Automáticos
+                </Button>
+              )}
             </div>
           </div>
-          <p className="text-sm text-white">
-            Informações técnicas detalhadas para diagnóstico e depuração
-          </p>
+          <div className="text-sm text-white space-y-2">
+            <p>Informações técnicas detalhadas para diagnóstico e depuração</p>
+            {debugLogsPath && (
+              <p className="text-xs text-studio-electric bg-studio-dark p-2 rounded border border-studio-electric/20">
+                <FileText className="w-4 h-4 inline mr-2" />
+                Logs automáticos salvos em: {debugLogsPath}
+              </p>
+            )}
+          </div>
         </div>
       </Card>
 

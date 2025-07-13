@@ -76,7 +76,10 @@ function createWindow() {
 }
 
 // Configurações do app
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
+  await ensureDebugDirectory();
+  await cleanOldLogs();
+  
   createWindow();
 
   // Verificar atualizações
@@ -148,6 +151,77 @@ ipcMain.handle('save-audio-file', async (event, filePath, audioData) => {
     console.error(`Erro ao salvar arquivo ${filePath}:`, error);
     throw error;
   }
+});
+
+// Sistema de logs de debug
+const debugLogsPath = path.join(app.getPath('userData'), 'debug');
+
+// Criar pasta de debug no userData
+async function ensureDebugDirectory() {
+  try {
+    await fs.mkdir(debugLogsPath, { recursive: true });
+    console.log(`Pasta de debug criada/verificada: ${debugLogsPath}`);
+  } catch (error) {
+    console.error('Erro ao criar pasta de debug:', error);
+  }
+}
+
+// Limpar logs antigos (manter apenas últimos 10 arquivos)
+async function cleanOldLogs() {
+  try {
+    const files = await fs.readdir(debugLogsPath);
+    const logFiles = files
+      .filter(file => file.startsWith('debug-') && file.endsWith('.log'))
+      .map(file => ({
+        name: file,
+        path: path.join(debugLogsPath, file),
+        time: fs.stat(path.join(debugLogsPath, file)).then(stats => stats.mtime)
+      }));
+
+    if (logFiles.length > 10) {
+      // Ordenar por data e remover os mais antigos
+      const filesWithTime = await Promise.all(
+        logFiles.map(async (file) => ({
+          ...file,
+          time: await file.time
+        }))
+      );
+      
+      filesWithTime.sort((a, b) => b.time - a.time);
+      const filesToDelete = filesWithTime.slice(10);
+      
+      for (const file of filesToDelete) {
+        await fs.unlink(file.path);
+        console.log(`Log antigo removido: ${file.name}`);
+      }
+    }
+  } catch (error) {
+    console.error('Erro ao limpar logs antigos:', error);
+  }
+}
+
+ipcMain.handle('write-debug-log', async (event, logData) => {
+  try {
+    const now = new Date();
+    const timestamp = now.toISOString().replace(/[:.]/g, '-').slice(0, 19);
+    const fileName = `debug-${timestamp.split('T')[0]}.log`;
+    const filePath = path.join(debugLogsPath, fileName);
+    
+    // Formatar entrada do log
+    const logEntry = `[${now.toISOString()}] [${logData.type.toUpperCase()}] ${logData.component ? `[${logData.component}] ` : ''}${logData.message}\n`;
+    
+    // Adicionar ao arquivo (criar se não existir)
+    await fs.appendFile(filePath, logEntry, 'utf8');
+    
+    return true;
+  } catch (error) {
+    console.error('Erro ao escrever log de debug:', error);
+    return false;
+  }
+});
+
+ipcMain.handle('get-debug-logs-path', async () => {
+  return debugLogsPath;
 });
 
 // Auto-updater events

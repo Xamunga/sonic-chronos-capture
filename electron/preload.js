@@ -19,6 +19,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
   ensureDirectory: (dirPath) => ipcRenderer.invoke('ensure-directory', dirPath),
   saveAudioFile: (filePath, audioData) => ipcRenderer.invoke('save-audio-file', filePath, audioData),
   
+  // Sistema de logs de debug
+  writeDebugLog: (logData) => ipcRenderer.invoke('write-debug-log', logData),
+  getDebugLogsPath: () => ipcRenderer.invoke('get-debug-logs-path'),
+  
   // Informações do sistema
   platform: process.platform,
   version: process.versions.electron

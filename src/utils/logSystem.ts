@@ -12,6 +12,45 @@ type LogListener = (entry: LogEntry) => void;
 
 class LogSystem {
   private listeners: LogListener[] = [];
+  private isElectron = false;
+
+  constructor() {
+    // Verificar se está rodando no Electron
+    this.isElectron = !!(window as any).electronAPI;
+    
+    if (this.isElectron) {
+      console.log('📁 Sistema de logs de debug inicializado - salvamento automático ativo');
+      this.logToFile('info', 'Sistema de logs de debug inicializado', 'LogSystem');
+    }
+  }
+
+  private async logToFile(type: LogEntry['type'], message: string, component?: string) {
+    if (!this.isElectron) return;
+    
+    try {
+      const electronAPI = (window as any).electronAPI;
+      await electronAPI.writeDebugLog({
+        type,
+        message,
+        component,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error('Erro ao salvar log em arquivo:', error);
+    }
+  }
+
+  async getDebugLogsPath(): Promise<string | null> {
+    if (!this.isElectron) return null;
+    
+    try {
+      const electronAPI = (window as any).electronAPI;
+      return await electronAPI.getDebugLogsPath();
+    } catch (error) {
+      console.error('Erro ao obter caminho dos logs:', error);
+      return null;
+    }
+  }
 
   addListener(listener: LogListener) {
     this.listeners.push(listener);
@@ -32,6 +71,11 @@ class LogSystem {
 
     // Notificar todos os listeners
     this.listeners.forEach(listener => listener(entry));
+    
+    // Salvar em arquivo se for Electron
+    if (this.isElectron) {
+      this.logToFile(type, message, component);
+    }
   }
 
   // Métodos de conveniência
