@@ -40,6 +40,13 @@ export class ElectronAudioService {
       this.dateFolderEnabled = parsed.dateFolderEnabled || false;
       this.dateFolderFormat = parsed.dateFolderFormat || 'dd-mm';
       this.fileNameFormat = parsed.fileNameFormat || 'timestamp';
+      
+      console.log('📋 Configurações carregadas:', {
+        dateFolderEnabled: this.dateFolderEnabled,
+        dateFolderFormat: this.dateFolderFormat,
+        splitEnabled: this.splitEnabled,
+        fileNameFormat: this.fileNameFormat
+      });
     }
   }
 
@@ -82,6 +89,9 @@ export class ElectronAudioService {
         return false;
       }
 
+      // Carregar configurações mais recentes antes de iniciar
+      this.loadSettings();
+
       this.recordingStartTime = Date.now();
       this.currentSplitNumber = 1;
 
@@ -92,13 +102,21 @@ export class ElectronAudioService {
         // Remover barras duplas e normalizar o path
         const normalizedPath = outputPath.replace(/[\\\/]+$/, '');
         finalOutputPath = `${normalizedPath}\\${dateFolder}`;
+        
+        console.log(`Pasta por data habilitada. Pasta base: ${normalizedPath}`);
+        console.log(`Formato de data: ${this.dateFolderFormat}`);
+        console.log(`Pasta de data criada: ${dateFolder}`);
+        console.log(`Caminho final: ${finalOutputPath}`);
+        
         await this.ensureDirectoryExists(finalOutputPath);
       } else {
+        console.log(`Pasta por data desabilitada. Usando pasta base: ${outputPath}`);
         await this.ensureDirectoryExists(outputPath);
         finalOutputPath = outputPath;
       }
 
       this.outputPath = finalOutputPath;
+      console.log(`Gravação será salva em: ${this.outputPath}`);
 
       const hasPermission = await this.requestMicrophonePermission();
       if (!hasPermission) return false;
@@ -229,16 +247,22 @@ export class ElectronAudioService {
       if (window.electronAPI) {
         const filename = this.formatFileName();
 
+        // Garantir que estamos usando o outputPath correto (já inclui a subpasta se habilitada)
+        console.log(`Salvando arquivo em: ${this.outputPath}`);
+        console.log(`Nome do arquivo: ${filename}`);
+        
         // Normalizar path e garantir que o arquivo seja salvo no diretório correto
         const normalizedPath = this.outputPath.replace(/[\\\/]+$/, '');
         const fullPath = `${normalizedPath}\\${filename}`;
+        
+        console.log(`Caminho completo do arquivo: ${fullPath}`);
 
         try {
           await window.electronAPI.saveAudioFile(fullPath, uint8Array);
-          console.log(`Arquivo salvo em: ${fullPath}`);
+          console.log(`✅ Arquivo salvo com sucesso em: ${fullPath}`);
           toast.success(`Arquivo salvo: ${filename}`);
         } catch (error) {
-          console.error('Erro ao salvar via Electron API:', error);
+          console.error('❌ Erro ao salvar via Electron API:', error);
           // Fallback para download
           this.downloadAudioFile(audioBlob, filename);
         }
@@ -299,16 +323,17 @@ export class ElectronAudioService {
 
   async ensureDirectoryExists(dirPath: string): Promise<void> {
     try {
-      console.log(`Verificando diretório: ${dirPath}`);
+      console.log(`🔍 Verificando diretório: ${dirPath}`);
       if (window.electronAPI) {
         await window.electronAPI.ensureDirectory(dirPath);
-        console.log(`Diretório criado/verificado: ${dirPath}`);
+        console.log(`✅ Diretório criado/verificado: ${dirPath}`);
       } else {
         // No navegador, apenas logar
-        console.log('Modo navegador - diretórios não podem ser criados automaticamente');
+        console.log('⚠️ Modo navegador - diretórios não podem ser criados automaticamente');
       }
     } catch (error) {
-      console.error('Erro ao verificar/criar diretório:', error);
+      console.error('❌ Erro ao verificar/criar diretório:', error);
+      toast.error(`Erro ao criar pasta: ${dirPath}`);
       throw error;
     }
   }
