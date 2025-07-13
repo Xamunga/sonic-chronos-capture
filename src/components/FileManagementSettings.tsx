@@ -435,7 +435,7 @@ const FileManagementSettings = () => {
           <Button onClick={handleSaveSettings} className="w-full">
             Salvar Configurações
           </Button>
-          <p className="text-xs text-muted-foreground mt-2">
+          <p className="text-xs text-white mt-2">
             Todas as configurações serão salvas permanentemente
           </p>
         </div>
