@@ -166,53 +166,51 @@ const DebugTab = () => {
   };
 
   const DebugSection = ({ title, data, icon: Icon, onCopy }: any) => (
-    <Card>
-      <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2 text-base">
-            <Icon className="h-4 w-4" />
-            {title}
-          </CardTitle>
-          <Button variant="outline" size="sm" onClick={() => onCopy(data, title)}>
+    <Card className="bg-gradient-to-br from-studio-charcoal to-studio-slate border-studio-electric/30">
+      <div className="p-6">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center space-x-2">
+            <Icon className="w-5 h-5 text-studio-electric" />
+            <h3 className="text-lg font-semibold text-studio-electric">{title}</h3>
+          </div>
+          <Button variant="outline" size="sm" onClick={() => onCopy(data, title)} className="bg-muted/50 border-studio-electric font-bold">
             <Copy className="h-4 w-4 mr-2" />
             Copiar
           </Button>
         </div>
-      </CardHeader>
-      <CardContent>
         <Textarea
           value={JSON.stringify(data, null, 2)}
           readOnly
-          className="min-h-[200px] font-mono text-xs"
+          className="min-h-[200px] font-mono text-xs bg-muted/50 border-studio-electric font-bold text-white"
         />
-      </CardContent>
+      </div>
     </Card>
   );
 
   return (
     <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2">
-              <Bug className="h-5 w-5" />
-              Debug Console
-            </CardTitle>
+      <Card className="bg-gradient-to-br from-studio-charcoal to-studio-slate border-studio-electric/30">
+        <div className="p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center space-x-2">
+              <Bug className="w-5 h-5 text-studio-electric" />
+              <h3 className="text-lg font-semibold text-studio-electric">Debug Console</h3>
+            </div>
             <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={refreshAllData}>
+              <Button variant="outline" size="sm" onClick={refreshAllData} className="bg-muted/50 border-studio-electric font-bold">
                 <RefreshCw className="h-4 w-4 mr-2" />
                 Atualizar
               </Button>
-              <Button variant="default" size="sm" onClick={generateFullReport}>
+              <Button variant="default" size="sm" onClick={generateFullReport} className="font-bold">
                 <Copy className="h-4 w-4 mr-2" />
                 Copiar Relatório Completo
               </Button>
             </div>
           </div>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-white">
             Informações técnicas detalhadas para diagnóstico e depuração
           </p>
-        </CardHeader>
+        </div>
       </Card>
 
       <Tabs defaultValue="system" className="w-full">

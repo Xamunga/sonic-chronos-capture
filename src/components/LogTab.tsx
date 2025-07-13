@@ -102,13 +102,13 @@ const LogTab = () => {
 
   return (
     <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2">
-              <FileText className="h-5 w-5" />
-              Logs do Sistema
-            </CardTitle>
+      <Card className="bg-gradient-to-br from-studio-charcoal to-studio-slate border-studio-electric/30">
+        <div className="p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center space-x-2">
+              <FileText className="w-5 h-5 text-studio-electric" />
+              <h3 className="text-lg font-semibold text-studio-electric">Logs do Sistema</h3>
+            </div>
             <div className="flex items-center gap-2">
               <Badge variant={isAutoSave ? 'default' : 'outline'}>
                 Auto-save: {isAutoSave ? 'ON' : 'OFF'}
@@ -117,30 +117,30 @@ const LogTab = () => {
                 variant="outline"
                 size="sm"
                 onClick={() => setIsAutoSave(!isAutoSave)}
+                className="bg-muted/50 border-studio-electric font-bold"
               >
                 {isAutoSave ? 'Desativar' : 'Ativar'} Auto-save
               </Button>
             </div>
           </div>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-between mb-4">
-            <div className="text-sm text-muted-foreground">
+          
+          <div className="flex items-center justify-between mb-4 p-4 bg-muted/50 rounded-lg">
+            <div className="text-sm text-white">
               Total de entradas: {logs.length}
             </div>
             <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={exportLogs}>
+              <Button variant="outline" size="sm" onClick={exportLogs} className="bg-muted/50 border-studio-electric font-bold">
                 <Download className="h-4 w-4 mr-2" />
                 Exportar Logs
               </Button>
-              <Button variant="outline" size="sm" onClick={clearLogs}>
+              <Button variant="outline" size="sm" onClick={clearLogs} className="bg-muted/50 border-studio-electric font-bold">
                 <Trash2 className="h-4 w-4 mr-2" />
                 Limpar
               </Button>
             </div>
           </div>
 
-          <ScrollArea className="h-[400px] w-full border rounded-md p-4">
+          <ScrollArea className="h-[400px] w-full border border-studio-electric rounded-md p-4 bg-muted/50">
             <div className="space-y-2">
               {logs.map((log, index) => (
                 <div key={log.id}>
@@ -156,24 +156,24 @@ const LogTab = () => {
                             {log.component}
                           </Badge>
                         )}
-                        <span className="text-xs text-muted-foreground">
+                        <span className="text-xs text-white">
                           {log.timestamp.toLocaleTimeString('pt-BR')}
                         </span>
                       </div>
-                      <p className="text-sm break-words">{log.message}</p>
+                      <p className="text-sm break-words text-white">{log.message}</p>
                     </div>
                   </div>
                   {index < logs.length - 1 && <Separator />}
                 </div>
               ))}
               {logs.length === 0 && (
-                <div className="text-center text-muted-foreground py-8">
+                <div className="text-center text-white py-8">
                   Nenhum log disponível
                 </div>
               )}
             </div>
           </ScrollArea>
-        </CardContent>
+        </div>
       </Card>
     </div>
   );
