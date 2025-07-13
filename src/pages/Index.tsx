@@ -24,15 +24,15 @@ const Index = () => {
     return () => clearInterval(interval);
   }, []);
   return (
-    <div className="min-h-screen bg-background p-2" style={{ maxWidth: '1200px', maxHeight: '530px' }}>
-      <div className="max-w-full mx-auto min-h-full flex flex-col">
+    <div className="min-h-screen bg-background px-2 py-2" style={{ width: '1200px', maxHeight: '530px' }}>
+      <div className="w-full min-h-full flex flex-col">
         <AppHeader />
         
         {/* Monitor Principal - Sem abas */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
           <div className="space-y-4">
             <RecordingControls outputPath={outputPath} />
-            <div className="bg-gradient-to-br from-studio-charcoal to-studio-slate border-studio-electric/30 rounded-lg p-3 text-center border">
+            <div className="bg-gradient-to-br from-studio-charcoal to-studio-slate border-studio-electric/30 rounded-lg p-3 text-center border mt-6">
               <div className="text-studio-electric font-mono text-base">
                 {currentTime.toLocaleString('pt-BR')}
               </div>
