@@ -3,16 +3,16 @@ const { execSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 
-console.log('🚀 Iniciando build do Gravador Real Time Pro v2.1...\n');
-console.log('📋 Correções e melhorias implementadas:');
-console.log('   ✅ Contador de tempo corrigido (não reseta ao trocar abas)');
-console.log('   ✅ VU Meter e RTA funcionais durante gravação');
-console.log('   ✅ Múltiplas opções de bitrate MP3 (96, 128, 256, 320 kbps)');
-console.log('   ✅ Persistência completa de configurações');
-console.log('   ✅ Monitor de Recursos (CPU, RAM, Disco)');
-console.log('   ✅ Tamanho inicial da janela reduzido');
-console.log('   ✅ Tema claro por padrão');
-console.log('   ✅ Versão corrigida no instalador\n');
+console.log('🚀 Iniciando build do Gravador Real Time Pro v2.3.0...\n');
+console.log('📋 Correções e melhorias implementadas na v2.3.0:');
+console.log('   ✅ VU Meters e Spectrum Analyzer funcionais imediatamente');
+console.log('   ✅ Sistema de logs inteligente (CPU/RAM warnings só após 2min)');
+console.log('   ✅ Logs de configurações apenas quando botões são clicados');
+console.log('   ✅ Organização automática por subpastas de data funcionando');
+console.log('   ✅ Debug completo - arquivo único com todas as informações');
+console.log('   ✅ Interface visual padronizada com tema azul studio-electric');
+console.log('   ✅ Sistema global de logs entre componentes');
+console.log('   ✅ Detecção de sinal de áudio melhorada\n');
 
 // 1. Build da aplicação React
 console.log('📦 Fazendo build da aplicação React...');
@@ -53,23 +53,22 @@ try {
 
 console.log('🎉 Build concluído com sucesso!');
 console.log('📁 Instalador disponível em: electron/dist-electron/');
-console.log('🚀 Gravador Real Time Pro está pronto para distribuição!');
+console.log('🚀 Gravador Real Time Pro v2.3.0 está pronto para distribuição!');
 
-// Changelog v2.1.0
-console.log('\n=== CHANGELOG v2.1.0 ===');
-console.log('🔧 CORREÇÕES:');
-console.log('✅ Contador de tempo não reseta mais ao trocar abas');
-console.log('✅ VU Meter e RTA funcionam corretamente durante gravação');
-console.log('✅ hasAudioSignal() corrigida para detecção real de sinal');
-console.log('✅ Tamanho inicial da janela reduzido para 800x600px');
-console.log('✅ Tema claro aplicado por padrão');
-console.log('✅ Versão corrigida no instalador (2.1.0)');
+// Changelog v2.3.0
+console.log('\n=== CHANGELOG v2.3.0 ===');
+console.log('🔧 CORREÇÕES CRÍTICAS:');
+console.log('✅ VU Meters e Spectrum Analyzer respondem imediatamente ao áudio');
+console.log('✅ Organização por subpastas de data funcionando corretamente');
+console.log('✅ Detecção de sinal de áudio com melhor sensibilidade');
+console.log('✅ Interface visual completamente padronizada');
 console.log('');
 console.log('🆕 NOVOS RECURSOS:');
-console.log('✅ Múltiplas opções de bitrate MP3: 96, 128, 256, 320 kbps');
-console.log('✅ Persistência completa de configurações com localStorage');
-console.log('✅ Monitor de Recursos substituindo Informações da Sessão');
-console.log('✅ Monitor de CPU, RAM e Espaço em Disco');
-console.log('✅ Botão "Salvar Configurações" em todas as seções');
-console.log('✅ Interface reorganizada com monitor principal sempre visível');
+console.log('✅ Sistema de logs inteligente (warnings CPU/RAM só após 2min)');
+console.log('✅ Logs de configurações apenas quando botões são clicados');
+console.log('✅ Debug Tab com exportação de arquivo completo');
+console.log('✅ Sistema global de comunicação entre componentes');
+console.log('✅ Logs detalhados para debugging de pastas e áudio');
+console.log('✅ Interface com tema azul studio-electric consistente');
+console.log('✅ Estados visuais inteligentes (Gravando/Sem Sinal/Com Áudio)');
 console.log('========================\n');
