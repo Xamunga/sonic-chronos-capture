@@ -54,7 +54,7 @@
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
       "shortcutName": "Gravador Real Time Pro",
-      "include": "installer.nsh"
+      "include": "./installer.nsh"
     },
     "publish": {
       "provider": "generic",
