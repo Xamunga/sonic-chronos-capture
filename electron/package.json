@@ -21,14 +21,14 @@
       "output": "dist-electron"
     },
     "files": [
+      "main.js",
+      "preload.js",
+      "package.json",
       {
         "from": "../dist",
         "to": ".",
         "filter": ["**/*"]
-      },
-      "main.js",
-      "preload.js",
-      "package.json"
+      }
     ],
     "extraResources": [
       {
