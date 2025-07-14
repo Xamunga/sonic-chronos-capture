@@ -3,16 +3,16 @@ const { execSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 
-console.log('🚀 Iniciando build do Gravador Real Time Pro v2.3.0...\n');
-console.log('📋 Correções e melhorias implementadas na v2.3.0:');
-console.log('   ✅ VU Meters e Spectrum Analyzer funcionais imediatamente');
-console.log('   ✅ Sistema de logs inteligente (CPU/RAM warnings só após 2min)');
-console.log('   ✅ Logs de configurações apenas quando botões são clicados');
-console.log('   ✅ Organização automática por subpastas de data funcionando');
-console.log('   ✅ Debug completo - arquivo único com todas as informações');
-console.log('   ✅ Interface visual padronizada com tema azul studio-electric');
-console.log('   ✅ Sistema global de logs entre componentes');
-console.log('   ✅ Detecção de sinal de áudio melhorada\n');
+console.log('🚀 Iniciando build do Gravador Real Time Pro v2.4.0...\n');
+console.log('📋 Correções e melhorias implementadas na v2.4.0:');
+console.log('   ✅ Qualidade de áudio corrigida (desativado echo cancellation)');
+console.log('   ✅ Formato de nomes de arquivo corrigido (hifens adicionados)');
+console.log('   ✅ VU Meters e RTA funcionais com callbacks sempre executados');
+console.log('   ✅ Debug automático salvando logs na pasta debug/');
+console.log('   ✅ Sistema de logs completo com rotação automática');
+console.log('   ✅ Configurações de áudio otimizadas para alta qualidade');
+console.log('   ✅ Detecção de dispositivos de áudio melhorada');
+console.log('   ✅ Interface visual refinada e responsiva\n');
 
 // 1. Build da aplicação React
 console.log('📦 Fazendo build da aplicação React...');
@@ -53,22 +53,27 @@ try {
 
 console.log('🎉 Build concluído com sucesso!');
 console.log('📁 Instalador disponível em: electron/dist-electron/');
-console.log('🚀 Gravador Real Time Pro v2.3.0 está pronto para distribuição!');
+console.log('🚀 Gravador Real Time Pro v2.4.0 está pronto para distribuição!');
 
-// Changelog v2.3.0
-console.log('\n=== CHANGELOG v2.3.0 ===');
+// Changelog v2.4.0
+console.log('\n=== CHANGELOG v2.4.0 ===');
 console.log('🔧 CORREÇÕES CRÍTICAS:');
-console.log('✅ VU Meters e Spectrum Analyzer respondem imediatamente ao áudio');
-console.log('✅ Organização por subpastas de data funcionando corretamente');
-console.log('✅ Detecção de sinal de áudio com melhor sensibilidade');
-console.log('✅ Interface visual completamente padronizada');
+console.log('✅ Qualidade de áudio corrigida - desativado echo cancellation');
+console.log('✅ Formato de nomes de arquivo corrigido - hifens adicionados');
+console.log('✅ VU Meters e RTA funcionais - callbacks sempre executados');
+console.log('✅ MediaRecorder configurado para alta qualidade');
+console.log('✅ Sample rate fixado em 48kHz para melhor qualidade');
 console.log('');
 console.log('🆕 NOVOS RECURSOS:');
-console.log('✅ Sistema de logs inteligente (warnings CPU/RAM só após 2min)');
-console.log('✅ Logs de configurações apenas quando botões são clicados');
-console.log('✅ Debug Tab com exportação de arquivo completo');
-console.log('✅ Sistema global de comunicação entre componentes');
-console.log('✅ Logs detalhados para debugging de pastas e áudio');
-console.log('✅ Interface com tema azul studio-electric consistente');
-console.log('✅ Estados visuais inteligentes (Gravando/Sem Sinal/Com Áudio)');
+console.log('✅ Debug automático - logs salvos em pasta debug/');
+console.log('✅ Sistema de rotação de logs (mantém últimos 10 arquivos)');
+console.log('✅ Configurações de áudio otimizadas para profissionais');
+console.log('✅ Detecção melhorada de dispositivos de áudio');
+console.log('✅ Interface visual refinada e responsiva');
+console.log('✅ Logs detalhados para análise completa do sistema');
+console.log('');
+console.log('🚨 IMPORTANTE:');
+console.log('✅ Esta versão corrige problemas de qualidade de áudio');
+console.log('✅ VU Meters e RTA agora funcionam corretamente');
+console.log('✅ Nomes de arquivo seguem configurações exatas');
 console.log('========================\n');
