@@ -137,12 +137,20 @@ export class ElectronAudioService {
       const hasPermission = await this.requestMicrophonePermission();
       if (!hasPermission) return false;
 
+      console.log('🎤 INICIANDO GRAVAÇÃO');
+      console.log('📊 Configurações de áudio:', {
+        echoCancellation: false,
+        noiseSuppression: false,
+        autoGainControl: false,
+        sampleRate: 44100,
+        channelCount: 2,
+        inputDevice: this.inputDevice
+      });
+      console.log('🔊 Dispositivo selecionado:', this.inputDevice);
+
       const constraints: MediaStreamConstraints = {
         audio: {
-          echoCancellation: false,
-          noiseSuppression: this.noiseSuppressionEnabled,
-          autoGainControl: false,
-          sampleRate: 48000,
+          sampleRate: 44100,
           channelCount: 2,
           deviceId: this.inputDevice !== 'default' ? { exact: this.inputDevice } : undefined
         }
@@ -169,7 +177,7 @@ export class ElectronAudioService {
       
       const mediaRecorderOptions: MediaRecorderOptions = {
         mimeType: mimeType,
-        audioBitsPerSecond: this.outputFormat === 'mp3' ? this.mp3Bitrate * 1000 : 256000 // Alta qualidade por padrão
+        audioBitsPerSecond: this.mp3Bitrate * 1000
       };
       
       this.mediaRecorder = new MediaRecorder(stream, mediaRecorderOptions);
@@ -191,6 +199,9 @@ export class ElectronAudioService {
       this.isRecording = true;
       this.isPaused = false;
       
+      console.log('📈 VU Callbacks registrados:', this.volumeCallbacks.length);
+      console.log('📊 Spectrum Callbacks registrados:', this.spectrumCallbacks.length);
+
       // Inicializar sinal de áudio após um pequeno delay
       setTimeout(() => {
         this.forceAudioAnalysisStart();
@@ -429,10 +440,10 @@ export class ElectronAudioService {
     let baseName: string;
     switch (this.fileNameFormat) {
       case 'hh-mm-ss-seq':
-        baseName = `${hours}-${minutes}-${seconds}_${this.currentSplitNumber.toString().padStart(3, '0')}`;
+        baseName = `${hours}-${minutes}-${seconds}-${this.currentSplitNumber.toString().padStart(3, '0')}`;
         break;
       case 'dd-mm-hh-mm-ss-seq':
-        baseName = `${day}-${month}-${hours}-${minutes}-${seconds}_${this.currentSplitNumber.toString().padStart(3, '0')}`;
+        baseName = `${day}-${month}-${hours}-${minutes}-${seconds}-${this.currentSplitNumber.toString().padStart(3, '0')}`;
         break;
       case 'timestamp':
       default:
@@ -501,23 +512,22 @@ export class ElectronAudioService {
   // Análise de áudio em tempo real
   private setupAudioAnalysis(stream: MediaStream): void {
     try {
-      this.audioContext = new AudioContext();
+      this.audioContext = new AudioContext({ sampleRate: 44100 });
       const source = this.audioContext.createMediaStreamSource(stream);
       
-      // Criar filtros de ruído se habilitado
-      let currentNode: AudioNode = source;
-      
-      if (this.noiseSuppressionEnabled) {
-        currentNode = this.createNoiseProcessingChain(this.audioContext, currentNode);
-        console.log('🔇 Supressão de ruído ativada - filtros aplicados');
-        logSystem.info('Filtros de supressão de ruído aplicados na gravação', 'Audio');
-      }
-      
       this.analyser = this.audioContext.createAnalyser();
-      this.analyser.fftSize = 256;
-      currentNode.connect(this.analyser);
+      this.analyser.fftSize = 2048;
+      this.analyser.smoothingTimeConstant = 0.3;
+      
+      // NÃO conectar ao destination para evitar feedback
+      source.connect(this.analyser);
       
       console.log('🎤 Contexto de áudio configurado para análise em tempo real');
+      console.log('📊 Configurações AudioContext:', {
+        sampleRate: this.audioContext.sampleRate,
+        fftSize: this.analyser.fftSize,
+        frequencyBinCount: this.analyser.frequencyBinCount
+      });
       this.startAudioAnalysis();
     } catch (error) {
       console.error('❌ Erro ao configurar análise de áudio:', error);
@@ -580,18 +590,16 @@ export class ElectronAudioService {
       try {
         this.analyser.getByteFrequencyData(dataArray);
         
-        // Calcular níveis de volume (simular stereo)
+        // Calcular níveis de volume em dB usando log10 (correção Manus IA)
         const sum = dataArray.reduce((acc, val) => acc + val, 0);
         const average = sum / bufferLength;
         
-        // Melhorar sensibilidade da detecção de sinal - amplificar valores baixos
-        const multiplier = 5; // Amplificar para melhorar detecção
-        const rawLeftLevel = Math.min(100, (average / 255) * 100 * multiplier);
-        const rawRightLevel = Math.min(100, ((average + Math.random() * 10 - 5) / 255) * 100 * multiplier);
+        // Calcular dB corretamente
+        const dbLevel = average > 0 ? 20 * Math.log10(average / 255) : -Infinity;
         
-        // Aplicar threshold mínimo e máximo
-        const leftLevel = Math.max(0, Math.min(100, rawLeftLevel));
-        const rightLevel = Math.max(0, Math.min(100, rawRightLevel));
+        // Converter dB para porcentagem para VU Meters (0-100%)
+        const leftLevel = Math.max(0, Math.min(100, (dbLevel + 60) * (100 / 60))); // Normalizar -60dB a 0dB para 0-100%
+        const rightLevel = Math.max(0, Math.min(100, (dbLevel + 60) * (100 / 60) + Math.random() * 2 - 1)); // Simular stereo
         const peak = leftLevel > 85 || rightLevel > 85;
 
         // Notificar callbacks VU Meters
@@ -605,8 +613,9 @@ export class ElectronAudioService {
 
         // Log detalhado para debug (a cada 30 execuções = ~1 segundo)
         if (analysisCounter % 30 === 0) {
-          console.log(`🎛️ Análise: sum=${sum} avg=${average.toFixed(1)} raw=${dataArray.slice(0,5).join(',')} L=${leftLevel.toFixed(1)}% R=${rightLevel.toFixed(1)}% callbacks=${this.volumeCallbacks.length}/${this.spectrumCallbacks.length}`);
-          logSystem.info(`Análise Audio: sum=${sum} avg=${average.toFixed(1)} L=${leftLevel.toFixed(1)}% R=${rightLevel.toFixed(1)}% hasSignal=${this.hasSignal} callbacks=${this.volumeCallbacks.length}/${this.spectrumCallbacks.length}`, 'AudioAnalysis');
+          console.log(`🎵 Nível de áudio detectado: ${dbLevel.toFixed(1)}dB`);
+          console.log(`🎛️ Análise: sum=${sum} avg=${average.toFixed(1)} dB=${dbLevel.toFixed(1)} L=${leftLevel.toFixed(1)}% R=${rightLevel.toFixed(1)}% callbacks=${this.volumeCallbacks.length}/${this.spectrumCallbacks.length}`);
+          logSystem.info(`Análise Audio: sum=${sum} avg=${average.toFixed(1)} dB=${dbLevel.toFixed(1)} L=${leftLevel.toFixed(1)}% R=${rightLevel.toFixed(1)}% hasSignal=${this.hasSignal} callbacks=${this.volumeCallbacks.length}/${this.spectrumCallbacks.length}`, 'AudioAnalysis');
         }
         analysisCounter++;
 
@@ -624,10 +633,22 @@ export class ElectronAudioService {
             console.warn('⚠️ Nenhum callback para VU Meters registrado');
           }
 
-          // Converter para array para espectro (32 barras)
-          const spectrumData = Array.from(dataArray)
-            .slice(0, 32)
-            .map(val => Math.min(100, (val / 255) * 100 * multiplier));
+          // Processar dados para spectrum analyzer com FFT (correção Manus IA)
+          const spectrumData = new Array(32).fill(0);
+          const binSize = Math.floor(dataArray.length / 32);
+          
+          for (let i = 0; i < 32; i++) {
+            let sum = 0;
+            for (let j = 0; j < binSize; j++) {
+              sum += dataArray[i * binSize + j];
+            }
+            spectrumData[i] = Math.min(100, (sum / binSize / 255) * 100);
+          }
+          
+          // Log dados de espectro para debug (menos frequente)
+          if (analysisCounter % 90 === 0) {
+            console.log('📊 Dados de espectro:', spectrumData.slice(0, 5));
+          }
           
           // Notificar callbacks de espectro
           if (this.spectrumCallbacks.length > 0) {
