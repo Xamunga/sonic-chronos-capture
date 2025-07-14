@@ -30,6 +30,7 @@ const AudioSettings = () => {
     setFormat(audioService.getOutputFormat());
     setBitrate(audioService.getMp3Bitrate());
     setSampleRate(audioService.getSampleRate());
+    setInputDevice(audioService.getInputDevice()); // CRÍTICO: Sincronizar dispositivo
     setNoiseSuppressionEnabled(audioService.getNoiseSuppressionEnabled());
     setNoiseThreshold(audioService.getNoiseThreshold());
   }, []);
@@ -67,7 +68,11 @@ const AudioSettings = () => {
             <Label htmlFor="input-device" className="text-sm font-medium text-studio-electric">
               Dispositivo de Entrada
             </Label>
-            <Select value={inputDevice} onValueChange={setInputDevice}>
+            <Select value={inputDevice} onValueChange={(value) => {
+              setInputDevice(value);
+              audioService.setInputDevice(value); // CRÍTICO: Aplicar mudança no service
+              console.log('🔧 Dispositivo de entrada alterado:', value);
+            }}>
               <SelectTrigger id="input-device" className="mt-2 bg-muted/50 border-studio-electric font-bold">
                 <SelectValue placeholder="Selecione o dispositivo" />
               </SelectTrigger>

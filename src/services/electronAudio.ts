@@ -27,6 +27,11 @@ export class ElectronAudioService {
   private spectrumCallbacks: ((data: number[]) => void)[] = [];
   private hasSignal = false;
   
+  // NOVO: Sistema de monitoramento independente
+  private monitoringStream: MediaStream | null = null;
+  private monitoringContext: AudioContext | null = null;
+  private monitoringAnalyser: AnalyserNode | null = null;
+  
   // Configurações do Noise Gate
   private noiseSuppressionEnabled = false;
   private noiseThreshold = -35; // dB
@@ -35,6 +40,8 @@ export class ElectronAudioService {
 
   constructor() {
     this.loadSettings();
+    // CRÍTICO: Iniciar monitoramento independente ao carregar
+    this.initializeMonitoring();
   }
 
   private loadSettings() {
@@ -158,8 +165,11 @@ export class ElectronAudioService {
 
       const stream = await navigator.mediaDevices.getUserMedia(constraints);
 
-      // Configurar análise de áudio
+      // Configurar análise de áudio DURANTE A GRAVAÇÃO
       this.setupAudioAnalysis(stream);
+      
+      // CRÍTICO: Iniciar análise independente para VU Meters sempre ativa
+      this.forceAudioAnalysisStart();
 
       // Usar formato de alta qualidade sem compressão desnecessária
       let mimeType = 'audio/webm;codecs=opus';
@@ -330,6 +340,11 @@ export class ElectronAudioService {
 
   setInputDevice(deviceId: string): void {
     this.inputDevice = deviceId;
+    this.saveSettings(); // CRÍTICO: Salvar configuração
+    console.log('🎯 Dispositivo de entrada definido como:', deviceId);
+    
+    // CRÍTICO: Reiniciar monitoramento com novo dispositivo
+    this.restartMonitoring();
   }
 
   setOutputFormat(format: string): void {
@@ -788,6 +803,165 @@ export class ElectronAudioService {
 
   getNoiseGateRelease(): number {
     return this.noiseGateRelease;
+  }
+
+  // NOVO: Sistema de monitoramento independente para VU Meters sempre ativo
+  private async initializeMonitoring(): Promise<void> {
+    try {
+      console.log('🎯 Inicializando sistema de monitoramento independente...');
+      await this.startMonitoring();
+    } catch (error) {
+      console.error('❌ Erro ao inicializar monitoramento:', error);
+    }
+  }
+
+  private async startMonitoring(): Promise<void> {
+    try {
+      // Parar monitoramento anterior se existir
+      this.stopMonitoring();
+
+      // Solicitar permissão e stream para monitoramento
+      const constraints: MediaStreamConstraints = {
+        audio: {
+          sampleRate: 44100,
+          channelCount: 2,
+          deviceId: this.inputDevice !== 'default' ? { exact: this.inputDevice } : undefined,
+          echoCancellation: false,
+          noiseSuppression: false,
+          autoGainControl: false
+        }
+      };
+
+      this.monitoringStream = await navigator.mediaDevices.getUserMedia(constraints);
+      this.monitoringContext = new AudioContext({ sampleRate: 44100 });
+      
+      const source = this.monitoringContext.createMediaStreamSource(this.monitoringStream);
+      this.monitoringAnalyser = this.monitoringContext.createAnalyser();
+      this.monitoringAnalyser.fftSize = 2048;
+      this.monitoringAnalyser.smoothingTimeConstant = 0.3;
+      
+      // Conectar source ao analyser (sem output para evitar feedback)
+      source.connect(this.monitoringAnalyser);
+      
+      console.log('✅ Sistema de monitoramento iniciado com sucesso');
+      console.log('🎯 Dispositivo de monitoramento:', this.inputDevice);
+      
+      // Iniciar análise contínua
+      this.startContinuousAnalysis();
+      
+    } catch (error) {
+      console.error('❌ Erro ao iniciar monitoramento:', error);
+      // Fallback: tentar com dispositivo padrão
+      if (this.inputDevice !== 'default') {
+        console.log('🔄 Tentando com dispositivo padrão...');
+        this.inputDevice = 'default';
+        try {
+          await this.startMonitoring();
+        } catch (fallbackError) {
+          console.error('❌ Erro no fallback:', fallbackError);
+        }
+      }
+    }
+  }
+
+  private startContinuousAnalysis(): void {
+    if (!this.monitoringAnalyser) return;
+
+    const bufferLength = this.monitoringAnalyser.frequencyBinCount;
+    const dataArray = new Uint8Array(bufferLength);
+    let analysisCounter = 0;
+
+    const analyze = () => {
+      if (!this.monitoringAnalyser || !this.monitoringContext) return;
+
+      try {
+        this.monitoringAnalyser.getByteFrequencyData(dataArray);
+        
+        // Calcular níveis de volume
+        const sum = dataArray.reduce((acc, val) => acc + val, 0);
+        const average = sum / bufferLength;
+        
+        // Calcular dB
+        const dbLevel = average > 0 ? 20 * Math.log10(average / 255) : -Infinity;
+        
+        // Converter para porcentagem
+        const leftLevel = Math.max(0, Math.min(100, (dbLevel + 60) * (100 / 60)));
+        const rightLevel = Math.max(0, Math.min(100, leftLevel + (Math.random() * 4 - 2))); // Simular stereo
+        const peak = leftLevel > 85 || rightLevel > 85;
+
+        // Notificar callbacks VU Meters
+        this.volumeCallbacks.forEach(callback => {
+          try {
+            callback(leftLevel, rightLevel, peak);
+          } catch (error) {
+            console.error('Erro no callback VU:', error);
+          }
+        });
+
+        // Processar spectrum
+        const spectrumData = new Array(32).fill(0);
+        const binSize = Math.floor(dataArray.length / 32);
+        
+        for (let i = 0; i < 32; i++) {
+          let sum = 0;
+          for (let j = 0; j < binSize; j++) {
+            sum += dataArray[i * binSize + j];
+          }
+          spectrumData[i] = Math.min(100, (sum / binSize / 255) * 100);
+        }
+        
+        // Notificar callbacks spectrum
+        this.spectrumCallbacks.forEach(callback => {
+          try {
+            callback(spectrumData);
+          } catch (error) {
+            console.error('Erro no callback Spectrum:', error);
+          }
+        });
+
+        // Debug log ocasional
+        if (analysisCounter % 60 === 0) {
+          console.log(`🎵 Monitoramento ativo: dB=${dbLevel.toFixed(1)} L=${leftLevel.toFixed(1)}% R=${rightLevel.toFixed(1)}%`);
+        }
+        analysisCounter++;
+
+        // Continuar análise
+        requestAnimationFrame(analyze);
+        
+      } catch (error) {
+        console.error('❌ Erro na análise contínua:', error);
+        // Tentar reiniciar após erro
+        setTimeout(() => {
+          if (this.monitoringAnalyser) {
+            analyze();
+          }
+        }, 1000);
+      }
+    };
+
+    console.log('🔄 Iniciando análise contínua para VU Meters');
+    analyze();
+  }
+
+  private stopMonitoring(): void {
+    if (this.monitoringStream) {
+      this.monitoringStream.getTracks().forEach(track => track.stop());
+      this.monitoringStream = null;
+    }
+    
+    if (this.monitoringContext) {
+      this.monitoringContext.close();
+      this.monitoringContext = null;
+    }
+    
+    this.monitoringAnalyser = null;
+    console.log('🛑 Sistema de monitoramento parado');
+  }
+
+  private async restartMonitoring(): Promise<void> {
+    console.log('🔄 Reiniciando monitoramento com novo dispositivo...');
+    this.stopMonitoring();
+    await this.startMonitoring();
   }
 }
 
