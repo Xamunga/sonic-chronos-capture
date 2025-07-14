@@ -44,7 +44,6 @@
           "arch": ["x64", "ia32"]
         }
       ],
-      
       "publisherName": "ALES Sonorização",
       "requestedExecutionLevel": "asInvoker"
     },
