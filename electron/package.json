@@ -21,18 +21,9 @@
       "output": "dist-electron"
     },
     "files": [
-      {
-        "from": "main.js",
-        "to": "main.js"
-      },
-      {
-        "from": "preload.js", 
-        "to": "preload.js"
-      },
-      {
-        "from": "package.json",
-        "to": "package.json"
-      },
+      "main.js",
+      "preload.js",
+      "package.json",
       {
         "from": "../dist",
         "to": ".",
