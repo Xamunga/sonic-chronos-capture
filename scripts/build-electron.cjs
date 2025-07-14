@@ -2,17 +2,17 @@ const { execSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 
-console.log('🚀 Iniciando build do Gravador Real Time Pro v2.5.0...\n');
+console.log('🚀 Iniciando build do Gravador Real Time Pro v2.6.0...\n');
 
-console.log('📋 Correções CRÍTICAS implementadas na v2.5.0:');
-console.log('   🔧 ÁUDIO DETERIORADO CORRIGIDO - removido noiseSuppression dinâmico');
-console.log('   🔧 SAMPLE RATE CORRIGIDO - fixado em 44100Hz para qualidade profissional');
-console.log('   🔧 VU METERS CORRIGIDOS - cálculo em dB real com Math.log10');
-console.log('   🔧 RTA/SPECTRUM CORRIGIDO - análise FFT real com 32 bins de frequência');
-console.log('   🔧 AUDIOCONTEXT OTIMIZADO - configuração limpa sem feedback');
-console.log('   🔧 NOMES DE ARQUIVO CORRIGIDOS - hífens no formato hh-mm-ss-seq');
-console.log('   🔧 LOGS DETALHADOS - debug completo para monitoramento');
-console.log('   ✅ Todas as funcionalidades principais restauradas e funcionais\n');
+console.log('📋 Correções CRÍTICAS implementadas na v2.6.0:');
+console.log('   🔧 SELEÇÃO DE DISPOSITIVO USB CORRIGIDA - sync entre interface e audioService');
+console.log('   🔧 VU METERS/RTA INDEPENDENTES - funciona sem gravação ativa');
+console.log('   🔧 STREAM DE MONITORAMENTO SEPARADO - análise em tempo real');
+console.log('   🔧 DETECÇÃO DE ELECTRON CORRIGIDA - isElectron funcional');
+console.log('   🔧 LOGS COMPLETOS - sistema de log operacional');
+console.log('   🔧 DISPOSITIVOS USB - reconhecimento e uso correto');
+console.log('   🔧 ANÁLISE DE ÁUDIO - VU e RTA funcionais independentemente');
+console.log('   ✅ Bug crítico dos VU Meters e RTA finalmente resolvido\n');
 
 // 1. Build da aplicação React
 console.log('📦 Fazendo build da aplicação React...');
@@ -80,32 +80,31 @@ try {
 // 6. Mensagem de sucesso
 console.log('🎉 Build concluído com sucesso!');
 console.log('📦 Instalador disponível em: electron/dist-electron/');
-console.log('🎯 Gravador Real Time Pro v2.5.0 está pronto para distribuição!\n');
+console.log('🎯 Gravador Real Time Pro v2.6.0 está pronto para distribuição!\n');
 
-// Changelog v2.5.0
-console.log('\n=== CHANGELOG v2.5.0 ===');
-console.log('🔧 CORREÇÕES CRÍTICAS (baseadas na análise técnica da Manus IA):');
-console.log('   ✅ ÁUDIO DETERIORADO CORRIGIDO - removido noiseSuppression dinâmico');
-console.log('   ✅ SAMPLE RATE CORRIGIDO - alterado de 48kHz para 44100Hz profissional');
-console.log('   ✅ VU METERS COMPLETAMENTE CORRIGIDOS - cálculo real em dB com Math.log10');
-console.log('   ✅ RTA/SPECTRUM ANALISADOR CORRIGIDO - análise FFT real com 32 bins');
-console.log('   ✅ AUDIOCONTEXT OTIMIZADO - configuração limpa sem conexão ao destination');
-console.log('   ✅ NOMES DE ARQUIVO CORRIGIDOS - hífens corretos no formato hh-mm-ss-seq');
-console.log('   ✅ MEDIARECORDER LIMPO - configurações mínimas sem interferência');
-console.log('   ✅ LOGS DETALHADOS - debug completo para monitoramento em tempo real');
+// Changelog v2.6.0
+console.log('\n=== CHANGELOG v2.6.0 ===');
+console.log('🔧 CORREÇÕES CRÍTICAS DE DISPOSITIVOS USB:');
+console.log('   ✅ SELEÇÃO DE DISPOSITIVO USB CORRIGIDA - sync entre interface e audioService');
+console.log('   ✅ BUG DOS VU METERS FINALMENTE RESOLVIDO - stream independente criado');
+console.log('   ✅ RTA/SPECTRUM FUNCIONAIS - análise em tempo real sem gravação');
+console.log('   ✅ DETECÇÃO DE ELECTRON CORRIGIDA - isElectron funcional');
+console.log('   ✅ LOGS COMPLETOS OPERACIONAIS - sistema de debug funcional');
+console.log('   ✅ DISPOSITIVOS USB RECONHECIDOS - placa de som USB funcional');
+console.log('   ✅ MONITORAMENTO INDEPENDENTE - VU e RTA não dependem de gravação');
 console.log('');
 console.log('🎯 MELHORIAS TÉCNICAS:');
-console.log('   ✅ Análise de áudio independente com requestAnimationFrame');
-console.log('   ✅ Processamento separado para VU Meters e Spectrum');
-console.log('   ✅ Callbacks executados com tratamento de erro individual');
-console.log('   ✅ Configurações de áudio profissionais para estúdio');
-console.log('   ✅ Sistema compatível com equipamentos digitais USB');
-console.log('   ✅ Separação clara entre gravação e análise visual');
+console.log('   ✅ Stream de monitoramento separado do stream de gravação');
+console.log('   ✅ Sincronização correta entre seleção e uso de dispositivo');
+console.log('   ✅ Análise de áudio funcional em tempo real');
+console.log('   ✅ Sistema de logs completo e operacional');
+console.log('   ✅ Detecção de ambiente Electron corrigida');
+console.log('   ✅ Interface responsiva e funcional');
 console.log('');
-console.log('📊 IMPORTANTE - VERSÃO DE CORREÇÃO CRÍTICA:');
-console.log('   🎵 VU Meters e RTA agora funcionam em tempo real');
-console.log('   🎧 Arquivos gravados mantêm qualidade profissional');
-console.log('   🎛️ Sistema compatível com equipamentos digitais USB');
-console.log('   📁 Arquivos gravados mantêm qualidade profissional');
-console.log('   🔧 Todos os problemas de áudio foram resolvidos');
+console.log('📊 IMPORTANTE - CORREÇÃO DO BUG CRÍTICO:');
+console.log('   🎵 VU Meters e RTA agora funcionam independentemente');
+console.log('   🎧 Dispositivos USB são corretamente utilizados');
+console.log('   🎛️ Monitoramento em tempo real funcional');
+console.log('   📁 Sistema de logs operacional para debug');
+console.log('   🔧 Bug histórico dos VU Meters finalmente resolvido');
 console.log('=========================\n');
