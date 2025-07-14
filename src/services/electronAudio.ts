@@ -139,9 +139,10 @@ export class ElectronAudioService {
 
       const constraints: MediaStreamConstraints = {
         audio: {
-          echoCancellation: true,
-          noiseSuppression: true,
-          sampleRate: this.sampleRate,
+          echoCancellation: false,
+          noiseSuppression: this.noiseSuppressionEnabled,
+          autoGainControl: false,
+          sampleRate: 48000,
           channelCount: 2,
           deviceId: this.inputDevice !== 'default' ? { exact: this.inputDevice } : undefined
         }
@@ -152,34 +153,24 @@ export class ElectronAudioService {
       // Configurar análise de áudio
       this.setupAudioAnalysis(stream);
 
-      // Usar formato específico para melhor compatibilidade
+      // Usar formato de alta qualidade sem compressão desnecessária
       let mimeType = 'audio/webm;codecs=opus';
-      let audioBitsPerSecond = undefined;
       
-      if (this.outputFormat === 'wav') {
-        // Para WAV, usar WebM e converter via Electron
+      // Verificar suporte e usar melhor opção disponível
+      if (MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) {
         mimeType = 'audio/webm;codecs=opus';
-      } else if (this.outputFormat === 'mp3') {
-        // Para MP3, configurar bitrate específico
-        mimeType = 'audio/webm;codecs=opus';
-        audioBitsPerSecond = this.mp3Bitrate * 1000; // Converter kbps para bps
-      }
-      
-      // Verificar suporte
-      if (!MediaRecorder.isTypeSupported(mimeType)) {
+      } else if (MediaRecorder.isTypeSupported('audio/webm')) {
         mimeType = 'audio/webm';
-        console.warn('Codec opus não suportado, usando WebM padrão');
+      } else {
+        mimeType = 'audio/mp4';
       }
       
       console.log(`Usando MIME type: ${mimeType} para formato: ${this.outputFormat}`);
       
       const mediaRecorderOptions: MediaRecorderOptions = {
-        mimeType: mimeType
+        mimeType: mimeType,
+        audioBitsPerSecond: this.outputFormat === 'mp3' ? this.mp3Bitrate * 1000 : 256000 // Alta qualidade por padrão
       };
-      
-      if (audioBitsPerSecond) {
-        mediaRecorderOptions.audioBitsPerSecond = audioBitsPerSecond;
-      }
       
       this.mediaRecorder = new MediaRecorder(stream, mediaRecorderOptions);
 
@@ -438,10 +429,10 @@ export class ElectronAudioService {
     let baseName: string;
     switch (this.fileNameFormat) {
       case 'hh-mm-ss-seq':
-        baseName = `${hours}${minutes}${seconds}_${this.currentSplitNumber.toString().padStart(3, '0')}`;
+        baseName = `${hours}-${minutes}-${seconds}_${this.currentSplitNumber.toString().padStart(3, '0')}`;
         break;
       case 'dd-mm-hh-mm-ss-seq':
-        baseName = `${day}-${month}-${hours}${minutes}${seconds}_${this.currentSplitNumber.toString().padStart(3, '0')}`;
+        baseName = `${day}-${month}-${hours}-${minutes}-${seconds}_${this.currentSplitNumber.toString().padStart(3, '0')}`;
         break;
       case 'timestamp':
       default:
@@ -602,6 +593,15 @@ export class ElectronAudioService {
         const leftLevel = Math.max(0, Math.min(100, rawLeftLevel));
         const rightLevel = Math.max(0, Math.min(100, rawRightLevel));
         const peak = leftLevel > 85 || rightLevel > 85;
+
+        // Notificar callbacks VU Meters
+        this.volumeCallbacks.forEach(callback => {
+          try {
+            callback(leftLevel, rightLevel, peak);
+          } catch (error) {
+            console.error('Erro no callback VU:', error);
+          }
+        });
 
         // Log detalhado para debug (a cada 30 execuções = ~1 segundo)
         if (analysisCounter % 30 === 0) {
