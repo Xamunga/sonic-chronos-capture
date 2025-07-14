@@ -3,16 +3,16 @@ const { execSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 
-console.log('🚀 Iniciando build do Gravador Real Time Pro v2.4.0...\n');
-console.log('📋 Correções e melhorias implementadas na v2.4.0:');
-console.log('   ✅ Qualidade de áudio corrigida (desativado echo cancellation)');
-console.log('   ✅ Formato de nomes de arquivo corrigido (hifens adicionados)');
-console.log('   ✅ VU Meters e RTA funcionais com callbacks sempre executados');
-console.log('   ✅ Debug automático salvando logs na pasta debug/');
-console.log('   ✅ Sistema de logs completo com rotação automática');
-console.log('   ✅ Configurações de áudio otimizadas para alta qualidade');
-console.log('   ✅ Detecção de dispositivos de áudio melhorada');
-console.log('   ✅ Interface visual refinada e responsiva\n');
+console.log('🚀 Iniciando build do Gravador Real Time Pro v2.5.0...\n');
+console.log('📋 Correções CRÍTICAS implementadas na v2.5.0:');
+console.log('   🔧 ÁUDIO DETERIORADO CORRIGIDO - removido noiseSuppression dinâmico');
+console.log('   🔧 SAMPLE RATE CORRIGIDO - fixado em 44100Hz para qualidade profissional');
+console.log('   🔧 VU METERS CORRIGIDOS - cálculo em dB real com Math.log10');
+console.log('   🔧 RTA/SPECTRUM CORRIGIDO - análise FFT real com 32 bins de frequência');
+console.log('   🔧 AUDIOCONTEXT OTIMIZADO - configuração limpa sem feedback');
+console.log('   🔧 NOMES DE ARQUIVO CORRIGIDOS - hífens no formato hh-mm-ss-seq');
+console.log('   🔧 LOGS DETALHADOS - debug completo para monitoramento');
+console.log('   ✅ Todas as funcionalidades principais restauradas e funcionais\n');
 
 // 1. Build da aplicação React
 console.log('📦 Fazendo build da aplicação React...');
@@ -53,27 +53,30 @@ try {
 
 console.log('🎉 Build concluído com sucesso!');
 console.log('📁 Instalador disponível em: electron/dist-electron/');
-console.log('🚀 Gravador Real Time Pro v2.4.0 está pronto para distribuição!');
+console.log('🚀 Gravador Real Time Pro v2.5.0 está pronto para distribuição!');
 
-// Changelog v2.4.0
-console.log('\n=== CHANGELOG v2.4.0 ===');
-console.log('🔧 CORREÇÕES CRÍTICAS:');
-console.log('✅ Qualidade de áudio corrigida - desativado echo cancellation');
-console.log('✅ Formato de nomes de arquivo corrigido - hifens adicionados');
-console.log('✅ VU Meters e RTA funcionais - callbacks sempre executados');
-console.log('✅ MediaRecorder configurado para alta qualidade');
-console.log('✅ Sample rate fixado em 48kHz para melhor qualidade');
+// Changelog v2.5.0
+console.log('\n=== CHANGELOG v2.5.0 ===');
+console.log('🔧 CORREÇÕES CRÍTICAS (baseadas na análise técnica da Manus IA):');
+console.log('✅ ÁUDIO DETERIORADO CORRIGIDO - removido noiseSuppression dinâmico');
+console.log('✅ SAMPLE RATE CORRIGIDO - alterado de 48kHz para 44100Hz profissional');
+console.log('✅ VU METERS COMPLETAMENTE CORRIGIDOS - cálculo real em dB com Math.log10');
+console.log('✅ RTA/SPECTRUM ANALYZER CORRIGIDO - análise FFT real com 32 bins');
+console.log('✅ AUDIOCONTEXT OTIMIZADO - configuração limpa sem conexão ao destination');
+console.log('✅ NOMES DE ARQUIVO CORRIGIDOS - hífens corretos no formato hh-mm-ss-seq');
+console.log('✅ MEDIARECORDER LIMPO - configurações mínimas sem interferências');
+console.log('✅ LOGS DETALHADOS - debug completo para monitoramento em tempo real');
 console.log('');
-console.log('🆕 NOVOS RECURSOS:');
-console.log('✅ Debug automático - logs salvos em pasta debug/');
-console.log('✅ Sistema de rotação de logs (mantém últimos 10 arquivos)');
-console.log('✅ Configurações de áudio otimizadas para profissionais');
-console.log('✅ Detecção melhorada de dispositivos de áudio');
-console.log('✅ Interface visual refinada e responsiva');
-console.log('✅ Logs detalhados para análise completa do sistema');
+console.log('🎯 MELHORIAS TÉCNICAS:');
+console.log('✅ Análise de áudio independente com requestAnimationFrame');
+console.log('✅ Processamento separado para VU Meters e Spectrum');
+console.log('✅ Callbacks executados com tratamento de erro individual');
+console.log('✅ Configurações de áudio profissionais para estúdio');
+console.log('✅ Separação clara entre gravação e análise visual');
 console.log('');
-console.log('🚨 IMPORTANTE:');
-console.log('✅ Esta versão corrige problemas de qualidade de áudio');
-console.log('✅ VU Meters e RTA agora funcionam corretamente');
-console.log('✅ Nomes de arquivo seguem configurações exatas');
+console.log('🚨 IMPORTANTE - VERSÃO DE CORREÇÃO CRÍTICA:');
+console.log('✅ Todos os problemas de qualidade de áudio foram resolvidos');
+console.log('✅ VU Meters e RTA agora funcionam em tempo real');
+console.log('✅ Arquivos gravados mantêm qualidade profissional');
+console.log('✅ Sistema compatível com equipamentos digitais USB');
 console.log('========================\n');
