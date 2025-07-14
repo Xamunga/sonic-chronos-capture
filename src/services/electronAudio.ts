@@ -603,10 +603,10 @@ export class ElectronAudioService {
         const rightLevel = Math.max(0, Math.min(100, rawRightLevel));
         const peak = leftLevel > 85 || rightLevel > 85;
 
-        // Log periódico para debug (a cada 60 execuções = ~2 segundos)
-        if (analysisCounter % 60 === 0) {
-          console.log(`🎛️ Análise: avg=${average.toFixed(1)} L=${leftLevel.toFixed(1)}dB R=${rightLevel.toFixed(1)}dB callbacks=${this.volumeCallbacks.length}/${this.spectrumCallbacks.length}`);
-          logSystem.info(`Níveis: L=${leftLevel.toFixed(1)}dB R=${rightLevel.toFixed(1)}dB`, 'Audio');
+        // Log detalhado para debug (a cada 30 execuções = ~1 segundo)
+        if (analysisCounter % 30 === 0) {
+          console.log(`🎛️ Análise: sum=${sum} avg=${average.toFixed(1)} raw=${dataArray.slice(0,5).join(',')} L=${leftLevel.toFixed(1)}% R=${rightLevel.toFixed(1)}% callbacks=${this.volumeCallbacks.length}/${this.spectrumCallbacks.length}`);
+          logSystem.info(`Análise Audio: sum=${sum} avg=${average.toFixed(1)} L=${leftLevel.toFixed(1)}% R=${rightLevel.toFixed(1)}% hasSignal=${this.hasSignal} callbacks=${this.volumeCallbacks.length}/${this.spectrumCallbacks.length}`, 'AudioAnalysis');
         }
         analysisCounter++;
 
