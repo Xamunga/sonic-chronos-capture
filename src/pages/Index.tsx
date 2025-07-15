@@ -49,7 +49,7 @@ const Index = () => {
         </div>
         
         {/* Sistema de Accordion para Abas */}
-        <Accordion type="multiple" className="w-full flex-1 flex flex-row space-x-2">
+        <Accordion type="multiple" className="w-full flex-1">
           <AccordionItem value="audio" className="border-studio-electric/30">
             <AccordionTrigger className="px-4 py-2 bg-black hover:bg-studio-electric/10 text-studio-electric">
               Áudio
