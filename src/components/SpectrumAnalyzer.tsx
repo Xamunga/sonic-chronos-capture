@@ -56,7 +56,7 @@ const SpectrumAnalyzer = () => {
                 ? <span className="text-studio-neon">Processamento Otimizado Windows 10/11</span>
                 : <span className="text-studio-electric bg-studio-dark p-2 rounded border border-studio-electric/20">🎤 GRAVANDO - Aguardando sinal</span>
               )
-            : <span className="text-studio-warning bg-studio-dark p-2 rounded border border-studio-electric/20">SEM SINAL</span>
+            : <span className="text-studio-warning bg-studio-dark p-2 rounded border border-studio-electric/20 ml-[45%]">SEM SINAL</span>
           }
         </div>
       </div>
