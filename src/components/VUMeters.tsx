@@ -91,8 +91,12 @@ const VUMeters = () => {
   return (
     <Card className="bg-gradient-to-br from-studio-charcoal to-studio-slate border-studio-electric/30">
       <div className="p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-studio-electric">VU Meters</h3>
+        <h3 className="text-lg font-semibold text-studio-electric mb-4">VU Meters</h3>
+        <div className="space-y-4">
+          <VUMeter level={leftLevel} peak={peakLeft} label="L" />
+          <VUMeter level={rightLevel} peak={peakRight} label="R" />
+        </div>
+        <div className="mt-4 text-center">
           <div className="text-xs text-muted-foreground">
             {audioService.isCurrentlyRecording() 
               ? (audioService.hasAudioSignal() 
@@ -102,10 +106,6 @@ const VUMeters = () => {
               : <span className="text-studio-warning bg-studio-dark p-2 rounded border border-studio-electric/20">SEM SINAL</span>
             }
           </div>
-        </div>
-        <div className="space-y-4">
-          <VUMeter level={leftLevel} peak={peakLeft} label="L" />
-          <VUMeter level={rightLevel} peak={peakRight} label="R" />
         </div>
       </div>
     </Card>

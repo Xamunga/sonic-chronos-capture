@@ -35,18 +35,7 @@ const SpectrumAnalyzer = () => {
   return (
     <Card className="bg-gradient-to-br from-studio-charcoal to-studio-slate border-studio-electric/30">
       <div className="p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-studio-electric">Analisador de Espectro</h3>
-          <div className="text-xs text-muted-foreground">
-            {audioService.isCurrentlyRecording() 
-              ? (audioService.hasAudioSignal() 
-                  ? <span className="text-studio-neon">Processamento Otimizado Windows 10/11</span>
-                  : <span className="text-studio-electric bg-studio-dark p-2 rounded border border-studio-electric/20">🎤 GRAVANDO - Aguardando sinal</span>
-                )
-              : <span className="text-studio-warning bg-studio-dark p-2 rounded border border-studio-electric/20">SEM SINAL</span>
-            }
-          </div>
-        </div>
+        <h3 className="text-lg font-semibold text-studio-electric mb-4">Analisador de Espectro</h3>
         <div className="h-32 flex items-end justify-between space-x-1 bg-studio-dark rounded-lg p-2">
           {spectrum.map((level, index) => (
             <div
@@ -60,6 +49,15 @@ const SpectrumAnalyzer = () => {
           <span>20Hz</span>
           <span>1kHz</span>
           <span>20kHz</span>
+        </div>
+        <div className="mt-2 text-xs text-center text-muted-foreground">
+          {audioService.isCurrentlyRecording() 
+            ? (audioService.hasAudioSignal() 
+                ? <span className="text-studio-neon">Processamento Otimizado Windows 10/11</span>
+                : <span className="text-studio-electric bg-studio-dark p-2 rounded border border-studio-electric/20">🎤 GRAVANDO - Aguardando sinal</span>
+              )
+            : <span className="text-studio-warning bg-studio-dark p-2 rounded border border-studio-electric/20">SEM SINAL</span>
+          }
         </div>
       </div>
     </Card>
