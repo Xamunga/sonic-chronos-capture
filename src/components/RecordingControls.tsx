@@ -93,7 +93,7 @@ const RecordingControls: React.FC<RecordingControlsProps> = ({ outputPath }) => 
 
         {/* Indicadores de Status */}
         <div className="flex items-center justify-between">
-          <div className="flex space-x-3" style={{ marginLeft: '1.25rem', marginRight: '1.25rem' }}>
+          <div className="flex space-x-3 ml-6 mr-5">
             <div className={`w-3 h-3 rounded-full ${
               isRecording && !isPaused ? 'bg-studio-warning animate-pulse' : 'bg-studio-slate'
             }`} />
