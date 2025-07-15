@@ -81,7 +81,7 @@ const VUMeters = () => {
         }`}>
           PEAK
         </div>
-        <span className="text-sm font-mono text-studio-electric w-12">
+        <span className="text-sm font-mono text-studio-neon w-12">
           {level > -60 ? level.toFixed(0) : '-∞'}dB
         </span>
       </div>

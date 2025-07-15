@@ -50,6 +50,21 @@ const SpectrumAnalyzer = () => {
           <span>1kHz</span>
           <span>20kHz</span>
         </div>
+        {/* Indicadores intermediários */}
+        <div className="mt-2 flex justify-between px-2">
+          <div className="flex items-center space-x-1">
+            <div className="w-2 h-2 rounded-full bg-studio-neon"></div>
+            <span className="text-xs text-studio-neon">100Hz</span>
+          </div>
+          <div className="flex items-center space-x-1">
+            <div className="w-2 h-2 rounded-full bg-studio-neon"></div>
+            <span className="text-xs text-studio-neon">500Hz</span>
+          </div>
+          <div className="flex items-center space-x-1">
+            <div className="w-2 h-2 rounded-full bg-studio-neon"></div>
+            <span className="text-xs text-studio-neon">10kHz</span>
+          </div>
+        </div>
         <div className="mt-2 text-xs text-center text-muted-foreground">
           {audioService.isCurrentlyRecording() 
             ? (audioService.hasAudioSignal() 
