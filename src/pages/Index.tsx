@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useWindowSize } from '@/hooks/useWindowSize';
+import { getFullVersionString } from '@/config/version';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import AppHeader from '../components/AppHeader';
 import RecordingControls from '../components/RecordingControls';
@@ -119,7 +120,7 @@ const Index = () => {
 
         <footer className="mt-4 text-center text-xs">
           <div className="bg-black p-2 rounded border border-studio-electric/20 text-white" style={{ textShadow: '0 0 3px hsl(195 100% 50%), 0 0 6px hsl(195 100% 50%)' }}>
-            Gravador Real Time Pro v2.4 | Desenvolvido por Tiago Lacerda
+            {getFullVersionString()}
           </div>
         </footer>
       </div>
