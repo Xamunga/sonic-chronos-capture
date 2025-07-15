@@ -15,6 +15,7 @@ import DebugTab from '../components/DebugTab';
 const Index = () => {
   const [outputPath, setOutputPath] = useState('C:\\Gravacoes\\');
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [openTabs, setOpenTabs] = useState<string[]>([]);
   const windowSize = useWindowSize();
 
   // Atualizar data/hora a cada segundo
@@ -50,42 +51,40 @@ const Index = () => {
         
         {/* Sistema de Abas Horizontais */}
         <div className="w-full flex-1">
-          {/* Triggers das Abas em linha horizontal */}
-          <div className="flex bg-black border border-studio-electric/30 rounded-t-lg">
-            <Accordion type="multiple" className="w-full">
+          <Accordion type="multiple" value={openTabs} onValueChange={setOpenTabs} className="w-full">
+            {/* Triggers das Abas em linha horizontal */}
+            <div className="flex bg-black border border-studio-electric/30 rounded-t-lg">
               <div className="flex w-full">
                 <AccordionItem value="audio" className="flex-1 border-r border-studio-electric/30 last:border-r-0">
-                  <AccordionTrigger className="px-4 py-2 hover:bg-studio-electric/10 text-studio-electric justify-center [&>svg]:hidden">
+                  <AccordionTrigger className="px-4 py-2 hover:bg-studio-electric/10 text-studio-electric justify-center [&>svg]:hidden border-b-0">
                     Áudio
                   </AccordionTrigger>
                 </AccordionItem>
                 <AccordionItem value="files" className="flex-1 border-r border-studio-electric/30 last:border-r-0">
-                  <AccordionTrigger className="px-4 py-2 hover:bg-studio-electric/10 text-studio-electric justify-center [&>svg]:hidden">
+                  <AccordionTrigger className="px-4 py-2 hover:bg-studio-electric/10 text-studio-electric justify-center [&>svg]:hidden border-b-0">
                     Arquivos
                   </AccordionTrigger>
                 </AccordionItem>
                 <AccordionItem value="resources" className="flex-1 border-r border-studio-electric/30 last:border-r-0">
-                  <AccordionTrigger className="px-4 py-2 hover:bg-studio-electric/10 text-studio-electric justify-center [&>svg]:hidden">
+                  <AccordionTrigger className="px-4 py-2 hover:bg-studio-electric/10 text-studio-electric justify-center [&>svg]:hidden border-b-0">
                     Recursos
                   </AccordionTrigger>
                 </AccordionItem>
                 <AccordionItem value="log" className="flex-1 border-r border-studio-electric/30 last:border-r-0">
-                  <AccordionTrigger className="px-4 py-2 hover:bg-studio-electric/10 text-studio-electric justify-center [&>svg]:hidden">
+                  <AccordionTrigger className="px-4 py-2 hover:bg-studio-electric/10 text-studio-electric justify-center [&>svg]:hidden border-b-0">
                     Log
                   </AccordionTrigger>
                 </AccordionItem>
                 <AccordionItem value="debug" className="flex-1">
-                  <AccordionTrigger className="px-4 py-2 hover:bg-studio-electric/10 text-studio-electric justify-center [&>svg]:hidden">
+                  <AccordionTrigger className="px-4 py-2 hover:bg-studio-electric/10 text-studio-electric justify-center [&>svg]:hidden border-b-0">
                     Debug
                   </AccordionTrigger>
                 </AccordionItem>
               </div>
-            </Accordion>
-          </div>
-          
-          {/* Conteúdo das Abas */}
-          <Accordion type="multiple" className="w-full">
-            <AccordionItem value="audio" className="border-studio-electric/30 border-x border-b rounded-b-lg">
+            </div>
+            
+            {/* Conteúdo das Abas */}
+            <AccordionItem value="audio" className="border-studio-electric/30 border-x border-b rounded-bl-lg">
               <AccordionContent className="px-4 pb-4 bg-black">
                 <AudioSettings />
               </AccordionContent>
@@ -109,7 +108,7 @@ const Index = () => {
               </AccordionContent>
             </AccordionItem>
 
-            <AccordionItem value="debug" className="border-studio-electric/30 border-x border-b rounded-b-lg">
+            <AccordionItem value="debug" className="border-studio-electric/30 border-x border-b rounded-br-lg">
               <AccordionContent className="px-4 pb-4 bg-black">
                 <DebugTab />
               </AccordionContent>
