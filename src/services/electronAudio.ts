@@ -237,43 +237,115 @@ export class ElectronAudioService {
     if (!this.isRecording || !this.mediaRecorder) return;
 
     try {
-      // CORREÇÃO: Split sem perda de áudio - transição instantânea
-      const currentStream = this.stream;
+      console.log('🔄 Iniciando split otimizado - Fase 1');
+      const splitStartTime = performance.now();
       
-      // Para o mediaRecorder atual
+      // FASE 1: Preparar novo MediaRecorder ANTES de parar o atual
+      const [newRecorder, currentChunks] = await Promise.all([
+        this.prepareNewMediaRecorder(),
+        this.getCurrentChunks()
+      ]);
+      
+      // Parar gravação atual (timing crítico)
       this.mediaRecorder.stop();
+      const stopTime = performance.now();
       
-      // Aguarda apenas o tempo mínimo necessário
-      await new Promise(resolve => setTimeout(resolve, 100));
+      // PARALELO: Processar arquivo + configurar próximo
+      const [savedFile] = await Promise.all([
+        this.saveCurrentFileAsync(currentChunks),
+        this.setupNewRecorderAsync(newRecorder)
+      ]);
+      
+      // Reiniciar IMEDIATAMENTE
+      this.mediaRecorder = newRecorder;
+      this.mediaRecorder.start(100); // timeslice otimizado
+      
+      const totalGap = performance.now() - stopTime;
+      const totalTime = performance.now() - splitStartTime;
       
       this.currentSplitNumber++;
-      this.audioChunks = [];
+      this.scheduleSplit();
       
-      // Recria MediaRecorder imediatamente com o mesmo stream
-      this.mediaRecorder = new MediaRecorder(currentStream!, {
+      console.log(`✅ Split Fase 1 - Gap: ${totalGap.toFixed(1)}ms | Total: ${totalTime.toFixed(1)}ms`);
+      toast.info(`Split ${this.currentSplitNumber} - Gap otimizado: ${totalGap.toFixed(0)}ms`);
+      
+    } catch (error) {
+      console.error('❌ Erro no split otimizado:', error);
+      toast.error('Erro ao dividir arquivo');
+      
+      // Fallback para método tradicional
+      await this.performSplitFallback();
+    }
+  }
+
+  private async prepareNewMediaRecorder(): Promise<MediaRecorder> {
+    const stream = await navigator.mediaDevices.getUserMedia({
+      audio: {
+        deviceId: this.inputDevice !== 'default' ? { exact: this.inputDevice } : undefined,
+        channelCount: 1,
+        sampleRate: 44100,
+        echoCancellation: this.noiseSuppressionEnabled,
+        noiseSuppression: this.noiseSuppressionEnabled,
+        autoGainControl: this.noiseSuppressionEnabled
+      }
+    });
+    
+    const recorder = new MediaRecorder(stream, {
+      mimeType: 'audio/webm;codecs=opus',
+      audioBitsPerSecond: this.mp3Bitrate * 1000
+    });
+    
+    return recorder;
+  }
+
+  private async getCurrentChunks(): Promise<Blob[]> {
+    return [...this.audioChunks];
+  }
+
+  private async saveCurrentFileAsync(chunks: Blob[]): Promise<string> {
+    const blob = new Blob(chunks, { type: 'audio/webm' });
+    const filename = this.generateFileName();
+    
+    if (window.electronAPI?.saveAudioFile) {
+      const arrayBuffer = await blob.arrayBuffer();
+      const audioData = new Uint8Array(arrayBuffer);
+      const outputPath = await this.ensureOutputDirectory(this.outputPath);
+      await window.electronAPI.saveAudioFile(`${outputPath}/${filename}`, audioData);
+    }
+    
+    return filename;
+  }
+
+  private async setupNewRecorderAsync(recorder: MediaRecorder): Promise<void> {
+    this.audioChunks = [];
+    
+    recorder.ondataavailable = (event) => {
+      if (event.data.size > 0) {
+        this.audioChunks.push(event.data);
+      }
+    };
+
+    recorder.onstop = () => {
+      this.saveRecording();
+    };
+  }
+
+  private async performSplitFallback(): Promise<void> {
+    console.log('🔄 Executando split fallback...');
+    this.mediaRecorder?.stop();
+    await new Promise(resolve => setTimeout(resolve, 100));
+    this.currentSplitNumber++;
+    this.audioChunks = [];
+    
+    if (this.stream) {
+      this.mediaRecorder = new MediaRecorder(this.stream, {
         mimeType: 'audio/webm;codecs=opus',
         audioBitsPerSecond: this.mp3Bitrate * 1000
       });
-
-      this.mediaRecorder.ondataavailable = (event) => {
-        if (event.data.size > 0) {
-          this.audioChunks.push(event.data);
-        }
-      };
-
-      this.mediaRecorder.onstop = () => {
-        this.saveRecording();
-      };
-
-      // Inicia gravação com timeslice menor para captura contínua
+      
+      this.setupNewRecorderAsync(this.mediaRecorder);
       this.mediaRecorder.start(100);
-      
       this.scheduleSplit();
-      
-      toast.info(`Split ${this.currentSplitNumber} - continuidade otimizada`);
-    } catch (error) {
-      console.error('Erro ao fazer split:', error);
-      toast.error('Erro ao dividir arquivo');
     }
   }
 
