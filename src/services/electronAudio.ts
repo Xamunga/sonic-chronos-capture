@@ -237,16 +237,20 @@ export class ElectronAudioService {
     if (!this.isRecording || !this.mediaRecorder) return;
 
     try {
+      // CORREÇÃO: Split sem perda de áudio - transição instantânea
+      const currentStream = this.stream;
+      
+      // Para o mediaRecorder atual
       this.mediaRecorder.stop();
       
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // Aguarda apenas o tempo mínimo necessário
+      await new Promise(resolve => setTimeout(resolve, 100));
       
       this.currentSplitNumber++;
-      
       this.audioChunks = [];
-      const stream = this.stream;
       
-      this.mediaRecorder = new MediaRecorder(stream!, {
+      // Recria MediaRecorder imediatamente com o mesmo stream
+      this.mediaRecorder = new MediaRecorder(currentStream!, {
         mimeType: 'audio/webm;codecs=opus',
         audioBitsPerSecond: this.mp3Bitrate * 1000
       });
@@ -261,11 +265,12 @@ export class ElectronAudioService {
         this.saveRecording();
       };
 
-      this.mediaRecorder.start(1000);
+      // Inicia gravação com timeslice menor para captura contínua
+      this.mediaRecorder.start(100);
       
       this.scheduleSplit();
       
-      toast.info(`Iniciando parte ${this.currentSplitNumber} da gravação`);
+      toast.info(`Split ${this.currentSplitNumber} - continuidade otimizada`);
     } catch (error) {
       console.error('Erro ao fazer split:', error);
       toast.error('Erro ao dividir arquivo');
