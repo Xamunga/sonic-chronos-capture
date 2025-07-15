@@ -1,8 +1,8 @@
 import { toast } from "sonner";
 import { logSystem } from '@/utils/logSystem';
 
-// VERSÃO 3.0 - BASE ESTÁVEL SIMPLIFICADA
-// Implementação baseada no plano Manus para correção crítica dos problemas da v2.9
+// VERSÃO 2.8 RESTAURADA + CORREÇÕES CRÍTICAS
+// Base funcional da v2.8 com problemas específicos corrigidos
 
 export class ElectronAudioService {
   private mediaRecorder: MediaRecorder | null = null;
@@ -12,20 +12,21 @@ export class ElectronAudioService {
   private outputPath = '';
   private inputDevice = 'default';
   private outputFormat = 'wav';
-  private mp3Bitrate = 128;
+  private mp3Bitrate = 320;
+  private sampleRate = 44100;
   private splitEnabled = false;
   private splitIntervalMinutes = 5;
   private dateFolderEnabled = false;
   private dateFolderFormat = 'dd-mm';
-  private fileNameFormat = 'hh-mm-ss-seq';
+  private fileNameFormat = 'timestamp';
   private recordingStartTime = 0;
   private currentSplitNumber = 1;
+  private audioContext: AudioContext | null = null;
+  private analyser: AnalyserNode | null = null;
+  private volumeCallbacks: ((left: number, right: number, peak: boolean) => void)[] = [];
+  private spectrumCallbacks: ((data: number[]) => void)[] = [];
+  private hasSignal = false;
   private stream: MediaStream | null = null;
-  
-  // Sistema básico de análise
-  private monitoringContext: AudioContext | null = null;
-  private monitoringAnalyser: AnalyserNode | null = null;
-  private volumeCallbacks: ((left: number, right: number, peakL: boolean, peakR: boolean) => void)[] = [];
   
   // Configurações do Noise Gate
   private noiseSuppressionEnabled = false;
@@ -35,7 +36,7 @@ export class ElectronAudioService {
 
   constructor() {
     this.loadSettings();
-    console.log('🎛️ ElectronAudioService v3.0 inicializado (modo básico estável)');
+    console.log('🎛️ ElectronAudioService v2.8 Corrigido inicializado');
   }
 
   private loadSettings() {
@@ -45,12 +46,12 @@ export class ElectronAudioService {
         const parsed = JSON.parse(settings);
         
         this.outputFormat = typeof parsed.outputFormat === 'string' ? parsed.outputFormat : 'wav';
-        this.mp3Bitrate = typeof parsed.mp3Bitrate === 'number' ? parsed.mp3Bitrate : 128;
+        this.mp3Bitrate = typeof parsed.mp3Bitrate === 'number' ? parsed.mp3Bitrate : 320;
         this.splitEnabled = typeof parsed.splitEnabled === 'boolean' ? parsed.splitEnabled : false;
         this.splitIntervalMinutes = typeof parsed.splitIntervalMinutes === 'number' ? parsed.splitIntervalMinutes : 5;
         this.dateFolderEnabled = typeof parsed.dateFolderEnabled === 'boolean' ? parsed.dateFolderEnabled : false;
         this.dateFolderFormat = typeof parsed.dateFolderFormat === 'string' ? parsed.dateFolderFormat : 'dd-mm';
-        this.fileNameFormat = typeof parsed.fileNameFormat === 'string' ? parsed.fileNameFormat : 'hh-mm-ss-seq';
+        this.fileNameFormat = typeof parsed.fileNameFormat === 'string' ? parsed.fileNameFormat : 'timestamp';
         this.inputDevice = typeof parsed.inputDevice === 'string' ? parsed.inputDevice : 'default';
         this.noiseSuppressionEnabled = typeof parsed.noiseSuppressionEnabled === 'boolean' ? parsed.noiseSuppressionEnabled : false;
         this.noiseThreshold = typeof parsed.noiseThreshold === 'number' ? parsed.noiseThreshold : -35;
@@ -93,20 +94,56 @@ export class ElectronAudioService {
     }
   }
 
-  // CORREÇÃO 1: startRecording SIMPLIFICADO (Plano Manus)
+  async requestMicrophonePermission(): Promise<boolean> {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: this.noiseSuppressionEnabled,
+          noiseSuppression: this.noiseSuppressionEnabled,
+          autoGainControl: this.noiseSuppressionEnabled,
+          deviceId: this.inputDevice !== 'default' ? { exact: this.inputDevice } : undefined,
+          channelCount: 1,
+          sampleRate: 44100
+        }
+      });
+      
+      stream.getTracks().forEach(track => track.stop());
+      
+      console.log('✅ Permissão de microfone concedida');
+      logSystem.info('Permissão de microfone concedida', 'Audio');
+      
+      return true;
+    } catch (error) {
+      console.error('❌ Erro ao solicitar permissão:', error);
+      logSystem.error(`Erro ao solicitar permissão de microfone: ${error}`, 'Audio');
+      toast.error('Erro ao acessar o microfone. Verifique as permissões.');
+      return false;
+    }
+  }
+
+  async getAudioDevices(): Promise<MediaDeviceInfo[]> {
+    try {
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      return devices.filter(device => device.kind === 'audioinput');
+    } catch (error) {
+      console.error('❌ Erro ao obter dispositivos:', error);
+      return [];
+    }
+  }
+
   async startRecording(outputPath: string): Promise<boolean> {
     try {
-      // SIMPLIFICAR - apenas inicialização básica
+      console.log('🎤 Iniciando gravação v2.8...');
+      
       this.outputPath = outputPath;
       this.recordingStartTime = Date.now();
       this.currentSplitNumber = 1;
       
-      // CONFIGURAÇÃO BÁSICA DO MEDIARECORDER
       const constraints = {
         audio: {
           deviceId: this.inputDevice === 'default' ? undefined : { exact: this.inputDevice },
-          sampleRate: 44100, // FIXO para estabilidade
-          channelCount: 1,    // MONO para simplicidade
+          sampleRate: this.sampleRate,
+          channelCount: 1,
           echoCancellation: false,
           noiseSuppression: this.noiseSuppressionEnabled,
           autoGainControl: false
@@ -115,15 +152,14 @@ export class ElectronAudioService {
       
       this.stream = await navigator.mediaDevices.getUserMedia(constraints);
       
-      // CONFIGURAÇÃO SIMPLES DO MEDIARECORDER
+      // CORREÇÃO: Usar WEBM mas salvar como MP3 real posteriormente
       const options = {
-        mimeType: 'audio/webm;codecs=opus', // MANTER WebM por enquanto
+        mimeType: 'audio/webm;codecs=opus',
         audioBitsPerSecond: this.mp3Bitrate * 1000
       };
       
       this.mediaRecorder = new MediaRecorder(this.stream, options);
       
-      // EVENTOS BÁSICOS APENAS
       this.mediaRecorder.ondataavailable = (event) => {
         if (event.data.size > 0) {
           this.audioChunks.push(event.data);
@@ -134,15 +170,19 @@ export class ElectronAudioService {
         this.saveRecording();
       };
       
-      // INICIAR GRAVAÇÃO
-      this.mediaRecorder.start();
+      this.mediaRecorder.start(1000);
       this.isRecording = true;
       
-      // Configurar VU meters básicos
-      this.setupBasicMonitoring();
+      // Configurar análise de áudio
+      this.setupAudioAnalysis(this.stream);
       
-      console.log('✅ Gravação iniciada (modo básico v3.0)');
-      logSystem.info('Gravação iniciada em modo básico', 'Recording');
+      // Agendar split se habilitado
+      if (this.splitEnabled) {
+        this.scheduleSplit();
+      }
+      
+      console.log('✅ Gravação iniciada com sucesso');
+      logSystem.info('Gravação iniciada', 'Recording');
       return true;
       
     } catch (error) {
@@ -159,12 +199,7 @@ export class ElectronAudioService {
       this.isRecording = false;
       this.isPaused = false;
       
-      // Cleanup básico
-      if (this.monitoringContext) {
-        this.monitoringContext.close();
-        this.monitoringContext = null;
-        this.monitoringAnalyser = null;
-      }
+      this.cleanupAudioAnalysis();
       
       if (this.stream) {
         this.stream.getTracks().forEach(track => track.stop());
@@ -190,21 +225,79 @@ export class ElectronAudioService {
     }
   }
 
-  // CORREÇÃO 2: ensureOutputDirectory SIMPLIFICADO (Plano Manus)
+  private scheduleSplit(): void {
+    setTimeout(() => {
+      if (this.isRecording && this.splitEnabled) {
+        this.performSplit();
+      }
+    }, this.splitIntervalMinutes * 60 * 1000);
+  }
+
+  private async performSplit(): Promise<void> {
+    if (!this.isRecording || !this.mediaRecorder) return;
+
+    try {
+      this.mediaRecorder.stop();
+      
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      this.currentSplitNumber++;
+      
+      this.audioChunks = [];
+      const stream = this.stream;
+      
+      this.mediaRecorder = new MediaRecorder(stream!, {
+        mimeType: 'audio/webm;codecs=opus',
+        audioBitsPerSecond: this.mp3Bitrate * 1000
+      });
+
+      this.mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          this.audioChunks.push(event.data);
+        }
+      };
+
+      this.mediaRecorder.onstop = () => {
+        this.saveRecording();
+      };
+
+      this.mediaRecorder.start(1000);
+      
+      this.scheduleSplit();
+      
+      toast.info(`Iniciando parte ${this.currentSplitNumber} da gravação`);
+    } catch (error) {
+      console.error('Erro ao fazer split:', error);
+      toast.error('Erro ao dividir arquivo');
+    }
+  }
+
+  // CORREÇÃO: Estrutura de pastas simplificada
   private async ensureOutputDirectory(outputPath: string): Promise<string> {
     try {
       let finalPath = outputPath;
       
-      // APENAS se pasta por data estiver habilitada
       if (this.dateFolderEnabled) {
         const now = new Date();
+        let dateFolder: string;
         
-        // FORMATO FIXO E SIMPLES
-        const dateFolder = `${now.getDate().toString().padStart(2, '0')}-${(now.getMonth() + 1).toString().padStart(2, '0')}`;
+        switch (this.dateFolderFormat) {
+          case 'dd-mm':
+            dateFolder = `${now.getDate().toString().padStart(2, '0')}-${(now.getMonth() + 1).toString().padStart(2, '0')}`;
+            break;
+          case 'mm-dd':
+            dateFolder = `${(now.getMonth() + 1).toString().padStart(2, '0')}-${now.getDate().toString().padStart(2, '0')}`;
+            break;
+          case 'yyyy-mm-dd':
+            dateFolder = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}-${now.getDate().toString().padStart(2, '0')}`;
+            break;
+          default:
+            dateFolder = `${now.getDate().toString().padStart(2, '0')}-${(now.getMonth() + 1).toString().padStart(2, '0')}`;
+        }
         
         finalPath = `${outputPath}/${dateFolder}`;
         
-        // CRIAR PASTA APENAS UMA VEZ
+        // CORREÇÃO: Criar pasta apenas uma vez
         await window.electronAPI.ensureDirectory(finalPath);
       }
       
@@ -213,7 +306,7 @@ export class ElectronAudioService {
     } catch (error) {
       console.error('❌ Erro ao criar diretório:', error);
       logSystem.error(`Erro ao criar diretório: ${error}`, 'FileSystem');
-      return outputPath; // FALLBACK para pasta original
+      return outputPath;
     }
   }
 
@@ -259,85 +352,140 @@ export class ElectronAudioService {
         const seq = this.currentSplitNumber.toString().padStart(3, '0');
         return `${hours}-${minutes}-${seconds}-${seq}.${this.outputFormat === 'mp3' ? 'mp3' : 'webm'}`;
       
+      case 'timestamp':
       default:
         const timestamp = now.toISOString().replace(/[:.]/g, '-').split('T')[1].split('-').slice(0, 3).join('-');
         return `gravacao_${timestamp}_${this.currentSplitNumber}.${this.outputFormat === 'mp3' ? 'mp3' : 'webm'}`;
     }
   }
 
-  // CORREÇÃO 3: VU Meters SIMPLIFICADO (Plano Manus)
-  private setupBasicMonitoring(): void {
-    if (!this.stream) return;
-    
+  // Sistema de análise de áudio da v2.8 (funcional)
+  private setupAudioAnalysis(stream: MediaStream): void {
     try {
-      this.monitoringContext = new AudioContext();
-      const source = this.monitoringContext.createMediaStreamSource(this.stream);
+      this.audioContext = new AudioContext({ sampleRate: 44100 });
+      const source = this.audioContext.createMediaStreamSource(stream);
       
-      this.monitoringAnalyser = this.monitoringContext.createAnalyser();
-      this.monitoringAnalyser.fftSize = 256;
-      this.monitoringAnalyser.smoothingTimeConstant = 0.3;
+      this.analyser = this.audioContext.createAnalyser();
+      this.analyser.fftSize = 2048;
+      this.analyser.smoothingTimeConstant = 0.3;
       
-      source.connect(this.monitoringAnalyser);
+      source.connect(this.analyser);
       
-      this.startAnalysisLoop();
-      
-      console.log('✅ Monitoramento básico configurado');
-      
+      console.log('🎤 Contexto de áudio configurado');
+      this.startAudioAnalysis();
     } catch (error) {
-      console.error('❌ Erro ao configurar monitoramento:', error);
-      logSystem.error(`Erro ao configurar monitoramento: ${error}`, 'Audio');
+      console.error('❌ Erro ao configurar análise de áudio:', error);
+      logSystem.error(`Erro ao configurar análise de áudio: ${error}`, 'Audio');
     }
   }
 
-  // SIMPLIFICAR análise - remover callbacks complexos
-  private startAnalysisLoop(): void {
-    if (!this.monitoringAnalyser || !this.isRecording) return;
-    
+  // CORREÇÃO: RTA otimizado com throttle da v2.9
+  private startAudioAnalysis(): void {
+    if (!this.analyser) return;
+
+    const bufferLength = this.analyser.frequencyBinCount;
+    const dataArray = new Uint8Array(bufferLength);
+    let frameCount = 0;
+
+    console.log('🎵 Iniciando análise de áudio otimizada');
+    logSystem.info('Análise de áudio iniciada', 'Audio');
+
     const analyze = () => {
-      // VERIFICAR se ainda está gravando
-      if (!this.isRecording || !this.monitoringAnalyser) {
-        return; // PARAR se não estiver gravando
-      }
-      
+      if (!this.analyser || !this.isRecording) return;
+
       try {
-        const bufferLength = this.monitoringAnalyser.frequencyBinCount;
-        const dataArray = new Uint8Array(bufferLength);
+        this.analyser.getByteFrequencyData(dataArray);
         
-        this.monitoringAnalyser.getByteFrequencyData(dataArray);
-        
-        // CÁLCULO SIMPLES DE VOLUME
-        let sum = 0;
-        for (let i = 0; i < bufferLength; i++) {
-          sum += dataArray[i];
-        }
+        // Calcular níveis de volume
+        const sum = dataArray.reduce((acc, val) => acc + val, 0);
         const average = sum / bufferLength;
-        const volume = (average / 255) * 100;
         
-        // CALLBACK SIMPLES
-        if (this.volumeCallbacks.length > 0) {
-          this.volumeCallbacks.forEach(callback => {
+        const dbLevel = average > 0 ? 20 * Math.log10(average / 255) : -Infinity;
+        const leftLevel = Math.max(0, Math.min(100, (dbLevel + 60) * (100 / 60)));
+        const rightLevel = Math.max(0, Math.min(100, (dbLevel + 60) * (100 / 60) + Math.random() * 2 - 1));
+        const peak = leftLevel > 85 || rightLevel > 85;
+
+        // Callbacks VU Meters (sempre chamar quando gravando)
+        this.volumeCallbacks.forEach(callback => {
+          try {
+            callback(leftLevel, rightLevel, peak);
+          } catch (error) {
+            console.error('Erro no callback VU:', error);
+          }
+        });
+
+        // OTIMIZAÇÃO: Spectrum callbacks apenas a cada 3 frames (throttle)
+        if (frameCount % 3 === 0) {
+          const spectrumData = new Array(32).fill(0);
+          const binSize = Math.floor(dataArray.length / 32);
+          
+          for (let i = 0; i < 32; i++) {
+            let sum = 0;
+            for (let j = 0; j < binSize; j++) {
+              sum += dataArray[i * binSize + j];
+            }
+            spectrumData[i] = Math.min(100, (sum / binSize / 255) * 100);
+          }
+          
+          this.spectrumCallbacks.forEach(callback => {
             try {
-              callback(volume, volume, false, false); // L, R, peakL, peakR
+              callback(spectrumData);
             } catch (error) {
-              console.error('❌ Erro no callback de volume:', error);
+              console.error('Erro no callback spectrum:', error);
             }
           });
         }
-        
-        // CONTINUAR APENAS SE GRAVANDO
-        if (this.isRecording) {
-          setTimeout(() => analyze(), 100); // 10 FPS fixo
-        }
-        
+
+        this.hasSignal = average > 0.1;
+        frameCount++;
+
+        // OTIMIZAÇÃO: requestAnimationFrame para melhor performance
+        requestAnimationFrame(analyze);
       } catch (error) {
-        console.error('❌ Erro na análise de áudio:', error);
+        console.error('❌ Erro durante análise de áudio:', error);
+        logSystem.error(`Erro durante análise de áudio: ${error}`, 'Audio');
       }
     };
-    
+
     analyze();
   }
 
-  // Métodos públicos básicos
+  private cleanupAudioAnalysis(): void {
+    if (this.audioContext) {
+      this.audioContext.close();
+      this.audioContext = null;
+    }
+    this.analyser = null;
+  }
+
+  // Callbacks para UI
+  onVolumeUpdate(callback: (left: number, right: number, peak: boolean) => void): void {
+    this.volumeCallbacks.push(callback);
+    console.log(`📊 Callback VU Meters registrado. Total: ${this.volumeCallbacks.length}`);
+  }
+
+  onSpectrumUpdate(callback: (data: number[]) => void): void {
+    this.spectrumCallbacks.push(callback);
+    console.log(`📈 Callback Spectrum registrado. Total: ${this.spectrumCallbacks.length}`);
+  }
+
+  removeVolumeCallback(callback: (left: number, right: number, peak: boolean) => void): void {
+    const index = this.volumeCallbacks.indexOf(callback);
+    if (index > -1) {
+      this.volumeCallbacks.splice(index, 1);
+      console.log(`📊 Callback VU Meters removido. Total: ${this.volumeCallbacks.length}`);
+    }
+  }
+
+  removeSpectrumCallback(callback: (data: number[]) => void): void {
+    const index = this.spectrumCallbacks.indexOf(callback);
+    if (index > -1) {
+      this.spectrumCallbacks.splice(index, 1);
+      console.log(`📈 Callback Spectrum removido. Total: ${this.spectrumCallbacks.length}`);
+    }
+  }
+
+  // Estados
   isCurrentlyRecording(): boolean {
     return this.isRecording;
   }
@@ -347,10 +495,10 @@ export class ElectronAudioService {
   }
 
   hasAudioSignal(): boolean {
-    return this.isRecording;
+    return this.hasSignal;
   }
 
-  // Configurações
+  // Configurações - todas com getters para compatibilidade
   setInputDevice(device: string): void {
     this.inputDevice = device;
     this.saveSettings();
@@ -471,71 +619,8 @@ export class ElectronAudioService {
     return this.noiseGateRelease;
   }
 
-  // Callbacks básicos
-  onVolumeUpdate(callback: (left: number, right: number, peakL: boolean, peakR: boolean) => void): void {
-    this.volumeCallbacks.push(callback);
-    console.log(`📊 Callback VU Meters registrado. Total: ${this.volumeCallbacks.length}`);
-  }
-
-  removeVolumeCallback(callback: (left: number, right: number, peakL: boolean, peakR: boolean) => void): void {
-    const index = this.volumeCallbacks.indexOf(callback);
-    if (index > -1) {
-      this.volumeCallbacks.splice(index, 1);
-      console.log(`📊 Callback VU Meters removido. Total: ${this.volumeCallbacks.length}`);
-    }
-  }
-
-  // Método para obter dispositivos de áudio
-  async getAudioDevices(): Promise<MediaDeviceInfo[]> {
-    try {
-      const devices = await navigator.mediaDevices.enumerateDevices();
-      return devices.filter(device => device.kind === 'audioinput');
-    } catch (error) {
-      console.error('❌ Erro ao obter dispositivos:', error);
-      return [];
-    }
-  }
-
-  // Método para solicitar permissão do microfone
-  async requestMicrophonePermission(): Promise<boolean> {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: {
-          echoCancellation: this.noiseSuppressionEnabled,
-          noiseSuppression: this.noiseSuppressionEnabled,
-          autoGainControl: this.noiseSuppressionEnabled,
-          deviceId: this.inputDevice !== 'default' ? { exact: this.inputDevice } : undefined,
-          channelCount: 1,
-          sampleRate: 44100
-        }
-      });
-      
-      stream.getTracks().forEach(track => track.stop());
-      
-      console.log('✅ Permissão de microfone concedida');
-      logSystem.info('Permissão de microfone concedida', 'Audio');
-      
-      return true;
-    } catch (error) {
-      console.error('❌ Erro ao solicitar permissão:', error);
-      logSystem.error(`Erro ao solicitar permissão de microfone: ${error}`, 'Audio');
-      toast.error('Erro ao acessar o microfone. Verifique as permissões.');
-      return false;
-    }
-  }
-
-  // Métodos temporários para compatibilidade com componentes existentes
-  onSpectrumUpdate(callback: (data: number[]) => void): void {
-    // Implementação básica - apenas para evitar erros
-    console.log('⚠️ Spectrum Analyzer temporariamente desabilitado na v3.0');
-  }
-
-  removeSpectrumCallback(callback: (data: number[]) => void): void {
-    // Implementação básica - apenas para evitar erros
-  }
-
   getSampleRate(): number {
-    return 44100; // Valor fixo para v3.0
+    return this.sampleRate;
   }
 }
 

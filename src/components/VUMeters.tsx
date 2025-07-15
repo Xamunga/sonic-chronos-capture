@@ -9,18 +9,18 @@ const VUMeters = () => {
   const [peakLeft, setPeakLeft] = useState(false);
   const [peakRight, setPeakRight] = useState(false);
 
-  // CALLBACK SIMPLIFICADO v3.0 - compatível com assinatura corrigida
-  const handleVolumeUpdate = useCallback((left: number, right: number, peakL: boolean, peakR: boolean) => {
+  // Callback da v2.8 - ASSINATURA ORIGINAL FUNCIONAL
+  const handleVolumeUpdate = useCallback((left: number, right: number, peak: boolean) => {
     // Só mostrar atividade se estiver gravando
     if (audioService.isCurrentlyRecording()) {
-      // Converter porcentagem para dB para compatibilidade
+      // Converter porcentagem para dB
       const leftDb = left > 0 ? (left * 60 / 100) - 60 : -60;
       const rightDb = right > 0 ? (right * 60 / 100) - 60 : -60;
       
       setLeftLevel(leftDb);
       setRightLevel(rightDb);
-      setPeakLeft(peakL || leftDb > -6);
-      setPeakRight(peakR || rightDb > -6);
+      setPeakLeft(peak || leftDb > -6);
+      setPeakRight(peak || rightDb > -6);
     } else {
       // Zerar quando não está gravando
       setLeftLevel(-60);
