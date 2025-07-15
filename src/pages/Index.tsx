@@ -32,7 +32,7 @@ const Index = () => {
         
         {/* Monitor Principal - Sem abas */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
-          <div className="space-y-4">
+          <div className="space-y-5">
             <RecordingControls outputPath={outputPath} />
             <div className="bg-gradient-to-br from-studio-charcoal to-studio-slate border-studio-electric/30 rounded-lg p-6 text-center border flex flex-col justify-center h-[270px]">
               <div className="text-studio-electric font-mono text-3xl font-bold" style={{ marginBottom: '3.25rem' }}>
