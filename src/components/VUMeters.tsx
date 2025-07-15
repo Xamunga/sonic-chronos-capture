@@ -82,12 +82,12 @@ const VUMeters = () => {
         <div className="mt-4 text-center">
           <div className="text-xs text-muted-foreground">
             {audioService.isCurrentlyRecording() 
-              ? `🎬 GRAVANDO - Peak: ${Math.max(leftLevel, rightLevel) > -60 ? Math.max(leftLevel, rightLevel).toFixed(1) : '-∞'}dB`
-              : `🎧 MONITORAMENTO - Peak: ${Math.max(leftLevel, rightLevel) > -60 ? Math.max(leftLevel, rightLevel).toFixed(1) : '-∞'}dB`
+              ? (audioService.hasAudioSignal() 
+                  ? `Peak Hold: ${Math.max(leftLevel, rightLevel) > -60 ? Math.max(leftLevel, rightLevel).toFixed(1) : '-∞'}dB`
+                  : <span className="text-studio-electric bg-studio-dark p-2 rounded border border-studio-electric/20">🎤 GRAVANDO - Aguardando sinal</span>
+                )
+              : <span className="text-studio-warning bg-studio-dark p-2 rounded border border-studio-electric/20">SEM SINAL</span>
             }
-          </div>
-          <div className="text-xs text-muted-foreground mt-1">
-            Escala: -60dB a 0dB (Padrão Profissional)
           </div>
         </div>
       </div>
