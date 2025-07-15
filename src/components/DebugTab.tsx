@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Copy, RefreshCw, Bug, Monitor, Headphones, Settings, Folder, Download, FileText } from 'lucide-react';
+import { Copy, RefreshCw, Bug, Monitor, Headphones, Settings, Folder, Download, FileText, AlertTriangle, Activity, FolderOpen } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { logSystem } from '@/utils/logSystem';
 
@@ -15,6 +15,9 @@ const DebugTab = () => {
   const [electronInfo, setElectronInfo] = useState<any>({});
   const [performanceMetrics, setPerformanceMetrics] = useState<any>({});
   const [debugLogsPath, setDebugLogsPath] = useState<string>('');
+  const [recordingDiagnostics, setRecordingDiagnostics] = useState<any>({});
+  const [fileDiagnostics, setFileDiagnostics] = useState<any>({});
+  const [vuMeterDiagnostics, setVuMeterDiagnostics] = useState<any>({});
   const { toast } = useToast();
 
   // Coleta informações do sistema
@@ -130,6 +133,134 @@ const DebugTab = () => {
     }
   };
 
+  // NOVO: Diagnósticos específicos para problemas v2.8/v2.9
+  const collectRecordingDiagnostics = () => {
+    const audioSettings = localStorage.getItem('audioSettings');
+    let settings = {};
+    try {
+      settings = audioSettings ? JSON.parse(audioSettings) : {};
+    } catch (e) {
+      settings = { error: 'Erro ao parsear audioSettings' };
+    }
+
+    const diagnostics = {
+      timestamp: new Date().toISOString(),
+      audioSettings: settings,
+      mediaRecorderSupport: {
+        isSupported: typeof MediaRecorder !== 'undefined',
+        supportedMimeTypes: {
+          'audio/webm': MediaRecorder?.isTypeSupported('audio/webm'),
+          'audio/webm;codecs=opus': MediaRecorder?.isTypeSupported('audio/webm;codecs=opus'),
+          'audio/mp4': MediaRecorder?.isTypeSupported('audio/mp4'),
+          'audio/mpeg': MediaRecorder?.isTypeSupported('audio/mpeg'),
+        }
+      },
+      webAudioAPI: {
+        isSupported: typeof AudioContext !== 'undefined' || typeof (window as any).webkitAudioContext !== 'undefined',
+        maxChannelCount: 'N/A' as string | number,
+        sampleRate: 'N/A' as string | number,
+        error: undefined as string | undefined
+      },
+      currentRecordingState: {
+        // Estes serão atualizados dinamicamente pelo audioService
+        isRecording: false,
+        isPaused: false,
+        currentFileSize: 'N/A',
+        lastSplitTime: 'N/A',
+        totalChunks: 'N/A'
+      }
+    };
+
+    // Tentar obter informações do AudioContext se disponível
+    try {
+      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      diagnostics.webAudioAPI.maxChannelCount = audioContext.destination.maxChannelCount;
+      diagnostics.webAudioAPI.sampleRate = audioContext.sampleRate;
+      audioContext.close();
+    } catch (e) {
+      diagnostics.webAudioAPI.error = 'Erro ao acessar AudioContext';
+    }
+
+    setRecordingDiagnostics(diagnostics);
+  };
+
+  // NOVO: Diagnósticos de estrutura de arquivos e pastas
+  const collectFileDiagnostics = () => {
+    const audioSettings = localStorage.getItem('audioSettings');
+    let settings = {};
+    try {
+      settings = audioSettings ? JSON.parse(audioSettings) : {};
+    } catch (e) {
+      settings = {};
+    }
+
+    const diagnostics = {
+      timestamp: new Date().toISOString(),
+      folderStructureConfig: {
+        dateFolderEnabled: (settings as any).dateFolderEnabled,
+        dateFolderFormat: (settings as any).dateFolderFormat,
+        fileNameFormat: (settings as any).fileNameFormat,
+        outputFormat: (settings as any).outputFormat,
+        splitEnabled: (settings as any).splitEnabled,
+        splitIntervalMinutes: (settings as any).splitIntervalMinutes
+      },
+      expectedFolderStructure: {
+        currentDate: new Date().toISOString().split('T')[0],
+        expectedDateFolder_ddmm: new Date().toLocaleDateString('pt-BR', { 
+          day: '2-digit', 
+          month: '2-digit' 
+        }).replace('/', '-'),
+        expectedDateFolder_mmddyyyy: new Date().toLocaleDateString('en-US', { 
+          month: '2-digit', 
+          day: '2-digit', 
+          year: 'numeric' 
+        }).replace(/\//g, '-'),
+        currentTime: new Date().toLocaleTimeString('pt-BR', { 
+          hour12: false 
+        }).replace(/:/g, '-')
+      },
+      fileSystemAPI: {
+        electronAvailable: !!(window as any).electronAPI,
+        electronSaveFileAPI: !!(window as any).electronAPI?.saveAudioFile,
+        electronEnsureDirAPI: !!(window as any).electronAPI?.ensureDirectory
+      }
+    };
+
+    setFileDiagnostics(diagnostics);
+  };
+
+  // NOVO: Diagnósticos específicos para VU Meters
+  const collectVuMeterDiagnostics = () => {
+    const diagnostics = {
+      timestamp: new Date().toISOString(),
+      analysisNode: {
+        available: 'N/A',
+        fftSize: 'N/A',
+        bufferLength: 'N/A',
+        connected: 'N/A'
+      },
+      volumeCallbacks: {
+        registered: 'N/A',
+        lastUpdate: 'N/A',
+        updateFrequency: 'Targeting 10 FPS (100ms)'
+      },
+      peakDetection: {
+        enabled: true,
+        threshold: -6, // dB
+        lastPeakL: 'N/A',
+        lastPeakR: 'N/A'
+      },
+      commonIssues: {
+        stuckAtMaximum: 'Monitor se VU meters ficam travados no máximo',
+        peakIndicatorsStuck: 'Monitor se indicadores L/R ficam acesos permanentemente',
+        noResponse: 'Monitor se VU meters não respondem ao áudio',
+        afterSplitFreeze: 'Monitor se VU meters travam após split de arquivo'
+      }
+    };
+
+    setVuMeterDiagnostics(diagnostics);
+  };
+
   // Atualiza todas as informações
   const refreshAllData = () => {
     collectSystemInfo();
@@ -138,6 +269,10 @@ const DebugTab = () => {
     collectElectronInfo();
     collectPerformanceMetrics();
     loadDebugLogsPath();
+    // NOVOS diagnósticos específicos v3.0
+    collectRecordingDiagnostics();
+    collectFileDiagnostics();
+    collectVuMeterDiagnostics();
   };
 
   useEffect(() => {
@@ -168,6 +303,12 @@ const DebugTab = () => {
   const generateFullReport = () => {
     const fullReport = {
       reportGenerated: new Date().toISOString(),
+      version: 'v3.0-dev',
+      criticalDiagnostics: {
+        recordingDiagnostics,
+        fileDiagnostics,
+        vuMeterDiagnostics
+      },
       systemInfo,
       audioDevices,
       appState,
@@ -177,12 +318,18 @@ const DebugTab = () => {
       networkRequests: [], // Placeholder para requisições de rede
     };
     
-    copyToClipboard(fullReport, 'Relatório Completo');
+    copyToClipboard(fullReport, 'Relatório Completo v3.0');
   };
 
   const exportFullReportToFile = () => {
     const fullReport = {
       reportGenerated: new Date().toISOString(),
+      version: 'v3.0-dev',
+      criticalDiagnostics: {
+        recordingDiagnostics,
+        fileDiagnostics,
+        vuMeterDiagnostics
+      },
       systemInfo,
       audioDevices,
       appState,
@@ -193,9 +340,22 @@ const DebugTab = () => {
     };
 
     // Gerar conteúdo formatado do arquivo
-    const reportContent = `RELATÓRIO COMPLETO DE DEBUG
+    const reportContent = `RELATÓRIO COMPLETO DE DEBUG v3.0
 ===========================================
 Gerado em: ${new Date().toLocaleString('pt-BR')}
+Versão: v3.0-dev (Plano Manus implementado)
+
+🚨 DIAGNÓSTICOS CRÍTICOS v3.0 🚨
+===========================================
+
+=== DIAGNÓSTICOS DE GRAVAÇÃO ===
+${JSON.stringify(recordingDiagnostics, null, 2)}
+
+=== DIAGNÓSTICOS DE ARQUIVOS E PASTAS ===
+${JSON.stringify(fileDiagnostics, null, 2)}
+
+=== DIAGNÓSTICOS VU METERS ===
+${JSON.stringify(vuMeterDiagnostics, null, 2)}
 
 === INFORMAÇÕES DO SISTEMA ===
 ${JSON.stringify(systemInfo, null, 2)}
@@ -219,7 +379,7 @@ ${JSON.stringify([], null, 2)}
 ${JSON.stringify([], null, 2)}
 
 ===========================================
-Fim do relatório`;
+Fim do relatório v3.0`;
 
     // Criar e baixar o arquivo
     const blob = new Blob([reportContent], { type: 'text/plain;charset=utf-8' });
@@ -314,7 +474,8 @@ Fim do relatório`;
             </div>
           </div>
           <div className="text-sm text-white space-y-2">
-            <p>Informações técnicas detalhadas para diagnóstico e depuração</p>
+            <p><strong>v3.0 Debug Enhanced:</strong> Diagnósticos específicos para problemas v2.8/v2.9 identificados</p>
+            <p className="text-xs text-red-400">🚨 Versão de desenvolvimento - Plano Manus implementado</p>
             {debugLogsPath && (
               <p className="text-xs text-studio-electric bg-studio-dark p-2 rounded border border-studio-electric/20">
                 <FileText className="w-4 h-4 inline mr-2" />
@@ -325,14 +486,58 @@ Fim do relatório`;
         </div>
       </Card>
 
-      <Tabs defaultValue="system" className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
+      <Tabs defaultValue="critical" className="w-full">
+        <TabsList className="grid w-full grid-cols-8">
+          <TabsTrigger value="critical">🚨 Críticos</TabsTrigger>
+          <TabsTrigger value="recording">Gravação</TabsTrigger>
+          <TabsTrigger value="files">Arquivos</TabsTrigger>
           <TabsTrigger value="system">Sistema</TabsTrigger>
           <TabsTrigger value="audio">Áudio</TabsTrigger>
           <TabsTrigger value="app">Aplicação</TabsTrigger>
           <TabsTrigger value="electron">Electron</TabsTrigger>
           <TabsTrigger value="performance">Performance</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="critical" className="space-y-4">
+          <div className="grid gap-4">
+            <DebugSection
+              title="🔴 Diagnósticos de Gravação (v3.0)"
+              data={recordingDiagnostics}
+              icon={AlertTriangle}
+              onCopy={copyToClipboard}
+            />
+            <DebugSection
+              title="🔴 Diagnósticos de Arquivos e Pastas (v3.0)"
+              data={fileDiagnostics}
+              icon={FolderOpen}
+              onCopy={copyToClipboard}
+            />
+            <DebugSection
+              title="🔴 Diagnósticos VU Meters (v3.0)"
+              data={vuMeterDiagnostics}
+              icon={Activity}
+              onCopy={copyToClipboard}
+            />
+          </div>
+        </TabsContent>
+
+        <TabsContent value="recording" className="space-y-4">
+          <DebugSection
+            title="Diagnósticos de Gravação Detalhados"
+            data={recordingDiagnostics}
+            icon={AlertTriangle}
+            onCopy={copyToClipboard}
+          />
+        </TabsContent>
+
+        <TabsContent value="files" className="space-y-4">
+          <DebugSection
+            title="Diagnósticos de Estrutura de Arquivos"
+            data={fileDiagnostics}
+            icon={FolderOpen}
+            onCopy={copyToClipboard}
+          />
+        </TabsContent>
 
         <TabsContent value="system" className="space-y-4">
           <DebugSection

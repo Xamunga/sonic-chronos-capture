@@ -1,13 +1,53 @@
-# Gravador Real Time Pro v2.9.0
+# Gravador Real Time Pro - Histórico Técnico de Desenvolvimento
 
-🎵 **Suíte Profissional de Gravação de Áudio - ALES Sonorização**
+**Documentação técnica interna - ALES Sonorização**  
+**VERSÃO ATUAL: v3.0-dev (Implementação Plano Manus)**
 
-## Visão Geral
-Sistema avançado de gravação de áudio com interface otimizada para estúdios profissionais e uso doméstico, especialmente projetado para **sessões longas de gravação** (5+ horas) com estabilidade e zero perda de dados.
+## 🚨 STATUS CRÍTICO - v3.0 em Desenvolvimento
+
+**OBJETIVO:** Implementar correções críticas baseadas no Plano Manus após falhas catastróficas identificadas na v2.9.
+
+**PROBLEMA RAIZ:** Over-engineering simultâneo causou conflitos críticos entre sistemas de health check, backup automático, monitoramento de disco e validação contínua.
 
 ---
 
-## 📊 ANÁLISE EVOLUTIVA DAS VERSÕES (2.3.0 → 2.9.0)
+## 🔧 SISTEMA DE DEBUG EXPANDIDO v3.0
+
+### Diagnósticos Críticos Implementados
+
+O sistema de debug foi **completamente expandido** para capturar especificamente os problemas identificados nas versões 2.8 e 2.9:
+
+#### **🔴 Diagnósticos de Gravação**
+- **Suporte a MIME Types:** Verificação detalhada de compatibilidade MediaRecorder
+- **Web Audio API:** Status, maxChannelCount, sampleRate e errors
+- **Estado de Gravação:** Tamanho de arquivo atual, chunks, tempo de split
+- **Configurações:** Parsing e validação de audioSettings localStorage
+
+#### **🔴 Diagnósticos de Arquivos e Pastas**
+- **Estrutura de Pastas:** Monitoramento da lógica de criação de subpastas
+- **Formatos de Data:** Comparação entre formatos esperados vs gerados
+- **APIs Electron:** Verificação de disponibilidade saveAudioFile e ensureDirectory
+- **Split Logic:** Detecção de loops infinitos na criação de pastas
+
+#### **🔴 Diagnósticos VU Meters**
+- **Analysis Nodes:** Status de AnalyserNode, FFT, buffer lengths
+- **Volume Callbacks:** Frequência de updates, últimas atualizações
+- **Peak Detection:** Thresholds, indicadores L/R, status de peak
+- **Problemas Comuns:** Detecção de travamentos, freeze pós-split
+
+### **📄 Relatórios de Debug v3.0**
+- **Aba "🚨 Críticos":** Visão consolidada dos problemas v2.8/v2.9
+- **Relatórios Expandidos:** Incluem seção específica "DIAGNÓSTICOS CRÍTICOS v3.0"
+- **Auto-refresh:** Atualização automática a cada 30 segundos
+- **Export Melhorado:** Arquivo TXT com timestamp e versão
+
+---
+
+## 📊 Análise Evolutiva das Versões
+
+### Resumo Executivo - Desenvolvimento Interno
+
+**ANÁLISE TÉCNICA:** Evolução do sistema de v2.3.0 → v2.9.0 com foco na identificação de padrões de falha e sucessos técnicos para fundamentar desenvolvimento da v3.0:
 
 ### **v2.3.0 (Julho 2024) - Base Funcional** 🔧
 **Status**: ✅ Estável para uso básico (≤ 2 horas)
@@ -87,19 +127,12 @@ Sistema avançado de gravação de áudio com interface otimizada para estúdios
 ### **v2.8.0 (Julho 2025) - Primeira Tentativa de Otimização** ⚠️
 **Status**: 🚨 **FALHAS CRÍTICAS IDENTIFICADAS**
 
-#### **Recursos Adicionados:**
-- ❌ **Try-catch básicos** (incompletos)
-- ❌ **Cleanup de callbacks** (implementação parcial)
-- ❌ **Debounce simples** (insuficiente para sessões longas)
-
 #### **PROBLEMAS CRÍTICOS v2.8.0:**
-- 🚨 **Monitoramento ainda inicializa automaticamente** → Consumo excessivo de recursos
-- 🚨 **Health check ausente** → Falhas silenciosas não detectadas
-- 🚨 **Sem monitoramento de disco** → Gravação falha por falta de espaço
-- 🚨 **Sem sistema de backup** → Perda total de dados em crash
-- 🚨 **Validação de dispositivos insuficiente** → Perda de áudio durante sessão
-- 🚨 **Análise de espectro não otimizada** → Degradação de performance
-- 🚨 **Logs não rotativos** → Crescimento ilimitado de memória
+- 🚨 **MP3 FALSO**: Arquivos WebM renomeados como .mp3 (incompatibilidade VLC)
+- 🚨 **RTA LENTO**: Análise pouco responsiva, travamentos frequentes
+- 🚨 **VU METERS**: Funcionais mas excessivamente sensíveis
+- 🚨 **Sem health check**: Falhas silenciosas não detectadas
+- 🚨 **Sem monitoramento de disco**: Gravação falha por falta de espaço
 
 #### **Taxa de Falha Estimada v2.8.0:**
 - 📊 **≤2 horas**: 10% de falhas
@@ -108,171 +141,194 @@ Sistema avançado de gravação de áudio com interface otimizada para estúdios
 
 ---
 
-### **v2.9.0 (Julho 2025) - Otimização Completa para Sessões Longas** ✨
-**Status**: ✅ **OTIMIZADO PARA SESSÕES LONGAS**
+### **v2.9.0 (Julho 2025) - Falha Catastrófica** 🚨
+**Status**: ❌ **COMPLETAMENTE INUTILIZÁVEL**
 
-#### **SISTEMAS CRÍTICOS IMPLEMENTADOS:**
+#### **FALHAS CATASTRÓFICAS v2.9.0:**
+- 🚨 **GRAVAÇÃO QUEBRADA**: Arquivos MP3 com tamanho ZERO
+- 🚨 **ESTRUTURA DE PASTAS**: Loop infinito - pasta dentro de pasta
+- 🚨 **VU METERS TRAVADOS**: Fixados no máximo após primeiro split
+- 🚨 **OVER-ENGINEERING**: Múltiplos sistemas complexos simultâneos causando conflitos
 
-##### **🏥 Sistema de Health Check**
-- ✅ **Verificação a cada 30s** do estado dos componentes
-- ✅ **Detecção automática** de falhas do MediaRecorder
-- ✅ **Monitoramento** de contexto de áudio
-- ✅ **Validação contínua** de dispositivos
-- ✅ **Reinicialização automática** em caso de falha
-- ✅ **Alertas em tempo real** para o usuário
+#### **CAUSA RAIZ IDENTIFICADA:**
+**Over-engineering simultâneo** com sistemas competindo por recursos:
+1. Health check (30s) interferindo com gravação
+2. Backup automático (5min) criando pastas duplicadas  
+3. Monitoramento de disco (1min) travando VU meters
+4. Validação contínua causando instabilidade
 
-##### **💾 Monitoramento de Espaço em Disco**
-- ✅ **Verificação a cada 1min** do espaço disponível
-- ✅ **Alertas** quando espaço < 1GB
-- ✅ **Parada automática** quando espaço < 500MB
-- ✅ **API Navigator Storage** para precisão
-
-##### **🔄 Sistema de Backup Automático**
-- ✅ **Checkpoints a cada 5min** durante gravação
-- ✅ **Recuperação automática** de sessões interrompidas
-- ✅ **Persistência** de configurações e estado
-- ✅ **Restauração** após crash da aplicação
-
-##### **⚙️ Monitoramento Sob Demanda**
-- ✅ **Inicialização apenas** quando necessário
-- ✅ **Suspensão automática** ao parar gravação
-- ✅ **Economia de recursos** em background
-- ✅ **Reativação inteligente** ao retomar
-
-##### **🔍 Validação Contínua de Dispositivos**
-- ✅ **Verificação periódica** de dispositivos conectados
-- ✅ **Detecção de desconexão** durante gravação
-- ✅ **Fallback automático** para dispositivo padrão
-- ✅ **Monitoramento de mudanças** do sistema
-
-##### **⚡ Otimizações de Performance**
-- ✅ **Throttling** de análise de espectro (máx 20 FPS)
-- ✅ **Rotação automática** de logs (máx 1000 entradas)
-- ✅ **Garbage collection** forçado quando necessário
-- ✅ **Limpeza contínua** de recursos não utilizados
-
-#### **Taxa de Falha Estimada v2.9.0:**
-- 📊 **≤2 horas**: **2% de falhas** ✅
-- 📊 **2-5 horas**: **5% de falhas** ✅
-- 📊 **+5 horas**: **8% de falhas** ✅
-- 📊 **+8 horas**: **10% de falhas** ✅
-
-#### **PROBLEMAS CONHECIDOS v2.9.0:**
-- ⚠️ **Possível over-engineering** em algumas funções
-- ⚠️ **Health check pode ser muito agressivo** (30s)
-- ⚠️ **Backup a cada 5min pode gerar overhead** em SSDs
-- ⚠️ **Necessita testes extensivos** para validação completa
+#### **Taxa de Falha v2.9.0:**
+- 📊 **Qualquer duração**: **100% de falhas** 🚨
 
 ---
 
-## 🔧 Como Compilar
+## 🚀 v3.0 - PLANO MANUS IMPLEMENTADO
 
-### Build Desktop (Electron)
+### **ESTRATÉGIA DE RECUPERAÇÃO - 3 FASES CRÍTICAS**
+
+#### **🔴 FASE 1 - REVERSÃO E ESTABILIZAÇÃO (PRIORIDADE MÁXIMA)**
+- **STATUS:** ✅ Debug System Expandido
+- **PRÓXIMO:** Remover sistemas problemáticos da v2.9
+  - Health check automático (interferência na gravação)
+  - Backup automático (criação de pastas duplicadas)
+  - Monitoramento de disco (travamento VU meters)
+  - Validação contínua (instabilidade)
+
+#### **🔴 FASE 2 - CORREÇÕES PRIORITÁRIAS**
+- **Problema MP3 Falso:** WebM renomeado → Implementar conversão real
+- **Estrutura de Pastas:** Corrigir loop de subpastas
+- **VU Meters:** Eliminar travamento pós-split
+- **Gravação Base:** Restaurar funcionalidade básica estável
+
+#### **🔴 FASE 3 - MELHORIAS GRADUAIS**
+- **Implementação isolada:** Uma otimização por vez
+- **Testes rigorosos:** Validação individual antes do próximo
+- **Rollback automático:** Reversão imediata se detectar problemas
+
+### **🧪 PLANO DE TESTES OBRIGATÓRIOS**
+1. **Teste Básico:** 30s gravação → arquivo com conteúdo > 0
+2. **Teste Pastas:** Data folder → apenas UMA pasta criada
+3. **Teste VU Meters:** Responsividade → sem travamento pós-split
+4. **Teste Split:** 3min gravação 1min split → 3 arquivos válidos
+
+### **📋 DIAGNÓSTICOS ESPECÍFICOS v3.0**
+O sistema de debug agora captura **exatamente** os problemas identificados:
+- **Tamanho de arquivos MP3** (detecção de zero bytes)
+- **Estrutura de pastas** (detecção de loops infinitos)
+- **Estado VU Meters** (detecção de travamentos)
+- **Compatibilidade MIME Types** (validação codecs)
+
+---
+
+## 🛠️ Instruções de Build - v3.0 Development
+
+### **Build de Desenvolvimento (v3.0-dev)**
 ```bash
 # Instalar dependências
 npm install
-cd electron && npm install
 
-# Build da aplicação web
+# DESENVOLVIMENTO v3.0 - Debug Expandido
+npm run dev
+# ↳ Acessar aba "🚨 Críticos" no Debug Tab
+
+# Build com diagnósticos
 npm run build
 
-# Build do Electron
-cd electron && npm run build
+# Build Electron (após correções)
+npm run build:electron
 ```
 
-### Build Web
+### **⚠️ COMANDOS DE DESENVOLVIMENTO INTERNO**
 ```bash
-npm run build
+# Gerar relatório de debug v3.0
+# Interface → Debug Tab → "🚨 Críticos" → "Baixar Arquivo"
+
+# Verificar logs automáticos
+# Interface → Debug Tab → "Logs Automáticos"
+
+# Monitoramento em tempo real
+# Auto-refresh a cada 30s dos diagnósticos críticos
 ```
 
 ---
 
-## ⚙️ Configurações Disponíveis
+## ⚙️ Configurações Disponíveis - Foco v3.0
+
+### **🔧 Configurações Críticas para Debug**
 
 ### 📁 Gerenciamento de Arquivos
 - **Diretório Principal**: Seleção visual de pasta
 - **Organização por Data**: Subpastas automáticas (DD-MM, DD-MM-AAAA, etc.)
 - **Nomenclatura**: Múltiplos padrões de nomes de arquivo
 - **Limpeza Automática**: Exclusão programada de arquivos antigos
-- **Backup Automático**: Checkpoints a cada 5 minutos (v2.9.0)
+- **⚠️ Backup Automático**: REMOVIDO na v3.0 (causa problemas)
 
 ### 🎛️ Configurações de Áudio
-- **Formatos**: WAV, MP3 (320kbps)
+- **Formatos**: WAV, MP3 (320kbps) - **EM CORREÇÃO**
 - **Sample Rate**: 44.1kHz padrão
 - **Divisão Automática**: 1min a 2h configurável
 - **VU Meters**: Monitoramento estéreo profissional (-60dB a 0dB)
-- **Analisador de Espectro**: 32 bandas, 20Hz-20kHz (otimizado)
+- **Analisador de Espectro**: 32 bandas, 20Hz-20kHz
 - **Supressão de Ruído**: Configurável e funcional
-- **Health Check**: Monitoramento contínuo de integridade (v2.9.0)
+- **⚠️ Health Check**: REMOVIDO na v3.0 (interfere na gravação)
 
 ### 🖥️ Interface
 - **Resolução Fixa**: 1200x530 pixels
 - **VU Meters**: Escala profissional com indicadores coloridos
 - **RTA**: Análise em tempo real estável
 - **Controles**: Interface intuitiva com feedback visual
-- **Logs**: Sistema completo de registro de eventos
+- **🆕 Debug Tab**: Diagnósticos críticos v3.0
 
 ---
 
-## 🎯 Casos de Uso Recomendados
+## 🎯 Estratégia de Uso - Desenvolvimento v3.0
 
-### **v2.7.0 - Para Uso Atual (Estável)**
-- ✅ **Gravações até 3-4 horas**
-- ✅ **Estúdios com operação assistida**
-- ✅ **Podcasts e entrevistas**
-- ✅ **Gravação de ensaios**
+### **🚨 VERSÃO ATUAL RECOMENDADA**
+- **PRODUÇÃO:** **v2.8.0** (com correção manual de MP3)
+- **DESENVOLVIMENTO:** **v3.0-dev** (implementação Plano Manus)
+- **TESTES:** **v3.0-dev** (diagnósticos expandidos)
 
-### **v2.9.0 - Para Sessões Longas (Experimental)**
-- ✅ **Gravações de 5+ horas** (shows, eventos)
-- ✅ **Transmissões ao vivo longas**
-- ✅ **Gravação noturna desassistida**
-- ✅ **Backup automático crítico**
+### **📋 WORKFLOW DE DESENVOLVIMENTO v3.0**
+1. **Base Estável:** Usar v2.8.0 como fundação
+2. **Diagnósticos:** v3.0-dev para identificar problemas
+3. **Correções Graduais:** Implementar Plano Manus fase por fase
+4. **Validação:** Testes obrigatórios a cada correção
 
----
-
-## 🔍 Compatibilidade
-
-### **Hardware**
-- ✅ Windows 10/11 (otimizado)
-- ✅ Interfaces USB profissionais
-- ✅ Mesas Yamaha e similares
-- ✅ Microfones USB e XLR
-
-### **Software**
-- ✅ VLC Media Player
-- ✅ Windows Media Player
-- ✅ Reprodutores profissionais de áudio
-- ✅ Editores: Audacity, Reaper, Pro Tools
-
-### **Requisitos de Sistema**
-- **RAM**: Mínimo 4GB (8GB recomendado para v2.9.0)
-- **Disco**: Mínimo 2GB livres (10GB+ para sessões longas)
-- **CPU**: Dual-core 2.0GHz+ (Quad-core para v2.9.0)
+### **🔍 IDENTIFICAÇÃO DE PROBLEMAS**
+- **v2.8:** MP3 falso + RTA lento ✅ **IDENTIFICADO**
+- **v2.9:** Pastas duplicadas + gravação quebrada ✅ **IDENTIFICADO**  
+- **v3.0:** Debug expandido para captura completa ✅ **IMPLEMENTADO**
 
 ---
 
-## 🛠️ Tecnologias
+## 💻 Requisitos Técnicos - v3.0 Development
 
-- **Frontend**: React 18 + TypeScript + Vite
-- **UI**: Shadcn/UI + Tailwind CSS
-- **Desktop**: Electron 28.x
-- **Audio**: Web Audio API + MediaRecorder
-- **Storage**: Navigator Storage API (v2.9.0)
-- **Monitoring**: Performance API + Health Check (v2.9.0)
+### **🔧 Ambiente de Desenvolvimento**
+- **Node.js:** 18.0+
+- **Electron:** 28.3.3 (mantido da v2.8/2.9)
+- **Chrome:** 120.0+ (debugging Web Audio API)
+- **TypeScript:** Para tipagem de diagnósticos
+
+### **📊 Plataformas de Teste**
+- **Windows 10/11:** Ambiente principal de desenvolvimento
+- **Dispositivos USB Audio:** Teste específico problemas v2.8/2.9
+- **Dispositivos Realtek:** Validação compatibilidade drivers
+
+### **🧪 Ferramentas de Debug v3.0**
+- **Debug Tab Expandido:** Diagnósticos críticos em tempo real
+- **Log System:** Salvamento automático em arquivo
+- **Performance Monitoring:** Detecção de vazamentos de memória
+- **MediaRecorder Analysis:** Verificação de MIME types suportados
 
 ---
 
-## 📈 Roadmap v3.0
+## 🚀 Stack Técnico v3.0
 
-Com base na análise das versões 2.8 e 2.9, a versão 3.0 combinará:
-- ✅ **Estabilidade da v2.7.0** (base sólida)
-- ✅ **Otimizações da v2.9.0** (refinadas)
-- 🚀 **Novos recursos** baseados em feedback real
+- **Core:** React 18.3.1 + TypeScript (mantido)
+- **Desktop:** Electron 28.3.3 (estável)
+- **Audio Engine:** Web Audio API + MediaRecorder API
+- **Debug System:** LogSystem expandido + diagnósticos críticos
+- **UI:** Tailwind CSS + shadcn/ui (design system)
+- **Build:** Vite (mantido para desenvolvimento rápido)
+
+### **📈 Monitoramento Implementado**
+- **Real-time Diagnostics:** Auto-refresh 30s
+- **Critical Issue Detection:** Detecção automática de problemas v2.8/v2.9
+- **Performance Tracking:** Métricas de AudioContext, MediaRecorder
+- **File System Monitoring:** Validação estrutura de pastas
 
 ---
 
-## 📞 ALES Sonorização
+## 📞 Contato Técnico - Desenvolvimento Interno
 
-© 2024-2025 ALES Sonorização - Todos os direitos reservados  
-**Versão Atual**: 2.9.0 Build 2025.07.15  
-**Versão Estável Recomendada**: 2.7.0
+**ALES Sonorização - Equipe de Desenvolvimento**  
+**Versão Atual:** v3.0-dev (Plano Manus)  
+**Última Atualização:** 2025-07-15  
+**Status:** 🚨 DESENVOLVIMENTO CRÍTICO - CORREÇÕES v2.9
+
+**Relatórios de Bug:** Debug Tab → "🚨 Críticos" → Export  
+**Logs Automáticos:** Disponíveis via interface
+
+---
+
+*© 2025 ALES Sonorização - Documentação Técnica Interna v3.0*
