@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card } from '@/components/ui/card';
 import { audioService } from '@/services/electronAudio';
 
@@ -9,42 +9,37 @@ const VUMeters = () => {
   const [peakLeft, setPeakLeft] = useState(false);
   const [peakRight, setPeakRight] = useState(false);
 
-  useEffect(() => {
-    // VU Meters só funcionam durante gravação para evitar confusão do operador
-    const handleVolumeUpdate = (left: number, right: number, peak: boolean) => {
-      // Só mostrar atividade se estiver gravando
-      if (audioService.isCurrentlyRecording()) {
-        setLeftLevel(left);
-        setRightLevel(right);
-        setPeakLeft(peak || left > -6);
-        setPeakRight(peak || right > -6);
-      } else {
-        // Zerar VU Meters quando não está gravando
-        setLeftLevel(-60);
-        setRightLevel(-60);
-        setPeakLeft(false);
-        setPeakRight(false);
-      }
-    };
+  // Callback estável com useCallback
+  const handleVolumeUpdate = useCallback((left: number, right: number, peak: boolean) => {
+    // Só mostrar atividade se estiver gravando
+    if (audioService.isCurrentlyRecording()) {
+      setLeftLevel(left);
+      setRightLevel(right);
+      // Lógica de peak clara e consistente
+      setPeakLeft(peak || left > -6);
+      setPeakRight(peak || right > -6);
+    } else {
+      // Zerar quando não está gravando
+      setLeftLevel(-60);
+      setRightLevel(-60);
+      setPeakLeft(false);
+      setPeakRight(false);
+    }
+  }, []);
 
-    // Registrar callback no audioService
+  useEffect(() => {
+    // Registrar callback
     audioService.onVolumeUpdate(handleVolumeUpdate);
 
-    // Verificar estado de gravação periodicamente
-    const statusInterval = setInterval(() => {
-      if (!audioService.isCurrentlyRecording()) {
-        setLeftLevel(-60);
-        setRightLevel(-60);
-        setPeakLeft(false);
-        setPeakRight(false);
-      }
-    }, 100);
-
+    // CRÍTICO: Cleanup obrigatório
     return () => {
-      audioService.removeVolumeCallback(handleVolumeUpdate);
-      clearInterval(statusInterval);
+      try {
+        audioService.removeVolumeCallback(handleVolumeUpdate);
+      } catch (error) {
+        console.error('❌ Erro ao remover callback VU:', error);
+      }
     };
-  }, []);
+  }, [handleVolumeUpdate]);
 
   // CORRIGIDO: VUMeter com escala dB profissional
   const VUMeter = ({ level, peak, label }: { level: number; peak: boolean; label: string }) => {

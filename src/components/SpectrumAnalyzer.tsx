@@ -1,36 +1,35 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card } from '@/components/ui/card';
 import { audioService } from '@/services/electronAudio';
 
 const SpectrumAnalyzer = () => {
   const [spectrum, setSpectrum] = useState<number[]>(Array(32).fill(0));
 
-  useEffect(() => {
-    const handleSpectrumUpdate = (data: number[]) => {
+  // Callback estável
+  const handleSpectrumUpdate = useCallback((data: number[]) => {
+    // Só mostrar dados reais durante gravação
+    if (audioService.isCurrentlyRecording() && data && data.length > 0) {
       setSpectrum(data);
-    };
+    } else {
+      // Zerar quando não está gravando
+      setSpectrum(Array(32).fill(0));
+    }
+  }, []);
 
-    // Registrar callback no audioService
+  useEffect(() => {
+    // Registrar callback
     audioService.onSpectrumUpdate(handleSpectrumUpdate);
 
-    // Fallback para mostrar atividade quando gravando mas sem muito sinal
-    const fallbackInterval = setInterval(() => {
-      if (audioService.isCurrentlyRecording() && !audioService.hasAudioSignal()) {
-        // Mostrar atividade mínima para indicar que está funcionando
-        const minSpectrum = Array(32).fill(0).map(() => Math.random() * 3); // 0-3% de atividade
-        setSpectrum(minSpectrum);
-      } else if (!audioService.isCurrentlyRecording()) {
-        // Zerar quando não está gravando
-        setSpectrum(Array(32).fill(0));
-      }
-    }, 50);
-
+    // CRÍTICO: Cleanup obrigatório
     return () => {
-      audioService.removeSpectrumCallback(handleSpectrumUpdate);
-      clearInterval(fallbackInterval);
+      try {
+        audioService.removeSpectrumCallback(handleSpectrumUpdate);
+      } catch (error) {
+        console.error('❌ Erro ao remover callback spectrum:', error);
+      }
     };
-  }, []);
+  }, [handleSpectrumUpdate]);
 
   return (
     <Card className="bg-gradient-to-br from-studio-charcoal to-studio-slate border-studio-electric/30">

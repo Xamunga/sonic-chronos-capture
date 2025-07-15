@@ -2,6 +2,18 @@
 import { toast } from "sonner";
 import { logSystem } from '@/utils/logSystem';
 
+// NOVO: Debounce utility para otimização de performance
+function debounce<T extends (...args: any[]) => any>(
+  func: T,
+  wait: number
+): (...args: Parameters<T>) => void {
+  let timeout: NodeJS.Timeout;
+  return (...args: Parameters<T>) => {
+    clearTimeout(timeout);
+    timeout = setTimeout(() => func(...args), wait);
+  };
+}
+
 // Interface para funcionalidades de áudio nativas no Electron
 export class ElectronAudioService {
   private mediaRecorder: MediaRecorder | null = null;
@@ -40,50 +52,81 @@ export class ElectronAudioService {
 
   constructor() {
     this.loadSettings();
-    // CRÍTICO: Iniciar monitoramento independente ao carregar
-    this.initializeMonitoring();
+    // NÃO inicializar monitoramento automaticamente
+    console.log('🎛️ ElectronAudioService inicializado (monitoramento sob demanda)');
   }
 
   private loadSettings() {
-    const settings = localStorage.getItem('audioSettings');
-    if (settings) {
-      const parsed = JSON.parse(settings);
-      this.outputFormat = parsed.outputFormat || 'wav';
-      this.mp3Bitrate = parsed.mp3Bitrate || 320;
-      this.splitEnabled = parsed.splitEnabled || false;
-      this.splitIntervalMinutes = parsed.splitIntervalMinutes || 5;
-      this.dateFolderEnabled = parsed.dateFolderEnabled || false;
-      this.dateFolderFormat = parsed.dateFolderFormat || 'dd-mm';
-      this.fileNameFormat = parsed.fileNameFormat || 'timestamp';
-      this.noiseSuppressionEnabled = parsed.noiseSuppressionEnabled || false;
-      this.noiseThreshold = parsed.noiseThreshold || -35;
-      this.noiseGateAttack = parsed.noiseGateAttack || 50;
-      this.noiseGateRelease = parsed.noiseGateRelease || 200;
-      
-      console.log('📋 Configurações carregadas:', {
-        dateFolderEnabled: this.dateFolderEnabled,
-        dateFolderFormat: this.dateFolderFormat,
-        splitEnabled: this.splitEnabled,
-        fileNameFormat: this.fileNameFormat
-      });
+    try {
+      const settings = localStorage.getItem('audioSettings');
+      if (settings) {
+        const parsed = JSON.parse(settings);
+        
+        // Validar tipos antes de usar
+        this.outputFormat = typeof parsed.outputFormat === 'string' ? parsed.outputFormat : 'wav';
+        this.mp3Bitrate = typeof parsed.mp3Bitrate === 'number' ? parsed.mp3Bitrate : 320;
+        this.splitEnabled = typeof parsed.splitEnabled === 'boolean' ? parsed.splitEnabled : false;
+        this.splitIntervalMinutes = typeof parsed.splitIntervalMinutes === 'number' ? parsed.splitIntervalMinutes : 5;
+        this.dateFolderEnabled = typeof parsed.dateFolderEnabled === 'boolean' ? parsed.dateFolderEnabled : false;
+        this.dateFolderFormat = typeof parsed.dateFolderFormat === 'string' ? parsed.dateFolderFormat : 'dd-mm';
+        this.fileNameFormat = typeof parsed.fileNameFormat === 'string' ? parsed.fileNameFormat : 'timestamp';
+        this.inputDevice = typeof parsed.inputDevice === 'string' ? parsed.inputDevice : 'default';
+        this.noiseSuppressionEnabled = typeof parsed.noiseSuppressionEnabled === 'boolean' ? parsed.noiseSuppressionEnabled : false;
+        this.noiseThreshold = typeof parsed.noiseThreshold === 'number' ? parsed.noiseThreshold : -35;
+        this.noiseGateAttack = typeof parsed.noiseGateAttack === 'number' ? parsed.noiseGateAttack : 50;
+        this.noiseGateRelease = typeof parsed.noiseGateRelease === 'number' ? parsed.noiseGateRelease : 200;
+        
+        console.log('✅ Configurações carregadas com validação');
+      }
+    } catch (error) {
+      console.error('❌ Erro ao carregar configurações, usando padrões:', error);
+      logSystem.error(`Erro ao carregar configurações: ${error}`, 'Settings');
+      // Usar valores padrão em caso de erro
+      this.resetToDefaults();
     }
   }
 
+  private resetToDefaults() {
+    this.outputFormat = 'wav';
+    this.mp3Bitrate = 320;
+    this.splitEnabled = false;
+    this.splitIntervalMinutes = 5;
+    this.dateFolderEnabled = false;
+    this.dateFolderFormat = 'dd-mm';
+    this.fileNameFormat = 'timestamp';
+    this.inputDevice = 'default';
+    this.noiseSuppressionEnabled = false;
+    this.noiseThreshold = -35;
+    this.noiseGateAttack = 50;
+    this.noiseGateRelease = 200;
+  }
+
   saveSettings() {
-    const settings = {
-      outputFormat: this.outputFormat,
-      mp3Bitrate: this.mp3Bitrate,
-      splitEnabled: this.splitEnabled,
-      splitIntervalMinutes: this.splitIntervalMinutes,
-      dateFolderEnabled: this.dateFolderEnabled,
-      dateFolderFormat: this.dateFolderFormat,
-      fileNameFormat: this.fileNameFormat,
-      noiseSuppressionEnabled: this.noiseSuppressionEnabled,
-      noiseThreshold: this.noiseThreshold,
-      noiseGateAttack: this.noiseGateAttack,
-      noiseGateRelease: this.noiseGateRelease
-    };
-    localStorage.setItem('audioSettings', JSON.stringify(settings));
+    try {
+      const settings = {
+        outputFormat: this.outputFormat,
+        mp3Bitrate: this.mp3Bitrate,
+        splitEnabled: this.splitEnabled,
+        splitIntervalMinutes: this.splitIntervalMinutes,
+        dateFolderEnabled: this.dateFolderEnabled,
+        dateFolderFormat: this.dateFolderFormat,
+        fileNameFormat: this.fileNameFormat,
+        inputDevice: this.inputDevice, // IMPORTANTE: Incluir inputDevice
+        noiseSuppressionEnabled: this.noiseSuppressionEnabled,
+        noiseThreshold: this.noiseThreshold,
+        noiseGateAttack: this.noiseGateAttack,
+        noiseGateRelease: this.noiseGateRelease
+      };
+      
+      localStorage.setItem('audioSettings', JSON.stringify(settings));
+      console.log('✅ Configurações salvas com sucesso');
+      logSystem.info('Configurações salvas', 'Settings');
+      
+    } catch (error) {
+      console.error('❌ Erro ao salvar configurações:', error);
+      logSystem.error(`Erro ao salvar configurações: ${error}`, 'Settings');
+      toast.error('Erro ao salvar configurações');
+    }
   }
 
   // MÉTODO CORRIGIDO: requestMicrophonePermission
@@ -123,6 +166,11 @@ export class ElectronAudioService {
         return false;
       }
 
+      // Inicializar monitoramento apenas ao iniciar gravação
+      if (!this.monitoringContext) {
+        await this.initializeMonitoring();
+      }
+
       // Carregar configurações mais recentes antes de iniciar
       this.loadSettings();
       
@@ -156,21 +204,19 @@ export class ElectronAudioService {
       this.outputPath = finalOutputPath;
       console.log(`Gravação será salva em: ${this.outputPath}`);
 
+      // Validar dispositivo antes de usar
+      const isValidDevice = await this.validateAudioDevice(this.inputDevice);
+      if (!isValidDevice) {
+        console.warn('⚠️ Dispositivo inválido, usando padrão');
+        this.inputDevice = 'default';
+      }
+
       const hasPermission = await this.requestMicrophonePermission();
       if (!hasPermission) return false;
 
       console.log('🎤 INICIANDO GRAVAÇÃO');
-      console.log('📊 Configurações de áudio:', {
-        echoCancellation: false,
-        noiseSuppression: false,
-        autoGainControl: false,
-        sampleRate: 44100,
-        channelCount: 2,
-        inputDevice: this.inputDevice
-      });
-      console.log('🔊 Dispositivo selecionado:', this.inputDevice);
 
-      // CORRIGIDO: Usar mesmas configurações do monitoramento
+      // Usar mesmo stream do monitoramento para gravação
       const constraints: MediaStreamConstraints = {
         audio: {
           deviceId: this.inputDevice ? { exact: this.inputDevice } : undefined,
@@ -255,20 +301,48 @@ export class ElectronAudioService {
     }
   }
 
-  stopRecording(): void {
-    if (this.mediaRecorder && this.isRecording) {
-      this.mediaRecorder.stop();
-      this.mediaRecorder.stream.getTracks().forEach(track => track.stop());
-      this.isRecording = false;
-      this.isPaused = false;
-      this.currentSplitNumber = 1;
-      
-      // Limpar contexto de áudio
-      this.cleanupAudioAnalysis();
-      
-      console.log('⏹️ Gravação finalizada com sucesso');
-      logSystem.info('Gravação finalizada', 'Recording');
-      toast.success('Gravação finalizada');
+  async stopRecording(): Promise<void> {
+    try {
+      if (this.mediaRecorder && this.isRecording) {
+        this.mediaRecorder.stop();
+        this.mediaRecorder.stream.getTracks().forEach(track => track.stop());
+        this.isRecording = false;
+        this.isPaused = false;
+        this.currentSplitNumber = 1;
+        
+        // Limpar contexto de áudio
+        this.cleanupAudioAnalysis();
+        
+        // IMPORTANTE: Suspender monitoramento para economizar recursos
+        if (this.monitoringContext && this.monitoringContext.state === 'running') {
+          await this.monitoringContext.suspend();
+          console.log('⏸️ Monitoramento suspenso para economizar recursos');
+        }
+        
+        // Zerar VU meters
+        this.volumeCallbacks.forEach(callback => {
+          try {
+            callback(-60, -60, false);
+          } catch (error) {
+            console.error('❌ Erro ao zerar VU:', error);
+          }
+        });
+        
+        // Zerar spectrum analyzer
+        this.spectrumCallbacks.forEach(callback => {
+          try {
+            callback(Array(32).fill(0));
+          } catch (error) {
+            console.error('❌ Erro ao zerar spectrum:', error);
+          }
+        });
+        
+        console.log('⏹️ Gravação finalizada com sucesso');
+        logSystem.info('Gravação finalizada', 'Recording');
+        toast.success('Gravação finalizada');
+      }
+    } catch (error) {
+      console.error('❌ Erro ao parar gravação:', error);
     }
   }
 
@@ -377,6 +451,21 @@ export class ElectronAudioService {
     this.restartMonitoring();
     
     console.log(`🎤 Dispositivo alterado para: ${deviceId}`);
+  }
+
+  // NOVO: Validação de dispositivos de áudio
+  private async validateAudioDevice(deviceId: string): Promise<boolean> {
+    try {
+      if (deviceId === 'default') return true;
+      
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const audioInputs = devices.filter(device => device.kind === 'audioinput');
+      
+      return audioInputs.some(device => device.deviceId === deviceId);
+    } catch (error) {
+      console.error('❌ Erro ao validar dispositivo:', error);
+      return false;
+    }
   }
 
   setOutputFormat(format: string): void {
