@@ -1,20 +1,9 @@
-
 import { toast } from "sonner";
 import { logSystem } from '@/utils/logSystem';
 
-// NOVO: Debounce utility para otimização de performance
-function debounce<T extends (...args: any[]) => any>(
-  func: T,
-  wait: number
-): (...args: Parameters<T>) => void {
-  let timeout: NodeJS.Timeout;
-  return (...args: Parameters<T>) => {
-    clearTimeout(timeout);
-    timeout = setTimeout(() => func(...args), wait);
-  };
-}
+// VERSÃO 3.0 - BASE ESTÁVEL SIMPLIFICADA
+// Implementação baseada no plano Manus para correção crítica dos problemas da v2.9
 
-// Interface para funcionalidades de áudio nativas no Electron
 export class ElectronAudioService {
   private mediaRecorder: MediaRecorder | null = null;
   private audioChunks: Blob[] = [];
@@ -23,313 +12,30 @@ export class ElectronAudioService {
   private outputPath = '';
   private inputDevice = 'default';
   private outputFormat = 'wav';
-  private mp3Bitrate = 320;
-  private sampleRate = 44100;
+  private mp3Bitrate = 128;
   private splitEnabled = false;
   private splitIntervalMinutes = 5;
   private dateFolderEnabled = false;
   private dateFolderFormat = 'dd-mm';
-  private fileNameFormat = 'timestamp';
+  private fileNameFormat = 'hh-mm-ss-seq';
   private recordingStartTime = 0;
   private currentSplitNumber = 1;
-  private audioContext: AudioContext | null = null;
-  private analyser: AnalyserNode | null = null;
-  private noiseGateNode: AudioWorkletNode | null = null;
-  private volumeCallbacks: ((left: number, right: number, peak: boolean) => void)[] = [];
-  private spectrumCallbacks: ((data: number[]) => void)[] = [];
-  private hasSignal = false;
+  private stream: MediaStream | null = null;
   
-  // NOVO: Sistema de monitoramento independente
-  private monitoringStream: MediaStream | null = null;
+  // Sistema básico de análise
   private monitoringContext: AudioContext | null = null;
   private monitoringAnalyser: AnalyserNode | null = null;
-  
-  // NOVO: Sistemas críticos para sessões longas
-  private healthCheckInterval: NodeJS.Timeout | null = null;
-  private backupInterval: NodeJS.Timeout | null = null;
-  private diskSpaceInterval: NodeJS.Timeout | null = null;
-  private lastHealthCheck: number = 0;
-  private backupIntervalMinutes: number = 5; // Backup a cada 5 minutos
-  private minDiskSpaceGB: number = 1; // Mínimo 1GB livre
+  private volumeCallbacks: ((left: number, right: number, peakL: boolean, peakR: boolean) => void)[] = [];
   
   // Configurações do Noise Gate
   private noiseSuppressionEnabled = false;
-  private noiseThreshold = -35; // dB
-  private noiseGateAttack = 50; // ms
-  private noiseGateRelease = 200; // ms
+  private noiseThreshold = -35;
+  private noiseGateAttack = 50;
+  private noiseGateRelease = 200;
 
   constructor() {
     this.loadSettings();
-    this.setupDeviceChangeMonitoring();
-    // NÃO inicializar monitoramento automaticamente
-    console.log('🎛️ ElectronAudioService inicializado (monitoramento sob demanda)');
-  }
-
-  // CRÍTICO: Sistema de monitoramento de mudanças de dispositivos
-  private setupDeviceChangeMonitoring(): void {
-    if (navigator.mediaDevices && navigator.mediaDevices.addEventListener) {
-      navigator.mediaDevices.addEventListener('devicechange', () => {
-        console.log('🔄 Mudança de dispositivos detectada');
-        
-        if (this.isRecording) {
-          // Verificar se dispositivo atual ainda existe
-          this.validateAudioDevice(this.inputDevice).then(isValid => {
-            if (!isValid) {
-              console.error('🚨 Dispositivo de gravação desconectado durante sessão!');
-              toast.error('AVISO: Dispositivo de áudio desconectado!');
-              logSystem.error('Dispositivo desconectado durante gravação', 'DeviceChange');
-            }
-          });
-        }
-      });
-    }
-  }
-
-  // CRÍTICO: Sistema de health check para sessões longas
-  private startHealthCheck(): void {
-    this.healthCheckInterval = setInterval(() => {
-      this.performHealthCheck();
-    }, 30000); // Verificar a cada 30 segundos
-    
-    console.log('🏥 Health check iniciado para sessão longa');
-    logSystem.info('Health check iniciado', 'HealthCheck');
-  }
-
-  private stopHealthCheck(): void {
-    if (this.healthCheckInterval) {
-      clearInterval(this.healthCheckInterval);
-      this.healthCheckInterval = null;
-      console.log('🏥 Health check parado');
-      logSystem.info('Health check parado', 'HealthCheck');
-    }
-  }
-
-  private async performHealthCheck(): Promise<void> {
-    try {
-      this.lastHealthCheck = Date.now();
-      
-      // 1. Verificar se MediaRecorder ainda está ativo
-      if (this.isRecording && (!this.mediaRecorder || this.mediaRecorder.state !== 'recording')) {
-        console.error('🚨 CRÍTICO: MediaRecorder parou inesperadamente!');
-        logSystem.error('MediaRecorder parou durante gravação', 'HealthCheck');
-        toast.error('ERRO CRÍTICO: Gravação interrompida! Reiniciando...');
-        
-        // Tentar reiniciar gravação automaticamente
-        await this.restartRecording();
-        return;
-      }
-
-      // 2. Verificar contexto de áudio
-      if (this.audioContext && this.audioContext.state === 'suspended') {
-        console.warn('⚠️ Contexto de áudio suspenso, reativando...');
-        await this.audioContext.resume();
-      }
-
-      // 3. Verificar dispositivo de áudio
-      const isDeviceValid = await this.validateAudioDevice(this.inputDevice);
-      if (!isDeviceValid) {
-        console.error('🚨 CRÍTICO: Dispositivo de áudio desconectado!');
-        logSystem.error('Dispositivo de áudio perdido', 'HealthCheck');
-        toast.error('AVISO: Dispositivo de áudio desconectado!');
-        
-        // Tentar usar dispositivo padrão
-        this.inputDevice = 'default';
-        await this.restartRecording();
-        return;
-      }
-
-      // 4. Verificar uso de memória
-      if ((performance as any).memory) {
-        const memoryUsage = (performance as any).memory.usedJSHeapSize / 1024 / 1024; // MB
-        if (memoryUsage > 500) { // Mais de 500MB
-          console.warn(`⚠️ Alto uso de memória: ${memoryUsage.toFixed(2)}MB`);
-          logSystem.error(`Alto uso de memória: ${memoryUsage.toFixed(2)}MB`, 'HealthCheck');
-          
-          // Forçar garbage collection se disponível
-          if ((window as any).gc) {
-            (window as any).gc();
-          }
-        }
-      }
-
-      console.log('✅ Health check OK');
-      
-    } catch (error) {
-      console.error('❌ Erro no health check:', error);
-      logSystem.error(`Erro no health check: ${error}`, 'HealthCheck');
-    }
-  }
-
-  // CRÍTICO: Método para reiniciar gravação automaticamente
-  private async restartRecording(): Promise<void> {
-    try {
-      console.log('🔄 Tentando reiniciar gravação automaticamente...');
-      
-      const currentOutputPath = this.outputPath;
-      
-      // Parar gravação atual
-      await this.stopRecording();
-      
-      // Aguardar um momento
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Reiniciar gravação
-      const success = await this.startRecording(currentOutputPath);
-      
-      if (success) {
-        console.log('✅ Gravação reiniciada com sucesso');
-        toast.success('Gravação reiniciada automaticamente');
-        logSystem.info('Gravação reiniciada automaticamente', 'Recovery');
-      } else {
-        console.error('❌ Falha ao reiniciar gravação');
-        toast.error('ERRO: Não foi possível reiniciar gravação');
-        logSystem.error('Falha ao reiniciar gravação', 'Recovery');
-      }
-      
-    } catch (error) {
-      console.error('❌ Erro ao reiniciar gravação:', error);
-      logSystem.error(`Erro ao reiniciar gravação: ${error}`, 'Recovery');
-    }
-  }
-
-  // CRÍTICO: Monitoramento de espaço em disco
-  private startDiskSpaceMonitoring(): void {
-    this.diskSpaceInterval = setInterval(() => {
-      this.checkDiskSpace();
-    }, 60000); // Verificar a cada 1 minuto
-    
-    console.log('💾 Monitoramento de espaço em disco iniciado');
-    logSystem.info('Monitoramento de espaço em disco iniciado', 'DiskSpace');
-  }
-
-  private stopDiskSpaceMonitoring(): void {
-    if (this.diskSpaceInterval) {
-      clearInterval(this.diskSpaceInterval);
-      this.diskSpaceInterval = null;
-      console.log('💾 Monitoramento de espaço em disco parado');
-      logSystem.info('Monitoramento de espaço em disco parado', 'DiskSpace');
-    }
-  }
-
-  private async checkDiskSpace(): Promise<void> {
-    try {
-      // Usar Navigator Storage API se disponível
-      if ('storage' in navigator && 'estimate' in navigator.storage) {
-        const estimate = await navigator.storage.estimate();
-        
-        if (estimate.quota && estimate.usage) {
-          const freeSpaceBytes = estimate.quota - estimate.usage;
-          const freeSpaceGB = freeSpaceBytes / (1024 * 1024 * 1024);
-          
-          console.log(`💾 Espaço livre: ${freeSpaceGB.toFixed(2)}GB`);
-          
-          if (freeSpaceGB < this.minDiskSpaceGB) {
-            console.error(`🚨 CRÍTICO: Pouco espaço em disco! ${freeSpaceGB.toFixed(2)}GB restantes`);
-            logSystem.error(`Pouco espaço em disco: ${freeSpaceGB.toFixed(2)}GB`, 'DiskSpace');
-            toast.error(`AVISO: Pouco espaço em disco! ${freeSpaceGB.toFixed(2)}GB restantes`);
-            
-            // Parar gravação se espaço crítico (menos de 500MB)
-            if (freeSpaceGB < 0.5) {
-              console.error('🚨 CRÍTICO: Parando gravação por falta de espaço!');
-              toast.error('ERRO CRÍTICO: Gravação parada por falta de espaço!');
-              logSystem.error('Gravação parada por falta de espaço', 'DiskSpace');
-              await this.stopRecording();
-            }
-          }
-        }
-      }
-      
-    } catch (error) {
-      console.error('❌ Erro ao verificar espaço em disco:', error);
-      logSystem.error(`Erro ao verificar espaço: ${error}`, 'DiskSpace');
-    }
-  }
-
-  // CRÍTICO: Sistema de backup automático
-  private startAutoBackup(): void {
-    this.backupInterval = setInterval(() => {
-      this.createBackupCheckpoint();
-    }, this.backupIntervalMinutes * 60 * 1000);
-    
-    console.log(`💾 Backup automático iniciado (${this.backupIntervalMinutes}min)`);
-    logSystem.info(`Backup automático iniciado (${this.backupIntervalMinutes}min)`, 'Backup');
-  }
-
-  private stopAutoBackup(): void {
-    if (this.backupInterval) {
-      clearInterval(this.backupInterval);
-      this.backupInterval = null;
-      console.log('💾 Backup automático parado');
-      logSystem.info('Backup automático parado', 'Backup');
-    }
-  }
-
-  private createBackupCheckpoint(): void {
-    try {
-      if (!this.isRecording) return;
-      
-      const checkpoint = {
-        timestamp: new Date().toISOString(),
-        outputPath: this.outputPath,
-        recordingStartTime: this.recordingStartTime,
-        currentSplitNumber: this.currentSplitNumber,
-        settings: {
-          outputFormat: this.outputFormat,
-          mp3Bitrate: this.mp3Bitrate,
-          splitEnabled: this.splitEnabled,
-          splitIntervalMinutes: this.splitIntervalMinutes,
-          inputDevice: this.inputDevice
-        }
-      };
-      
-      // Salvar checkpoint no localStorage
-      localStorage.setItem('recordingCheckpoint', JSON.stringify(checkpoint));
-      
-      console.log('💾 Checkpoint criado:', checkpoint.timestamp);
-      logSystem.info(`Checkpoint criado: ${checkpoint.timestamp}`, 'Backup');
-      
-    } catch (error) {
-      console.error('❌ Erro ao criar checkpoint:', error);
-      logSystem.error(`Erro ao criar checkpoint: ${error}`, 'Backup');
-    }
-  }
-
-  // PÚBLICO: Método para recuperar sessão interrompida
-  public async recoverSession(): Promise<boolean> {
-    try {
-      const checkpointData = localStorage.getItem('recordingCheckpoint');
-      if (!checkpointData) return false;
-      
-      const checkpoint = JSON.parse(checkpointData);
-      
-      console.log('🔄 Recuperando sessão interrompida:', checkpoint.timestamp);
-      toast.info('Recuperando sessão de gravação interrompida...');
-      logSystem.info(`Recuperando sessão: ${checkpoint.timestamp}`, 'Recovery');
-      
-      // Restaurar configurações
-      this.outputPath = checkpoint.outputPath;
-      this.recordingStartTime = checkpoint.recordingStartTime;
-      this.currentSplitNumber = checkpoint.currentSplitNumber;
-      this.outputFormat = checkpoint.settings.outputFormat;
-      this.mp3Bitrate = checkpoint.settings.mp3Bitrate;
-      this.splitEnabled = checkpoint.settings.splitEnabled;
-      this.splitIntervalMinutes = checkpoint.settings.splitIntervalMinutes;
-      this.inputDevice = checkpoint.settings.inputDevice;
-      
-      // Limpar checkpoint
-      localStorage.removeItem('recordingCheckpoint');
-      
-      console.log('✅ Sessão recuperada com sucesso');
-      toast.success('Sessão de gravação recuperada!');
-      logSystem.info('Sessão recuperada com sucesso', 'Recovery');
-      
-      return true;
-      
-    } catch (error) {
-      console.error('❌ Erro ao recuperar sessão:', error);
-      logSystem.error(`Erro ao recuperar sessão: ${error}`, 'Recovery');
-      return false;
-    }
+    console.log('🎛️ ElectronAudioService v3.0 inicializado (modo básico estável)');
   }
 
   private loadSettings() {
@@ -338,43 +44,25 @@ export class ElectronAudioService {
       if (settings) {
         const parsed = JSON.parse(settings);
         
-        // Validar tipos antes de usar
         this.outputFormat = typeof parsed.outputFormat === 'string' ? parsed.outputFormat : 'wav';
-        this.mp3Bitrate = typeof parsed.mp3Bitrate === 'number' ? parsed.mp3Bitrate : 320;
+        this.mp3Bitrate = typeof parsed.mp3Bitrate === 'number' ? parsed.mp3Bitrate : 128;
         this.splitEnabled = typeof parsed.splitEnabled === 'boolean' ? parsed.splitEnabled : false;
         this.splitIntervalMinutes = typeof parsed.splitIntervalMinutes === 'number' ? parsed.splitIntervalMinutes : 5;
         this.dateFolderEnabled = typeof parsed.dateFolderEnabled === 'boolean' ? parsed.dateFolderEnabled : false;
         this.dateFolderFormat = typeof parsed.dateFolderFormat === 'string' ? parsed.dateFolderFormat : 'dd-mm';
-        this.fileNameFormat = typeof parsed.fileNameFormat === 'string' ? parsed.fileNameFormat : 'timestamp';
+        this.fileNameFormat = typeof parsed.fileNameFormat === 'string' ? parsed.fileNameFormat : 'hh-mm-ss-seq';
         this.inputDevice = typeof parsed.inputDevice === 'string' ? parsed.inputDevice : 'default';
         this.noiseSuppressionEnabled = typeof parsed.noiseSuppressionEnabled === 'boolean' ? parsed.noiseSuppressionEnabled : false;
         this.noiseThreshold = typeof parsed.noiseThreshold === 'number' ? parsed.noiseThreshold : -35;
         this.noiseGateAttack = typeof parsed.noiseGateAttack === 'number' ? parsed.noiseGateAttack : 50;
         this.noiseGateRelease = typeof parsed.noiseGateRelease === 'number' ? parsed.noiseGateRelease : 200;
         
-        console.log('✅ Configurações carregadas com validação');
+        console.log('✅ Configurações carregadas');
       }
     } catch (error) {
-      console.error('❌ Erro ao carregar configurações, usando padrões:', error);
+      console.error('❌ Erro ao carregar configurações:', error);
       logSystem.error(`Erro ao carregar configurações: ${error}`, 'Settings');
-      // Usar valores padrão em caso de erro
-      this.resetToDefaults();
     }
-  }
-
-  private resetToDefaults() {
-    this.outputFormat = 'wav';
-    this.mp3Bitrate = 320;
-    this.splitEnabled = false;
-    this.splitIntervalMinutes = 5;
-    this.dateFolderEnabled = false;
-    this.dateFolderFormat = 'dd-mm';
-    this.fileNameFormat = 'timestamp';
-    this.inputDevice = 'default';
-    this.noiseSuppressionEnabled = false;
-    this.noiseThreshold = -35;
-    this.noiseGateAttack = 50;
-    this.noiseGateRelease = 200;
   }
 
   saveSettings() {
@@ -387,7 +75,7 @@ export class ElectronAudioService {
         dateFolderEnabled: this.dateFolderEnabled,
         dateFolderFormat: this.dateFolderFormat,
         fileNameFormat: this.fileNameFormat,
-        inputDevice: this.inputDevice, // IMPORTANTE: Incluir inputDevice
+        inputDevice: this.inputDevice,
         noiseSuppressionEnabled: this.noiseSuppressionEnabled,
         noiseThreshold: this.noiseThreshold,
         noiseGateAttack: this.noiseGateAttack,
@@ -395,7 +83,7 @@ export class ElectronAudioService {
       };
       
       localStorage.setItem('audioSettings', JSON.stringify(settings));
-      console.log('✅ Configurações salvas com sucesso');
+      console.log('✅ Configurações salvas');
       logSystem.info('Configurações salvas', 'Settings');
       
     } catch (error) {
@@ -405,7 +93,410 @@ export class ElectronAudioService {
     }
   }
 
-  // MÉTODO CORRIGIDO: requestMicrophonePermission
+  // CORREÇÃO 1: startRecording SIMPLIFICADO (Plano Manus)
+  async startRecording(outputPath: string): Promise<boolean> {
+    try {
+      // SIMPLIFICAR - apenas inicialização básica
+      this.outputPath = outputPath;
+      this.recordingStartTime = Date.now();
+      this.currentSplitNumber = 1;
+      
+      // CONFIGURAÇÃO BÁSICA DO MEDIARECORDER
+      const constraints = {
+        audio: {
+          deviceId: this.inputDevice === 'default' ? undefined : { exact: this.inputDevice },
+          sampleRate: 44100, // FIXO para estabilidade
+          channelCount: 1,    // MONO para simplicidade
+          echoCancellation: false,
+          noiseSuppression: this.noiseSuppressionEnabled,
+          autoGainControl: false
+        }
+      };
+      
+      this.stream = await navigator.mediaDevices.getUserMedia(constraints);
+      
+      // CONFIGURAÇÃO SIMPLES DO MEDIARECORDER
+      const options = {
+        mimeType: 'audio/webm;codecs=opus', // MANTER WebM por enquanto
+        audioBitsPerSecond: this.mp3Bitrate * 1000
+      };
+      
+      this.mediaRecorder = new MediaRecorder(this.stream, options);
+      
+      // EVENTOS BÁSICOS APENAS
+      this.mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          this.audioChunks.push(event.data);
+        }
+      };
+      
+      this.mediaRecorder.onstop = () => {
+        this.saveRecording();
+      };
+      
+      // INICIAR GRAVAÇÃO
+      this.mediaRecorder.start();
+      this.isRecording = true;
+      
+      // Configurar VU meters básicos
+      this.setupBasicMonitoring();
+      
+      console.log('✅ Gravação iniciada (modo básico v3.0)');
+      logSystem.info('Gravação iniciada em modo básico', 'Recording');
+      return true;
+      
+    } catch (error) {
+      console.error('❌ Erro ao iniciar gravação:', error);
+      logSystem.error(`Erro ao iniciar gravação: ${error}`, 'Recording');
+      toast.error('Erro ao iniciar gravação');
+      return false;
+    }
+  }
+
+  stopRecording(): void {
+    if (this.mediaRecorder && this.isRecording) {
+      this.mediaRecorder.stop();
+      this.isRecording = false;
+      this.isPaused = false;
+      
+      // Cleanup básico
+      if (this.monitoringContext) {
+        this.monitoringContext.close();
+        this.monitoringContext = null;
+        this.monitoringAnalyser = null;
+      }
+      
+      if (this.stream) {
+        this.stream.getTracks().forEach(track => track.stop());
+        this.stream = null;
+      }
+      
+      console.log('✅ Gravação parada');
+      logSystem.info('Gravação parada', 'Recording');
+    }
+  }
+
+  pauseRecording(): void {
+    if (this.mediaRecorder && this.isRecording) {
+      if (this.isPaused) {
+        this.mediaRecorder.resume();
+        this.isPaused = false;
+        console.log('▶️ Gravação retomada');
+      } else {
+        this.mediaRecorder.pause();
+        this.isPaused = true;
+        console.log('⏸️ Gravação pausada');
+      }
+    }
+  }
+
+  // CORREÇÃO 2: ensureOutputDirectory SIMPLIFICADO (Plano Manus)
+  private async ensureOutputDirectory(outputPath: string): Promise<string> {
+    try {
+      let finalPath = outputPath;
+      
+      // APENAS se pasta por data estiver habilitada
+      if (this.dateFolderEnabled) {
+        const now = new Date();
+        
+        // FORMATO FIXO E SIMPLES
+        const dateFolder = `${now.getDate().toString().padStart(2, '0')}-${(now.getMonth() + 1).toString().padStart(2, '0')}`;
+        
+        finalPath = `${outputPath}/${dateFolder}`;
+        
+        // CRIAR PASTA APENAS UMA VEZ
+        await window.electronAPI.ensureDirectory(finalPath);
+      }
+      
+      return finalPath;
+      
+    } catch (error) {
+      console.error('❌ Erro ao criar diretório:', error);
+      logSystem.error(`Erro ao criar diretório: ${error}`, 'FileSystem');
+      return outputPath; // FALLBACK para pasta original
+    }
+  }
+
+  private async saveRecording(): Promise<void> {
+    if (this.audioChunks.length === 0) {
+      console.warn('⚠️ Nenhum dado de áudio para salvar');
+      return;
+    }
+
+    try {
+      const finalOutputPath = await this.ensureOutputDirectory(this.outputPath);
+      const filename = this.generateFileName();
+      const blob = new Blob(this.audioChunks, { type: 'audio/webm' });
+      
+      console.log(`💾 Salvando arquivo: ${filename} (${(blob.size / 1024 / 1024).toFixed(2)}MB)`);
+      
+      // Converter Blob para Uint8Array
+      const arrayBuffer = await blob.arrayBuffer();
+      const audioData = new Uint8Array(arrayBuffer);
+      
+      await window.electronAPI.saveAudioFile(`${finalOutputPath}/${filename}`, audioData);
+      
+      this.audioChunks = [];
+      
+      console.log('✅ Arquivo salvo com sucesso');
+      logSystem.info(`Arquivo salvo: ${filename}`, 'Recording');
+      
+    } catch (error) {
+      console.error('❌ Erro ao salvar gravação:', error);
+      logSystem.error(`Erro ao salvar gravação: ${error}`, 'Recording');
+      toast.error('Erro ao salvar arquivo de áudio');
+    }
+  }
+
+  private generateFileName(): string {
+    const now = new Date();
+    
+    switch (this.fileNameFormat) {
+      case 'hh-mm-ss-seq':
+        const hours = now.getHours().toString().padStart(2, '0');
+        const minutes = now.getMinutes().toString().padStart(2, '0');
+        const seconds = now.getSeconds().toString().padStart(2, '0');
+        const seq = this.currentSplitNumber.toString().padStart(3, '0');
+        return `${hours}-${minutes}-${seconds}-${seq}.${this.outputFormat === 'mp3' ? 'mp3' : 'webm'}`;
+      
+      default:
+        const timestamp = now.toISOString().replace(/[:.]/g, '-').split('T')[1].split('-').slice(0, 3).join('-');
+        return `gravacao_${timestamp}_${this.currentSplitNumber}.${this.outputFormat === 'mp3' ? 'mp3' : 'webm'}`;
+    }
+  }
+
+  // CORREÇÃO 3: VU Meters SIMPLIFICADO (Plano Manus)
+  private setupBasicMonitoring(): void {
+    if (!this.stream) return;
+    
+    try {
+      this.monitoringContext = new AudioContext();
+      const source = this.monitoringContext.createMediaStreamSource(this.stream);
+      
+      this.monitoringAnalyser = this.monitoringContext.createAnalyser();
+      this.monitoringAnalyser.fftSize = 256;
+      this.monitoringAnalyser.smoothingTimeConstant = 0.3;
+      
+      source.connect(this.monitoringAnalyser);
+      
+      this.startAnalysisLoop();
+      
+      console.log('✅ Monitoramento básico configurado');
+      
+    } catch (error) {
+      console.error('❌ Erro ao configurar monitoramento:', error);
+      logSystem.error(`Erro ao configurar monitoramento: ${error}`, 'Audio');
+    }
+  }
+
+  // SIMPLIFICAR análise - remover callbacks complexos
+  private startAnalysisLoop(): void {
+    if (!this.monitoringAnalyser || !this.isRecording) return;
+    
+    const analyze = () => {
+      // VERIFICAR se ainda está gravando
+      if (!this.isRecording || !this.monitoringAnalyser) {
+        return; // PARAR se não estiver gravando
+      }
+      
+      try {
+        const bufferLength = this.monitoringAnalyser.frequencyBinCount;
+        const dataArray = new Uint8Array(bufferLength);
+        
+        this.monitoringAnalyser.getByteFrequencyData(dataArray);
+        
+        // CÁLCULO SIMPLES DE VOLUME
+        let sum = 0;
+        for (let i = 0; i < bufferLength; i++) {
+          sum += dataArray[i];
+        }
+        const average = sum / bufferLength;
+        const volume = (average / 255) * 100;
+        
+        // CALLBACK SIMPLES
+        if (this.volumeCallbacks.length > 0) {
+          this.volumeCallbacks.forEach(callback => {
+            try {
+              callback(volume, volume, false, false); // L, R, peakL, peakR
+            } catch (error) {
+              console.error('❌ Erro no callback de volume:', error);
+            }
+          });
+        }
+        
+        // CONTINUAR APENAS SE GRAVANDO
+        if (this.isRecording) {
+          setTimeout(() => analyze(), 100); // 10 FPS fixo
+        }
+        
+      } catch (error) {
+        console.error('❌ Erro na análise de áudio:', error);
+      }
+    };
+    
+    analyze();
+  }
+
+  // Métodos públicos básicos
+  isCurrentlyRecording(): boolean {
+    return this.isRecording;
+  }
+
+  isPausedState(): boolean {
+    return this.isPaused;
+  }
+
+  hasAudioSignal(): boolean {
+    return this.isRecording;
+  }
+
+  // Configurações
+  setInputDevice(device: string): void {
+    this.inputDevice = device;
+    this.saveSettings();
+  }
+
+  getInputDevice(): string {
+    return this.inputDevice;
+  }
+
+  setOutputFormat(format: string): void {
+    this.outputFormat = format;
+    this.saveSettings();
+  }
+
+  getOutputFormat(): string {
+    return this.outputFormat;
+  }
+
+  setMp3Bitrate(bitrate: number): void {
+    this.mp3Bitrate = bitrate;
+    this.saveSettings();
+  }
+
+  getMp3Bitrate(): number {
+    return this.mp3Bitrate;
+  }
+
+  setSplitEnabled(enabled: boolean): void {
+    this.splitEnabled = enabled;
+    this.saveSettings();
+  }
+
+  isSplitEnabled(): boolean {
+    return this.splitEnabled;
+  }
+
+  getSplitEnabled(): boolean {
+    return this.splitEnabled;
+  }
+
+  setSplitInterval(minutes: number): void {
+    this.splitIntervalMinutes = minutes;
+    this.saveSettings();
+  }
+
+  getSplitInterval(): number {
+    return this.splitIntervalMinutes;
+  }
+
+  setDateFolderEnabled(enabled: boolean): void {
+    this.dateFolderEnabled = enabled;
+    this.saveSettings();
+  }
+
+  isDateFolderEnabled(): boolean {
+    return this.dateFolderEnabled;
+  }
+
+  getDateFolderEnabled(): boolean {
+    return this.dateFolderEnabled;
+  }
+
+  setDateFolderFormat(format: string): void {
+    this.dateFolderFormat = format;
+    this.saveSettings();
+  }
+
+  getDateFolderFormat(): string {
+    return this.dateFolderFormat;
+  }
+
+  setFileNameFormat(format: string): void {
+    this.fileNameFormat = format;
+    this.saveSettings();
+  }
+
+  getFileNameFormat(): string {
+    return this.fileNameFormat;
+  }
+
+  setNoiseSuppressionEnabled(enabled: boolean): void {
+    this.noiseSuppressionEnabled = enabled;
+    this.saveSettings();
+  }
+
+  isNoiseSuppressionEnabled(): boolean {
+    return this.noiseSuppressionEnabled;
+  }
+
+  getNoiseSuppressionEnabled(): boolean {
+    return this.noiseSuppressionEnabled;
+  }
+
+  setNoiseThreshold(threshold: number): void {
+    this.noiseThreshold = threshold;
+    this.saveSettings();
+  }
+
+  getNoiseThreshold(): number {
+    return this.noiseThreshold;
+  }
+
+  setNoiseGateAttack(attack: number): void {
+    this.noiseGateAttack = attack;
+    this.saveSettings();
+  }
+
+  getNoiseGateAttack(): number {
+    return this.noiseGateAttack;
+  }
+
+  setNoiseGateRelease(release: number): void {
+    this.noiseGateRelease = release;
+    this.saveSettings();
+  }
+
+  getNoiseGateRelease(): number {
+    return this.noiseGateRelease;
+  }
+
+  // Callbacks básicos
+  onVolumeUpdate(callback: (left: number, right: number, peakL: boolean, peakR: boolean) => void): void {
+    this.volumeCallbacks.push(callback);
+    console.log(`📊 Callback VU Meters registrado. Total: ${this.volumeCallbacks.length}`);
+  }
+
+  removeVolumeCallback(callback: (left: number, right: number, peakL: boolean, peakR: boolean) => void): void {
+    const index = this.volumeCallbacks.indexOf(callback);
+    if (index > -1) {
+      this.volumeCallbacks.splice(index, 1);
+      console.log(`📊 Callback VU Meters removido. Total: ${this.volumeCallbacks.length}`);
+    }
+  }
+
+  // Método para obter dispositivos de áudio
+  async getAudioDevices(): Promise<MediaDeviceInfo[]> {
+    try {
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      return devices.filter(device => device.kind === 'audioinput');
+    } catch (error) {
+      console.error('❌ Erro ao obter dispositivos:', error);
+      return [];
+    }
+  }
+
+  // Método para solicitar permissão do microfone
   async requestMicrophonePermission(): Promise<boolean> {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
@@ -414,17 +505,15 @@ export class ElectronAudioService {
           noiseSuppression: this.noiseSuppressionEnabled,
           autoGainControl: this.noiseSuppressionEnabled,
           deviceId: this.inputDevice !== 'default' ? { exact: this.inputDevice } : undefined,
-          channelCount: 1, // FORÇAR MONO
+          channelCount: 1,
           sampleRate: 44100
         }
       });
       
-      // Parar stream de teste
       stream.getTracks().forEach(track => track.stop());
       
       console.log('✅ Permissão de microfone concedida');
-      console.log(`🎛️ Configurações aplicadas: supressão=${this.noiseSuppressionEnabled}`);
-      logSystem.info(`Permissão de microfone concedida com supressão=${this.noiseSuppressionEnabled}`, 'Audio');
+      logSystem.info('Permissão de microfone concedida', 'Audio');
       
       return true;
     } catch (error) {
@@ -435,1106 +524,20 @@ export class ElectronAudioService {
     }
   }
 
-  // CRÍTICO: Validação de dispositivos de áudio
-  private async validateAudioDevice(deviceId: string): Promise<boolean> {
-    try {
-      if (deviceId === 'default') return true;
-      
-      const devices = await navigator.mediaDevices.enumerateDevices();
-      const audioInputs = devices.filter(device => device.kind === 'audioinput');
-      
-      const deviceExists = audioInputs.some(device => device.deviceId === deviceId);
-      
-      if (!deviceExists) {
-        console.warn(`⚠️ Dispositivo ${deviceId} não encontrado`);
-        logSystem.error(`Dispositivo ${deviceId} não encontrado`, 'DeviceValidation');
-      }
-      
-      return deviceExists;
-      
-    } catch (error) {
-      console.error('❌ Erro ao validar dispositivo:', error);
-      logSystem.error(`Erro ao validar dispositivo: ${error}`, 'DeviceValidation');
-      return false;
-    }
-  }
-
-  async startRecording(outputPath: string): Promise<boolean> {
-    try {
-      if (this.isRecording) {
-        toast.warning('Gravação já está em andamento');
-        return false;
-      }
-
-      // Inicializar monitoramento apenas ao iniciar gravação
-      if (!this.monitoringContext) {
-        await this.initializeMonitoring();
-      }
-
-      // Carregar configurações mais recentes antes de iniciar
-      this.loadSettings();
-      
-      // Log para aba de logs
-      logSystem.info('Iniciando gravação', 'Recording');
-      logSystem.info(`Dispositivo: ${this.inputDevice || 'padrão'}`, 'Audio');
-
-      this.recordingStartTime = Date.now();
-      this.currentSplitNumber = 1;
-
-      // Criar pasta com data se habilitado
-      let finalOutputPath = outputPath;
-      if (this.dateFolderEnabled) {
-        const dateFolder = this.formatDateFolder();
-        // Remover barras duplas e normalizar o path
-        const normalizedPath = outputPath.replace(/[\\\/]+$/, '');
-        finalOutputPath = `${normalizedPath}\\${dateFolder}`;
-        
-        console.log(`Pasta por data habilitada. Pasta base: ${normalizedPath}`);
-        console.log(`Formato de data: ${this.dateFolderFormat}`);
-        console.log(`Pasta de data criada: ${dateFolder}`);
-        console.log(`Caminho final: ${finalOutputPath}`);
-        
-        await this.ensureDirectoryExists(finalOutputPath);
-      } else {
-        console.log(`Pasta por data desabilitada. Usando pasta base: ${outputPath}`);
-        await this.ensureDirectoryExists(outputPath);
-        finalOutputPath = outputPath;
-      }
-
-      this.outputPath = finalOutputPath;
-      console.log(`Gravação será salva em: ${this.outputPath}`);
-
-      // Validar dispositivo antes de usar
-      const isValidDevice = await this.validateAudioDevice(this.inputDevice);
-      if (!isValidDevice) {
-        console.warn('⚠️ Dispositivo inválido, usando padrão');
-        this.inputDevice = 'default';
-      }
-
-      const hasPermission = await this.requestMicrophonePermission();
-      if (!hasPermission) return false;
-
-      console.log('🎤 INICIANDO GRAVAÇÃO');
-
-      // Usar mesmo stream do monitoramento para gravação
-      const constraints: MediaStreamConstraints = {
-        audio: {
-          deviceId: this.inputDevice ? { exact: this.inputDevice } : undefined,
-          echoCancellation: this.noiseSuppressionEnabled,
-          noiseSuppression: this.noiseSuppressionEnabled,
-          autoGainControl: this.noiseSuppressionEnabled,
-          channelCount: 1, // FORÇAR MONO para evitar mixagem
-          sampleRate: 44100
-        }
-      };
-
-      const stream = await navigator.mediaDevices.getUserMedia(constraints);
-
-      // Configurar análise de áudio DURANTE A GRAVAÇÃO
-      this.setupAudioAnalysis(stream);
-      
-      // CRÍTICO: Iniciar análise independente para VU Meters sempre ativa
-      this.forceAudioAnalysisStart();
-
-      // Usar formato de alta qualidade sem compressão desnecessária
-      let mimeType = 'audio/webm;codecs=opus';
-      
-      // Verificar suporte e usar melhor opção disponível
-      if (MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) {
-        mimeType = 'audio/webm;codecs=opus';
-      } else if (MediaRecorder.isTypeSupported('audio/webm')) {
-        mimeType = 'audio/webm';
-      } else {
-        mimeType = 'audio/mp4';
-      }
-      
-      console.log(`Usando MIME type: ${mimeType} para formato: ${this.outputFormat}`);
-      
-      const mediaRecorderOptions: MediaRecorderOptions = {
-        mimeType: mimeType,
-        audioBitsPerSecond: this.mp3Bitrate * 1000
-      };
-      
-      this.mediaRecorder = new MediaRecorder(stream, mediaRecorderOptions);
-
-      this.audioChunks = [];
-      this.outputPath = finalOutputPath;
-
-      this.mediaRecorder.ondataavailable = (event) => {
-        if (event.data.size > 0) {
-          this.audioChunks.push(event.data);
-        }
-      };
-
-      this.mediaRecorder.onstop = () => {
-        this.saveRecording();
-      };
-
-      this.mediaRecorder.start(1000); // Capturar dados a cada segundo
-      this.isRecording = true;
-      this.isPaused = false;
-      
-      console.log('📈 VU Callbacks registrados:', this.volumeCallbacks.length);
-      console.log('📊 Spectrum Callbacks registrados:', this.spectrumCallbacks.length);
-
-      // Inicializar sinal de áudio após um pequeno delay
-      setTimeout(() => {
-        this.forceAudioAnalysisStart();
-        console.log('🎵 Análise de áudio iniciada - VU Meters e Spectrum devem estar funcionando');
-      }, 500);
-
-      // Configurar split automático se habilitado
-      if (this.splitEnabled) {
-        this.scheduleSplit();
-      }
-
-      // CRÍTICO: Iniciar sistemas para sessões longas
-      this.startHealthCheck();
-      this.startDiskSpaceMonitoring();
-      this.startAutoBackup();
-
-      console.log('🎬 Gravação iniciada com sucesso');
-      logSystem.info(`Formato: MP3, ${this.sampleRate}Hz, ${this.mp3Bitrate}kbps`, 'Recording');
-      toast.success('Gravação iniciada com sucesso');
-      return true;
-
-    } catch (error) {
-      console.error('❌ Erro ao iniciar gravação:', error);
-      logSystem.error(`Erro ao iniciar gravação: ${error.message}`, 'Recording');
-      toast.error('Erro ao iniciar gravação');
-      return false;
-    }
-  }
-
-  async stopRecording(): Promise<void> {
-    try {
-      if (this.mediaRecorder && this.isRecording) {
-        // CRÍTICO: Parar sistemas para sessões longas
-        this.stopHealthCheck();
-        this.stopDiskSpaceMonitoring();
-        this.stopAutoBackup();
-        
-        // Limpar checkpoint ao parar normalmente
-        localStorage.removeItem('recordingCheckpoint');
-        
-        this.mediaRecorder.stop();
-        this.mediaRecorder.stream.getTracks().forEach(track => track.stop());
-        this.isRecording = false;
-        this.isPaused = false;
-        this.currentSplitNumber = 1;
-        
-        // Limpar contexto de áudio
-        this.cleanupAudioAnalysis();
-        
-        // IMPORTANTE: Suspender monitoramento para economizar recursos
-        if (this.monitoringContext && this.monitoringContext.state === 'running') {
-          await this.monitoringContext.suspend();
-          console.log('⏸️ Monitoramento suspenso para economizar recursos');
-        }
-        
-        // Zerar VU meters
-        this.volumeCallbacks.forEach(callback => {
-          try {
-            callback(-60, -60, false);
-          } catch (error) {
-            console.error('❌ Erro ao zerar VU:', error);
-          }
-        });
-        
-        // Zerar spectrum analyzer
-        this.spectrumCallbacks.forEach(callback => {
-          try {
-            callback(Array(32).fill(0));
-          } catch (error) {
-            console.error('❌ Erro ao zerar spectrum:', error);
-          }
-        });
-        
-        console.log('⏹️ Gravação finalizada com sucesso');
-        logSystem.info('Gravação finalizada', 'Recording');
-        toast.success('Gravação finalizada');
-      }
-    } catch (error) {
-      console.error('❌ Erro ao parar gravação:', error);
-    }
-  }
-
-  // MÉTODO CORRIGIDO: pauseRecording
-  pauseRecording(): void {
-    if (this.mediaRecorder && this.isRecording) {
-      if (this.mediaRecorder.state === 'recording') {
-        this.mediaRecorder.pause();
-        this.isPaused = true;
-        
-        // NÃO parar monitoramento durante pausa
-        console.log('⏸️ Gravação pausada (monitoramento continua)');
-        logSystem.info('Gravação pausada', 'Recording');
-        toast.info('Gravação pausada');
-      } else if (this.mediaRecorder.state === 'paused') {
-        this.mediaRecorder.resume();
-        this.isPaused = false;
-        console.log('▶️ Gravação retomada');
-        logSystem.info('Gravação retomada', 'Recording');
-        toast.info('Gravação retomada');
-      }
-    }
-  }
-
-  private async saveRecording(): Promise<void> {
-    try {
-      const audioBlob = new Blob(this.audioChunks, { type: 'audio/webm' });
-      const arrayBuffer = await audioBlob.arrayBuffer();
-      const uint8Array = new Uint8Array(arrayBuffer);
-
-      // Se estiver no Electron, usar a API nativa para salvar
-      if (window.electronAPI) {
-        const filename = this.formatFileName();
-
-        // Garantir que estamos usando o outputPath correto (já inclui a subpasta se habilitada)
-        console.log(`Salvando arquivo em: ${this.outputPath}`);
-        console.log(`Nome do arquivo: ${filename}`);
-        
-        // Normalizar path e garantir que o arquivo seja salvo no diretório correto
-        const normalizedPath = this.outputPath.replace(/[\\\/]+$/, '');
-        const fullPath = `${normalizedPath}\\${filename}`;
-        
-        console.log(`Caminho completo do arquivo: ${fullPath}`);
-
-        try {
-          await window.electronAPI.saveAudioFile(fullPath, uint8Array);
-          console.log(`✅ Arquivo salvo com sucesso em: ${fullPath}`);
-          logSystem.info(`Arquivo salvo: ${filename}`, 'Recording');
-          toast.success(`Arquivo salvo: ${filename}`);
-        } catch (error) {
-          console.error('❌ Erro ao salvar via Electron API:', error);
-          logSystem.error(`Erro ao salvar arquivo: ${error}`, 'Recording');
-          // Fallback para download
-          this.downloadAudioFile(audioBlob, filename);
-        }
-      } else {
-        // Fallback para download no navegador
-        const extension = this.outputFormat === 'wav' ? 'wav' : 
-                         this.outputFormat === 'mp3' ? 'mp3' : 'webm';
-        const filename = `gravacao_${Date.now()}.${extension}`;
-        this.downloadAudioFile(audioBlob, filename);
-      }
-
-    } catch (error) {
-      console.error('Erro ao salvar gravação:', error);
-      toast.error('Erro ao salvar arquivo de áudio');
-    }
-  }
-
-  private downloadAudioFile(blob: Blob, filename: string): void {
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    a.click();
-    URL.revokeObjectURL(url);
-    toast.success(`Download iniciado: ${filename}`);
-  }
-
-  isCurrentlyRecording(): boolean {
-    return this.isRecording;
-  }
-
-  getRecordingState(): string {
-    if (!this.mediaRecorder) return 'stopped';
-    return this.mediaRecorder.state;
-  }
-
-  async getAudioDevices(): Promise<MediaDeviceInfo[]> {
-    try {
-      const devices = await navigator.mediaDevices.enumerateDevices();
-      return devices.filter(device => device.kind === 'audioinput');
-    } catch (error) {
-      console.error('Erro ao obter dispositivos de áudio:', error);
-      return [];
-    }
-  }
-
-  setInputDevice(deviceId: string): void {
-    const oldDevice = this.inputDevice;
-    this.inputDevice = deviceId;
-    this.saveSettings();
-    
-    logSystem.info(`Dispositivo alterado: ${oldDevice || 'padrão'} → ${deviceId}`, 'Audio');
-    
-    this.restartMonitoring();
-    
-    console.log(`🎤 Dispositivo alterado para: ${deviceId}`);
-  }
-
-
-  setOutputFormat(format: string): void {
-    this.outputFormat = format;
-  }
-
-  setSampleRate(rate: number): void {
-    this.sampleRate = rate;
-  }
-
-  async ensureDirectoryExists(dirPath: string): Promise<void> {
-    try {
-      console.log(`🔍 Verificando diretório: ${dirPath}`);
-      if (window.electronAPI) {
-        await window.electronAPI.ensureDirectory(dirPath);
-        console.log(`✅ Diretório criado/verificado: ${dirPath}`);
-      } else {
-        // No navegador, apenas logar
-        console.log('⚠️ Modo navegador - diretórios não podem ser criados automaticamente');
-      }
-    } catch (error) {
-      console.error('❌ Erro ao verificar/criar diretório:', error);
-      toast.error(`Erro ao criar pasta: ${dirPath}`);
-      throw error;
-    }
-  }
-
-  getInputDevice(): string {
-    return this.inputDevice;
-  }
-
-  getOutputFormat(): string {
-    return this.outputFormat;
-  }
-
-  getSampleRate(): number {
-    return this.sampleRate;
-  }
-
-  // Configurações de split
-  setSplitEnabled(enabled: boolean): void {
-    this.splitEnabled = enabled;
-  }
-
-  setSplitInterval(minutes: number): void {
-    this.splitIntervalMinutes = minutes;
-  }
-
-  getSplitEnabled(): boolean {
-    return this.splitEnabled;
-  }
-
-  getSplitInterval(): number {
-    return this.splitIntervalMinutes;
-  }
-
-  // Configurações de pasta por data
-  setDateFolderEnabled(enabled: boolean): void {
-    this.dateFolderEnabled = enabled;
-  }
-
-  setDateFolderFormat(format: string): void {
-    this.dateFolderFormat = format;
-  }
-
-  getDateFolderEnabled(): boolean {
-    return this.dateFolderEnabled;
-  }
-
-  getDateFolderFormat(): string {
-    return this.dateFolderFormat;
-  }
-
-  private formatDateFolder(): string {
-    const now = new Date();
-    const day = now.getDate().toString().padStart(2, '0');
-    const month = (now.getMonth() + 1).toString().padStart(2, '0');
-    const year = now.getFullYear().toString();
-
-    switch (this.dateFolderFormat) {
-      case 'dd-mm':
-        return `${day}-${month}`;
-      case 'dd-mm-yyyy':
-        return `${day}-${month}-${year}`;
-      case 'mm-dd-yyyy':
-        return `${month}-${day}-${year}`;
-      case 'yyyy-mm-dd':
-        return `${year}-${month}-${day}`;
-      case 'yyyy/mm/dd':
-        return `${year}/${month}/${day}`;
-      default:
-        return `${day}-${month}`;
-    }
-  }
-
-  private formatFileName(): string {
-    const now = new Date();
-    const day = now.getDate().toString().padStart(2, '0');
-    const month = (now.getMonth() + 1).toString().padStart(2, '0');
-    const year = now.getFullYear().toString();
-    const hours = now.getHours().toString().padStart(2, '0');
-    const minutes = now.getMinutes().toString().padStart(2, '0');
-    const seconds = now.getSeconds().toString().padStart(2, '0');
-
-    const extension = this.outputFormat === 'wav' ? 'wav' : 
-                     this.outputFormat === 'mp3' ? 'mp3' : 'webm';
-
-    let baseName: string;
-    switch (this.fileNameFormat) {
-      case 'hh-mm-ss-seq':
-        baseName = `${hours}-${minutes}-${seconds}-${this.currentSplitNumber.toString().padStart(3, '0')}`;
-        break;
-      case 'dd-mm-hh-mm-ss-seq':
-        baseName = `${day}-${month}-${hours}-${minutes}-${seconds}-${this.currentSplitNumber.toString().padStart(3, '0')}`;
-        break;
-      case 'timestamp':
-      default:
-        const timestamp = now.toISOString().replace(/[:.]/g, '-').slice(0, 19);
-        baseName = this.splitEnabled && this.currentSplitNumber > 1 
-          ? `gravacao_${timestamp}_parte${this.currentSplitNumber}`
-          : `gravacao_${timestamp}`;
-        break;
-    }
-
-    return `${baseName}.${extension}`;
-  }
-
-  private scheduleSplit(): void {
-    setTimeout(() => {
-      if (this.isRecording && this.splitEnabled) {
-        this.performSplit();
-      }
-    }, this.splitIntervalMinutes * 60 * 1000);
-  }
-
-  private async performSplit(): Promise<void> {
-    if (!this.isRecording || !this.mediaRecorder) return;
-
-    try {
-      // Parar gravação atual
-      this.mediaRecorder.stop();
-      
-      // Aguardar um breve momento para processamento
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      // Incrementar número da parte
-      this.currentSplitNumber++;
-      
-      // Reiniciar gravação com novo arquivo
-      this.audioChunks = [];
-      const stream = this.mediaRecorder.stream;
-      
-      // Recriar MediaRecorder
-      this.mediaRecorder = new MediaRecorder(stream, {
-        mimeType: this.mediaRecorder.mimeType
-      });
-
-      this.mediaRecorder.ondataavailable = (event) => {
-        if (event.data.size > 0) {
-          this.audioChunks.push(event.data);
-        }
-      };
-
-      this.mediaRecorder.onstop = () => {
-        this.saveRecording();
-      };
-
-      this.mediaRecorder.start(1000);
-      
-      // Agendar próximo split
-      this.scheduleSplit();
-      
-      toast.info(`Iniciando parte ${this.currentSplitNumber} da gravação`);
-    } catch (error) {
-      console.error('Erro ao fazer split:', error);
-      toast.error('Erro ao dividir arquivo');
-    }
-  }
-
-  // Análise de áudio em tempo real
-  private setupAudioAnalysis(stream: MediaStream): void {
-    try {
-      this.audioContext = new AudioContext({ sampleRate: 44100 });
-      const source = this.audioContext.createMediaStreamSource(stream);
-      
-      this.analyser = this.audioContext.createAnalyser();
-      this.analyser.fftSize = 2048;
-      this.analyser.smoothingTimeConstant = 0.3;
-      
-      // NÃO conectar ao destination para evitar feedback
-      source.connect(this.analyser);
-      
-      console.log('🎤 Contexto de áudio configurado para análise em tempo real');
-      console.log('📊 Configurações AudioContext:', {
-        sampleRate: this.audioContext.sampleRate,
-        fftSize: this.analyser.fftSize,
-        frequencyBinCount: this.analyser.frequencyBinCount
-      });
-      this.startAudioAnalysis();
-    } catch (error) {
-      console.error('❌ Erro ao configurar análise de áudio:', error);
-      logSystem.error(`Erro ao configurar análise de áudio: ${error}`, 'Audio');
-    }
-  }
-
-  private createNoiseProcessingChain(audioContext: AudioContext, sourceNode: AudioNode): AudioNode {
-    try {
-      // Filtro High-Pass para remover ruído de baixa frequência
-      const highPassFilter = audioContext.createBiquadFilter();
-      highPassFilter.type = 'highpass';
-      highPassFilter.frequency.setValueAtTime(80, audioContext.currentTime);
-      highPassFilter.Q.setValueAtTime(1, audioContext.currentTime);
-      
-      // Filtro Notch para remover ruído elétrico de 60Hz
-      const notchFilter60Hz = audioContext.createBiquadFilter();
-      notchFilter60Hz.type = 'notch';
-      notchFilter60Hz.frequency.setValueAtTime(60, audioContext.currentTime);
-      notchFilter60Hz.Q.setValueAtTime(10, audioContext.currentTime);
-      
-      // Filtro Notch para remover ruído elétrico de 50Hz (Europa)
-      const notchFilter50Hz = audioContext.createBiquadFilter();
-      notchFilter50Hz.type = 'notch';
-      notchFilter50Hz.frequency.setValueAtTime(50, audioContext.currentTime);
-      notchFilter50Hz.Q.setValueAtTime(10, audioContext.currentTime);
-      
-      // Conectar filtros em série
-      sourceNode.connect(highPassFilter);
-      highPassFilter.connect(notchFilter60Hz);
-      notchFilter60Hz.connect(notchFilter50Hz);
-      
-      console.log(`🎛️ Cadeia de filtros criada - Threshold: ${this.noiseThreshold}dB`);
-      return notchFilter50Hz;
-      
-    } catch (error) {
-      console.error('❌ Erro ao criar filtros de ruído:', error);
-      logSystem.error(`Erro ao criar filtros de supressão de ruído: ${error}`, 'Audio');
-      return sourceNode; // Fallback para nó original
-    }
-  }
-
-  private startAudioAnalysis(): void {
-    if (!this.analyser) {
-      console.error('❌ startAudioAnalysis: analyser não disponível');
-      logSystem.error('Análise de áudio não pode ser iniciada - analyser indisponível', 'Audio');
-      return;
-    }
-
-    const bufferLength = this.analyser.frequencyBinCount;
-    const dataArray = new Uint8Array(bufferLength);
-    let analysisCounter = 0;
-
-    console.log('🎵 Iniciando análise de áudio em tempo real');
-    logSystem.info('Análise de áudio em tempo real iniciada', 'Audio');
-
-    const analyze = () => {
-      if (!this.analyser || !this.isRecording) return;
-
-      try {
-        this.analyser.getByteFrequencyData(dataArray);
-        
-        // Calcular níveis de volume em dB usando log10 (correção Manus IA)
-        const sum = dataArray.reduce((acc, val) => acc + val, 0);
-        const average = sum / bufferLength;
-        
-        // Calcular dB corretamente
-        const dbLevel = average > 0 ? 20 * Math.log10(average / 255) : -Infinity;
-        
-        // Converter dB para porcentagem para VU Meters (0-100%)
-        const leftLevel = Math.max(0, Math.min(100, (dbLevel + 60) * (100 / 60))); // Normalizar -60dB a 0dB para 0-100%
-        const rightLevel = Math.max(0, Math.min(100, (dbLevel + 60) * (100 / 60) + Math.random() * 2 - 1)); // Simular stereo
-        const peak = leftLevel > 85 || rightLevel > 85;
-
-        // Notificar callbacks VU Meters
-        this.volumeCallbacks.forEach(callback => {
-          try {
-            callback(leftLevel, rightLevel, peak);
-          } catch (error) {
-            console.error('Erro no callback VU:', error);
-          }
-        });
-
-        // Log detalhado para debug (a cada 30 execuções = ~1 segundo)
-        if (analysisCounter % 30 === 0) {
-          console.log(`🎵 Nível de áudio detectado: ${dbLevel.toFixed(1)}dB`);
-          console.log(`🎛️ Análise: sum=${sum} avg=${average.toFixed(1)} dB=${dbLevel.toFixed(1)} L=${leftLevel.toFixed(1)}% R=${rightLevel.toFixed(1)}% callbacks=${this.volumeCallbacks.length}/${this.spectrumCallbacks.length}`);
-          logSystem.info(`Análise Audio: sum=${sum} avg=${average.toFixed(1)} dB=${dbLevel.toFixed(1)} L=${leftLevel.toFixed(1)}% R=${rightLevel.toFixed(1)}% hasSignal=${this.hasSignal} callbacks=${this.volumeCallbacks.length}/${this.spectrumCallbacks.length}`, 'AudioAnalysis');
-        }
-        analysisCounter++;
-
-        // Marcar que há sinal com threshold mais baixo para melhor sensibilidade
-        this.hasSignal = this.isRecording && (average > 0.1 || leftLevel > 0.5 || rightLevel > 0.5);
-        
-        // Sempre notificar callbacks quando está gravando, mesmo com sinal baixo
-        if (this.isRecording) {
-          // Notificar callbacks de volume
-          if (this.volumeCallbacks.length > 0) {
-            this.volumeCallbacks.forEach(callback => {
-              callback(leftLevel, rightLevel, peak);
-            });
-          } else if (analysisCounter % 120 === 0) {
-            console.warn('⚠️ Nenhum callback para VU Meters registrado');
-          }
-
-          // Processar dados para spectrum analyzer com FFT (correção Manus IA)
-          const spectrumData = new Array(32).fill(0);
-          const binSize = Math.floor(dataArray.length / 32);
-          
-          for (let i = 0; i < 32; i++) {
-            let sum = 0;
-            for (let j = 0; j < binSize; j++) {
-              sum += dataArray[i * binSize + j];
-            }
-            spectrumData[i] = Math.min(100, (sum / binSize / 255) * 100);
-          }
-          
-          // Log dados de espectro para debug (menos frequente)
-          if (analysisCounter % 90 === 0) {
-            console.log('📊 Dados de espectro:', spectrumData.slice(0, 5));
-          }
-          
-          // Notificar callbacks de espectro
-          if (this.spectrumCallbacks.length > 0) {
-            this.spectrumCallbacks.forEach(callback => {
-              callback(spectrumData);
-            });
-          } else if (analysisCounter % 120 === 0) {
-            console.warn('⚠️ Nenhum callback para Spectrum Analyzer registrado');
-          }
-        }
-
-        requestAnimationFrame(analyze);
-      } catch (error) {
-        console.error('❌ Erro durante análise de áudio:', error);
-        logSystem.error(`Erro durante análise de áudio: ${error}`, 'Audio');
-      }
-    };
-
-    console.log('🔄 Iniciando loop de análise de áudio em tempo real');
-    analyze();
-  }
-
-  private cleanupAudioAnalysis(): void {
-    if (this.audioContext) {
-      this.audioContext.close();
-      this.audioContext = null;
-    }
-    this.analyser = null;
-  }
-
-  // Callbacks para UI
-  onVolumeUpdate(callback: (left: number, right: number, peak: boolean) => void): void {
-    this.volumeCallbacks.push(callback);
-    console.log(`📊 Callback VU Meters registrado. Total: ${this.volumeCallbacks.length}`);
-    logSystem.info(`Callback VU Meters registrado. Total: ${this.volumeCallbacks.length}`, 'Audio');
-  }
-
+  // Métodos temporários para compatibilidade com componentes existentes
   onSpectrumUpdate(callback: (data: number[]) => void): void {
-    this.spectrumCallbacks.push(callback);
-    console.log(`📈 Callback Spectrum registrado. Total: ${this.spectrumCallbacks.length}`);
-    logSystem.info(`Callback Spectrum registrado. Total: ${this.spectrumCallbacks.length}`, 'Audio');
-  }
-
-  removeVolumeCallback(callback: (left: number, right: number, peak: boolean) => void): void {
-    const index = this.volumeCallbacks.indexOf(callback);
-    if (index > -1) {
-      this.volumeCallbacks.splice(index, 1);
-      console.log(`📊 Callback VU Meters removido. Total: ${this.volumeCallbacks.length}`);
-    }
+    // Implementação básica - apenas para evitar erros
+    console.log('⚠️ Spectrum Analyzer temporariamente desabilitado na v3.0');
   }
 
   removeSpectrumCallback(callback: (data: number[]) => void): void {
-    const index = this.spectrumCallbacks.indexOf(callback);
-    if (index > -1) {
-      this.spectrumCallbacks.splice(index, 1);
-      console.log(`📈 Callback Spectrum removido. Total: ${this.spectrumCallbacks.length}`);
-    }
+    // Implementação básica - apenas para evitar erros
   }
 
-  isPausedState(): boolean {
-    return this.isPaused;
-  }
-
-  // Configurações de formato de nome
-  setFileNameFormat(format: string): void {
-    this.fileNameFormat = format;
-  }
-
-  getFileNameFormat(): string {
-    return this.fileNameFormat;
-  }
-
-  // Método para verificar se há sinal de áudio
-  hasAudioSignal(): boolean {
-    return this.isRecording && this.analyser !== null;
-  }
-   
-  // Forçar inicialização da análise de áudio para componentes
-  forceAudioAnalysisStart(): void {
-    if (this.isRecording && this.audioContext && this.analyser) {
-      console.log('🎵 Forçando início da análise de áudio para VU Meters e Spectrum');
-      this.hasSignal = true;
-      
-      // Inicializar componentes com dados vazios para ativar a interface
-      this.volumeCallbacks.forEach(callback => {
-        callback(0, 0, false);
-      });
-      this.spectrumCallbacks.forEach(callback => {
-        callback(Array(32).fill(0));
-      });
-      
-      console.log('✅ VU Meters e Spectrum inicializados');
-    }
-  }
-
-  // Configurações de MP3 Bitrate
-  setMp3Bitrate(bitrate: number): void {
-    this.mp3Bitrate = bitrate;
-  }
-
-  getMp3Bitrate(): number {
-    return this.mp3Bitrate;
-  }
-
-  // MÉTODO CORRIGIDO: setNoiseSuppressionEnabled
-  setNoiseSuppressionEnabled(enabled: boolean): void {
-    this.noiseSuppressionEnabled = enabled;
-    this.saveSettings();
-    
-    // CRÍTICO: Reiniciar monitoramento com nova configuração
-    this.restartMonitoring();
-    
-    console.log(`🎛️ Supressão de ruído: ${enabled ? 'ATIVADA' : 'DESATIVADA'}`);
-    
-    // Log para aba de logs
-    logSystem.info(`Supressão de ruído ${enabled ? 'ativada' : 'desativada'}`, 'Audio');
-  }
-
-  getNoiseSuppressionEnabled(): boolean {
-    return this.noiseSuppressionEnabled;
-  }
-
-  setNoiseThreshold(threshold: number): void {
-    this.noiseThreshold = threshold;
-    console.log(`Threshold de ruído ajustado para: ${threshold}dB`);
-    logSystem.info(`Threshold de ruído ajustado para: ${threshold}dB`, 'Audio');
-  }
-
-  getNoiseThreshold(): number {
-    return this.noiseThreshold;
-  }
-
-  setNoiseGateAttack(attack: number): void {
-    this.noiseGateAttack = attack;
-  }
-
-  getNoiseGateAttack(): number {
-    return this.noiseGateAttack;
-  }
-
-  setNoiseGateRelease(release: number): void {
-    this.noiseGateRelease = release;
-  }
-
-  getNoiseGateRelease(): number {
-    return this.noiseGateRelease;
-  }
-
-  // NOVO: Sistema de monitoramento independente para VU Meters sempre ativo
-  private async initializeMonitoring(): Promise<void> {
-    try {
-      console.log('🎯 Inicializando sistema de monitoramento independente...');
-      // CRÍTICO: Limpar contextos antes de inicializar
-      await this.cleanupAllAudioContexts();
-      await this.startMonitoring();
-    } catch (error) {
-      console.error('❌ Erro ao inicializar monitoramento:', error);
-      logSystem.error(`Erro ao inicializar monitoramento: ${error}`, 'Audio');
-    }
-  }
-
-  // NOVO MÉTODO: Limpeza completa de contextos
-  private async cleanupAllAudioContexts(): Promise<void> {
-    // Parar todas as tracks do stream de monitoramento
-    if (this.monitoringStream) {
-      this.monitoringStream.getTracks().forEach(track => {
-        track.stop();
-        console.log('🛑 Track de monitoramento parada');
-      });
-      this.monitoringStream = null;
-    }
-    
-    // Fechar contexto de monitoramento
-    if (this.monitoringContext && this.monitoringContext.state !== 'closed') {
-      await this.monitoringContext.close();
-      this.monitoringContext = null;
-      console.log('🛑 Contexto de monitoramento fechado');
-    }
-    
-    // Fechar contexto de gravação se existir
-    if (this.audioContext && this.audioContext.state !== 'closed') {
-      await this.audioContext.close();
-      this.audioContext = null;
-      console.log('🛑 Contexto de gravação fechado');
-    }
-    
-    this.monitoringAnalyser = null;
-    this.analyser = null;
-    
-    console.log('✅ Todos os contextos de áudio limpos');
-  }
-
-  private async startMonitoring(): Promise<void> {
-    try {
-      // CRÍTICO: Limpar TODOS os contextos antes de inicializar
-      await this.cleanupAllAudioContexts();
-      
-      const constraints: MediaStreamConstraints = {
-        audio: {
-          deviceId: this.inputDevice ? { exact: this.inputDevice } : undefined,
-          echoCancellation: this.noiseSuppressionEnabled,
-          noiseSuppression: this.noiseSuppressionEnabled,
-          autoGainControl: this.noiseSuppressionEnabled,
-          channelCount: 1, // FORÇAR MONO para evitar mixagem
-          sampleRate: 44100 // Padrão profissional
-        }
-      };
-
-      // USAR MESMO STREAM para monitoramento E gravação
-      this.monitoringStream = await navigator.mediaDevices.getUserMedia(constraints);
-      
-      // Configurar contexto de áudio
-      this.monitoringContext = new AudioContext({ sampleRate: 44100 });
-      const source = this.monitoringContext.createMediaStreamSource(this.monitoringStream);
-      
-      this.monitoringAnalyser = this.monitoringContext.createAnalyser();
-      this.monitoringAnalyser.fftSize = 512; // Reduzido para melhor performance
-      this.monitoringAnalyser.smoothingTimeConstant = 0.3;
-      
-      source.connect(this.monitoringAnalyser);
-      
-      this.startContinuousAnalysis();
-      
-      console.log('✅ Sistema de monitoramento iniciado com fonte única');
-      console.log(`🎯 Dispositivo: ${this.inputDevice || 'padrão'}`);
-      console.log(`🎛️ Supressão: ${this.noiseSuppressionEnabled ? 'ON' : 'OFF'}`);
-      logSystem.info(`Monitoramento iniciado - Dispositivo: ${this.inputDevice || 'padrão'}, Supressão: ${this.noiseSuppressionEnabled ? 'ON' : 'OFF'}`, 'Audio');
-      
-    } catch (error) {
-      console.error('❌ Erro ao inicializar monitoramento:', error);
-      logSystem.error(`Erro ao inicializar monitoramento: ${error}`, 'Audio');
-      
-      // Fallback: tentar com dispositivo padrão
-      if (this.inputDevice !== 'default') {
-        console.log('🔄 Tentando com dispositivo padrão...');
-        this.inputDevice = 'default';
-        try {
-          await this.startMonitoring();
-        } catch (fallbackError) {
-          console.error('❌ Erro no fallback:', fallbackError);
-          logSystem.error(`Erro no fallback de dispositivo: ${fallbackError}`, 'Audio');
-        }
-      }
-    }
-  }
-
-  // MÉTODO OTIMIZADO: startContinuousAnalysis com throttling
-  private startContinuousAnalysis(): void {
-    if (!this.monitoringAnalyser) return;
-
-    const bufferLength = this.monitoringAnalyser.frequencyBinCount;
-    const dataArray = new Uint8Array(bufferLength);
-    let lastAnalysisTime = 0;
-    const analysisThrottle = 50; // Máximo 20 FPS para melhor performance
-
-    const analyze = () => {
-      const now = performance.now();
-      
-      // Throttling para otimizar performance
-      if (now - lastAnalysisTime < analysisThrottle) {
-        if (this.monitoringContext && this.monitoringContext.state === 'running') {
-          requestAnimationFrame(analyze);
-        }
-        return;
-      }
-      
-      lastAnalysisTime = now;
-      
-      if (!this.monitoringAnalyser || !this.monitoringContext) return;
-
-      try {
-        this.monitoringAnalyser.getByteFrequencyData(dataArray);
-        
-        // Calcular RMS para VU meters
-        let sum = 0;
-        for (let i = 0; i < bufferLength; i++) {
-          const normalized = dataArray[i] / 255.0;
-          sum += normalized * normalized;
-        }
-        
-        const rms = Math.sqrt(sum / bufferLength);
-        
-        // CORREÇÃO: Escala dB profissional (-60dB a 0dB)
-        const dbLevel = rms > 0 ? Math.max(20 * Math.log10(rms), -60) : -60;
-        
-        // Simular stereo para compatibilidade
-        const leftLevel = dbLevel;
-        const rightLevel = dbLevel;
-        
-        // Detectar peaks (próximo a 0dB)
-        const peak = dbLevel > -6;
-
-        // Notificar callbacks para VU meters
-        this.volumeCallbacks.forEach(callback => {
-          try {
-            callback(leftLevel, rightLevel, peak);
-          } catch (error) {
-            console.error('❌ Erro no callback VU:', error);
-          }
-        });
-
-        // Processar dados para spectrum analyzer com FFT
-        const spectrumData = new Array(32).fill(0);
-        const binSize = Math.floor(dataArray.length / 32);
-        
-        for (let i = 0; i < 32; i++) {
-          let sum = 0;
-          for (let j = 0; j < binSize; j++) {
-            sum += dataArray[i * binSize + j];
-          }
-          spectrumData[i] = Math.min(100, (sum / binSize / 255) * 100);
-        }
-        
-        // Notificar callbacks para spectrum analyzer
-        this.spectrumCallbacks.forEach(callback => {
-          try {
-            callback(spectrumData);
-          } catch (error) {
-            console.error('❌ Erro no callback spectrum:', error);
-          }
-        });
-
-        // Logs periódicos para debug (reduzir frequência)
-        if (Math.random() < 0.01) { // 1% chance = logs esporádicos
-          console.log(`🎛️ Análise OTIMIZADA: L=${leftLevel.toFixed(1)}dB R=${rightLevel.toFixed(1)}dB`);
-        }
-
-        // Continuar análise
-        if (this.monitoringContext && this.monitoringContext.state === 'running') {
-          requestAnimationFrame(analyze);
-        }
-        
-      } catch (error) {
-        console.error('❌ Erro durante análise de áudio:', error);
-        logSystem.error(`Erro durante análise de áudio: ${error}`, 'Audio');
-        // Tentar reiniciar após erro
-        setTimeout(() => {
-          if (this.monitoringAnalyser) {
-            analyze();
-          }
-        }, 1000);
-      }
-    };
-
-    console.log('🔄 Iniciando loop de análise de áudio em tempo real');
-    analyze();
-  }
-
-  private stopMonitoring(): void {
-    if (this.monitoringStream) {
-      this.monitoringStream.getTracks().forEach(track => track.stop());
-      this.monitoringStream = null;
-    }
-    
-    if (this.monitoringContext) {
-      this.monitoringContext.close();
-      this.monitoringContext = null;
-    }
-    
-    this.monitoringAnalyser = null;
-    console.log('🛑 Sistema de monitoramento parado');
-  }
-
-  // MÉTODO CORRIGIDO: restartMonitoring
-  private async restartMonitoring(): Promise<void> {
-    console.log('🔄 Reiniciando monitoramento...');
-    
-    // CRÍTICO: Limpar recursos antes de reiniciar
-    await this.cleanupAllAudioContexts();
-    
-    // Aguardar um momento para garantir limpeza
-    await new Promise(resolve => setTimeout(resolve, 100));
-    
-    // Reinicializar
-    await this.startMonitoring();
-  }
-
-  // NOVO: Sistema de rotação de logs para sessões longas
-  private rotateLogsIfNeeded(): void {
-    try {
-      // Rotação básica através do localStorage para manter logs leves
-      const maxLogEntries = 100;
-      const logKey = 'audioServiceLogs';
-      
-      const storedLogs = localStorage.getItem(logKey);
-      if (storedLogs) {
-        const logs = JSON.parse(storedLogs);
-        if (Array.isArray(logs) && logs.length > maxLogEntries) {
-          // Manter apenas os últimos 50 logs
-          const recentLogs = logs.slice(-50);
-          localStorage.setItem(logKey, JSON.stringify(recentLogs));
-          console.log(`🗂️ Logs rotacionados: ${logs.length} → 50`);
-        }
-      }
-      
-    } catch (error) {
-      console.error('❌ Erro ao rotacionar logs:', error);
-    }
-  }
-
-  // NOVO: Método público para verificar saúde do sistema
-  public getSystemHealth(): {
-    isHealthy: boolean;
-    issues: string[];
-    recommendations: string[];
-  } {
-    const issues: string[] = [];
-    const recommendations: string[] = [];
-
-    try {
-      // Verificar contexto de áudio
-      if (this.monitoringContext && this.monitoringContext.state === 'suspended') {
-        issues.push('Contexto de áudio suspenso');
-        recommendations.push('Reativar contexto de áudio');
-      }
-
-      // Verificar uso de memória
-      if ((performance as any).memory) {
-        const memoryUsage = (performance as any).memory.usedJSHeapSize / 1024 / 1024;
-        if (memoryUsage > 300) {
-          issues.push(`Alto uso de memória: ${memoryUsage.toFixed(2)}MB`);
-          recommendations.push('Considerar limpeza de cache');
-        }
-      }
-
-      // Verificar health check ativo durante gravação
-      if (this.isRecording && !this.healthCheckInterval) {
-        issues.push('Health check não está ativo durante gravação');
-        recommendations.push('Ativar health check para sessões longas');
-      }
-
-      // Verificar backup ativo durante gravação
-      if (this.isRecording && !this.backupInterval) {
-        issues.push('Backup automático não está ativo');
-        recommendations.push('Ativar backup automático');
-      }
-
-      return {
-        isHealthy: issues.length === 0,
-        issues,
-        recommendations
-      };
-
-    } catch (error) {
-      return {
-        isHealthy: false,
-        issues: [`Erro ao verificar saúde do sistema: ${error}`],
-        recommendations: ['Reiniciar o serviço de áudio']
-      };
-    }
+  getSampleRate(): number {
+    return 44100; // Valor fixo para v3.0
   }
 }
 
+// Instância única do serviço
 export const audioService = new ElectronAudioService();
