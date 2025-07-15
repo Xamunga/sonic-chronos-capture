@@ -1,8 +1,8 @@
 
 {
   "name": "gravador-realtime-pro",
-  "version": "2.9.0",
-  "description": "Suíte Profissional de Gravação de Áudio - ALES Sonorização",
+  "version": "3.1.0",
+  "description": "Suíte Profissional de Gravação de Áudio - ALES Sonorização v3.1 (Split Otimizado)",
   "main": "main.js",
   "author": "ALES Sonorização",
   "license": "MIT",
@@ -16,7 +16,7 @@
   "build": {
     "appId": "com.ales.gravador-realtime-pro",
     "productName": "Gravador Real Time Pro",
-    "copyright": "Copyright © 2024 ALES Sonorização",
+    "copyright": "Copyright © 2025 ALES Sonorização",
     "directories": {
       "output": "dist-electron"
     },
