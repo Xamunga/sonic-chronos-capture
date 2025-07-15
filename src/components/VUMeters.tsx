@@ -4,28 +4,45 @@ import { Card } from '@/components/ui/card';
 import { audioService } from '@/services/electronAudio';
 
 const VUMeters = () => {
-  const [leftLevel, setLeftLevel] = useState(0);
-  const [rightLevel, setRightLevel] = useState(0);
+  const [leftLevel, setLeftLevel] = useState(-60);
+  const [rightLevel, setRightLevel] = useState(-60);
   const [peakLeft, setPeakLeft] = useState(false);
   const [peakRight, setPeakRight] = useState(false);
 
   useEffect(() => {
-    // CORRIGIDO: Tratar valores dB corretamente (-60dB a 0dB)
+    // VU Meters só funcionam durante gravação para evitar confusão do operador
     const handleVolumeUpdate = (left: number, right: number, peak: boolean) => {
-      setLeftLevel(left);
-      setRightLevel(right);
-      setPeakLeft(peak || left > -6); // Peak próximo a 0dB
-      setPeakRight(peak || right > -6);
+      // Só mostrar atividade se estiver gravando
+      if (audioService.isCurrentlyRecording()) {
+        setLeftLevel(left);
+        setRightLevel(right);
+        setPeakLeft(peak || left > -6);
+        setPeakRight(peak || right > -6);
+      } else {
+        // Zerar VU Meters quando não está gravando
+        setLeftLevel(-60);
+        setRightLevel(-60);
+        setPeakLeft(false);
+        setPeakRight(false);
+      }
     };
 
     // Registrar callback no audioService
     audioService.onVolumeUpdate(handleVolumeUpdate);
 
-    // REMOVIDO: VU meters agora funcionam independentemente da gravação
-    // Sistema de monitoramento independente sempre ativo
+    // Verificar estado de gravação periodicamente
+    const statusInterval = setInterval(() => {
+      if (!audioService.isCurrentlyRecording()) {
+        setLeftLevel(-60);
+        setRightLevel(-60);
+        setPeakLeft(false);
+        setPeakRight(false);
+      }
+    }, 100);
 
     return () => {
       audioService.removeVolumeCallback(handleVolumeUpdate);
+      clearInterval(statusInterval);
     };
   }, []);
 
