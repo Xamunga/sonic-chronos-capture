@@ -36,7 +36,7 @@ const SpectrumAnalyzer = () => {
     <Card className="bg-gradient-to-br from-studio-charcoal to-studio-slate border-studio-electric/30">
       <div className="p-6">
         <h3 className="text-lg font-semibold text-studio-electric mb-4">Analisador de Espectro</h3>
-        <div className="h-30 flex items-end justify-between space-x-1 bg-studio-dark rounded-lg p-2">
+        <div className="h-32 flex items-end justify-between space-x-1 bg-studio-dark rounded-lg p-2">
           {spectrum.map((level, index) => (
             <div
               key={index}
