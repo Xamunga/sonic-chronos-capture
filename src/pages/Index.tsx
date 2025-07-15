@@ -35,7 +35,7 @@ const Index = () => {
           <div className="space-y-4">
             <RecordingControls outputPath={outputPath} />
             <div className="bg-gradient-to-br from-studio-charcoal to-studio-slate border-studio-electric/30 rounded-lg p-6 text-center border flex flex-col justify-center h-[270px]">
-              <div className="text-studio-electric font-mono text-2xl font-bold mb-2">
+              <div className="text-studio-electric font-mono text-3xl font-bold mb-6">
                 <span>{currentTime.toLocaleDateString('pt-BR')}</span>
                 <span style={{ marginLeft: '0.8em' }}>{currentTime.toLocaleTimeString('pt-BR')}</span>
               </div>
