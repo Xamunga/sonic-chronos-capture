@@ -15,7 +15,6 @@ import DebugTab from '../components/DebugTab';
 const Index = () => {
   const [outputPath, setOutputPath] = useState('C:\\Gravacoes\\');
   const [currentTime, setCurrentTime] = useState(new Date());
-  const [activeTab, setActiveTab] = useState('');
   const windowSize = useWindowSize();
 
   // Atualizar data/hora a cada segundo
@@ -49,93 +48,53 @@ const Index = () => {
           </div>
         </div>
         
-        {/* Sistema de Accordion com Layout Horizontal */}
-        <div className="w-full flex-1">
-          {/* Barra de Abas Horizontal */}
-          <div className="grid w-full grid-cols-5 mb-4 bg-black sticky top-0 z-10 rounded-lg">
-            <button 
-              onClick={() => setActiveTab(activeTab === 'audio' ? '' : 'audio')}
-              className={`px-4 py-2 text-sm font-medium transition-colors ${
-                activeTab === 'audio' 
-                  ? 'bg-studio-electric text-black' 
-                  : 'text-studio-electric hover:bg-studio-electric/10'
-              }`}
-            >
+        {/* Sistema de Accordion para Abas */}
+        <Accordion type="multiple" className="w-full flex-1">
+          <AccordionItem value="audio" className="border-studio-electric/30">
+            <AccordionTrigger className="px-4 py-2 bg-black hover:bg-studio-electric/10 text-studio-electric">
               Áudio
-            </button>
-            <button 
-              onClick={() => setActiveTab(activeTab === 'files' ? '' : 'files')}
-              className={`px-4 py-2 text-sm font-medium transition-colors ${
-                activeTab === 'files' 
-                  ? 'bg-studio-electric text-black' 
-                  : 'text-studio-electric hover:bg-studio-electric/10'
-              }`}
-            >
-              Arquivos
-            </button>
-            <button 
-              onClick={() => setActiveTab(activeTab === 'resources' ? '' : 'resources')}
-              className={`px-4 py-2 text-sm font-medium transition-colors ${
-                activeTab === 'resources' 
-                  ? 'bg-studio-electric text-black' 
-                  : 'text-studio-electric hover:bg-studio-electric/10'
-              }`}
-            >
-              Recursos
-            </button>
-            <button 
-              onClick={() => setActiveTab(activeTab === 'log' ? '' : 'log')}
-              className={`px-4 py-2 text-sm font-medium transition-colors ${
-                activeTab === 'log' 
-                  ? 'bg-studio-electric text-black' 
-                  : 'text-studio-electric hover:bg-studio-electric/10'
-              }`}
-            >
-              Log
-            </button>
-            <button 
-              onClick={() => setActiveTab(activeTab === 'debug' ? '' : 'debug')}
-              className={`px-4 py-2 text-sm font-medium transition-colors ${
-                activeTab === 'debug' 
-                  ? 'bg-studio-electric text-black' 
-                  : 'text-studio-electric hover:bg-studio-electric/10'
-              }`}
-            >
-              Debug
-            </button>
-          </div>
-
-          {/* Conteúdo Expansível */}
-          {activeTab === 'audio' && (
-            <div className="animate-fade-in">
+            </AccordionTrigger>
+            <AccordionContent className="px-4 pb-4">
               <AudioSettings />
-            </div>
-          )}
-          
-          {activeTab === 'files' && (
-            <div className="animate-fade-in">
+            </AccordionContent>
+          </AccordionItem>
+
+          <AccordionItem value="files" className="border-studio-electric/30">
+            <AccordionTrigger className="px-4 py-2 bg-black hover:bg-studio-electric/10 text-studio-electric">
+              Arquivos
+            </AccordionTrigger>
+            <AccordionContent className="px-4 pb-4">
               <FileManagementSettings />
-            </div>
-          )}
-          
-          {activeTab === 'resources' && (
-            <div className="animate-fade-in">
+            </AccordionContent>
+          </AccordionItem>
+
+          <AccordionItem value="resources" className="border-studio-electric/30">
+            <AccordionTrigger className="px-4 py-2 bg-black hover:bg-studio-electric/10 text-studio-electric">
+              Recursos
+            </AccordionTrigger>
+            <AccordionContent className="px-4 pb-4">
               <ResourceMonitor />
-            </div>
-          )}
-          
-          {activeTab === 'log' && (
-            <div className="animate-fade-in">
+            </AccordionContent>
+          </AccordionItem>
+
+          <AccordionItem value="log" className="border-studio-electric/30">
+            <AccordionTrigger className="px-4 py-2 bg-black hover:bg-studio-electric/10 text-studio-electric">
+              Log
+            </AccordionTrigger>
+            <AccordionContent className="px-4 pb-4">
               <LogTab />
-            </div>
-          )}
-          
-          {activeTab === 'debug' && (
-            <div className="animate-fade-in">
+            </AccordionContent>
+          </AccordionItem>
+
+          <AccordionItem value="debug" className="border-studio-electric/30">
+            <AccordionTrigger className="px-4 py-2 bg-black hover:bg-studio-electric/10 text-studio-electric">
+              Debug
+            </AccordionTrigger>
+            <AccordionContent className="px-4 pb-4">
               <DebugTab />
-            </div>
-          )}
-        </div>
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
 
         <footer className="mt-4 text-center text-xs text-muted-foreground">
           <div className="bg-muted/50 rounded-lg p-2 border border-border">
