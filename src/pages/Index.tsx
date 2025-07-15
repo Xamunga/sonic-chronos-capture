@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useWindowSize } from '@/hooks/useWindowSize';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import AppHeader from '../components/AppHeader';
 import RecordingControls from '../components/RecordingControls';
 import VUMeters from '../components/VUMeters';
@@ -48,45 +48,53 @@ const Index = () => {
           </div>
         </div>
         
-        <Tabs defaultValue="audio" className="w-full flex-1 flex flex-col">
-          <TabsList className="grid w-full grid-cols-5 mb-6 bg-black sticky top-0 z-10">
-            <TabsTrigger value="audio" className="data-[state=active]:bg-studio-electric data-[state=active]:text-black">
+        {/* Sistema de Accordion para Abas */}
+        <Accordion type="multiple" className="w-full flex-1">
+          <AccordionItem value="audio" className="border-studio-electric/30">
+            <AccordionTrigger className="px-4 py-2 bg-black hover:bg-studio-electric/10 text-studio-electric">
               Áudio
-            </TabsTrigger>
-            <TabsTrigger value="files" className="data-[state=active]:bg-studio-electric data-[state=active]:text-black">
+            </AccordionTrigger>
+            <AccordionContent className="px-4 pb-4">
+              <AudioSettings />
+            </AccordionContent>
+          </AccordionItem>
+
+          <AccordionItem value="files" className="border-studio-electric/30">
+            <AccordionTrigger className="px-4 py-2 bg-black hover:bg-studio-electric/10 text-studio-electric">
               Arquivos
-            </TabsTrigger>
-            <TabsTrigger value="resources" className="data-[state=active]:bg-studio-electric data-[state=active]:text-black">
+            </AccordionTrigger>
+            <AccordionContent className="px-4 pb-4">
+              <FileManagementSettings />
+            </AccordionContent>
+          </AccordionItem>
+
+          <AccordionItem value="resources" className="border-studio-electric/30">
+            <AccordionTrigger className="px-4 py-2 bg-black hover:bg-studio-electric/10 text-studio-electric">
               Recursos
-            </TabsTrigger>
-            <TabsTrigger value="log" className="data-[state=active]:bg-studio-electric data-[state=active]:text-black">
+            </AccordionTrigger>
+            <AccordionContent className="px-4 pb-4">
+              <ResourceMonitor />
+            </AccordionContent>
+          </AccordionItem>
+
+          <AccordionItem value="log" className="border-studio-electric/30">
+            <AccordionTrigger className="px-4 py-2 bg-black hover:bg-studio-electric/10 text-studio-electric">
               Log
-            </TabsTrigger>
-            <TabsTrigger value="debug" className="data-[state=active]:bg-studio-electric data-[state=active]:text-black">
+            </AccordionTrigger>
+            <AccordionContent className="px-4 pb-4">
+              <LogTab />
+            </AccordionContent>
+          </AccordionItem>
+
+          <AccordionItem value="debug" className="border-studio-electric/30">
+            <AccordionTrigger className="px-4 py-2 bg-black hover:bg-studio-electric/10 text-studio-electric">
               Debug
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="audio" className="space-y-4">
-            <AudioSettings />
-          </TabsContent>
-
-          <TabsContent value="files" className="space-y-4">
-            <FileManagementSettings />
-          </TabsContent>
-
-          <TabsContent value="resources" className="space-y-4">
-            <ResourceMonitor />
-          </TabsContent>
-
-          <TabsContent value="log" className="space-y-4">
-            <LogTab />
-          </TabsContent>
-
-          <TabsContent value="debug" className="space-y-4">
-            <DebugTab />
-          </TabsContent>
-        </Tabs>
+            </AccordionTrigger>
+            <AccordionContent className="px-4 pb-4">
+              <DebugTab />
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
 
         <footer className="mt-4 text-center text-xs text-muted-foreground">
           <div className="bg-muted/50 rounded-lg p-2 border border-border">
