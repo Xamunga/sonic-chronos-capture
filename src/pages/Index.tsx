@@ -48,53 +48,74 @@ const Index = () => {
           </div>
         </div>
         
-        {/* Sistema de Accordion para Abas */}
-        <Accordion type="multiple" className="w-full flex-1">
-          <AccordionItem value="audio" className="border-studio-electric/30">
-            <AccordionTrigger className="px-4 py-2 bg-black hover:bg-studio-electric/10 text-studio-electric">
-              Áudio
-            </AccordionTrigger>
-            <AccordionContent className="px-4 pb-4">
-              <AudioSettings />
-            </AccordionContent>
-          </AccordionItem>
+        {/* Sistema de Abas Horizontais */}
+        <div className="w-full flex-1">
+          {/* Triggers das Abas em linha horizontal */}
+          <div className="flex bg-black border border-studio-electric/30 rounded-t-lg">
+            <Accordion type="multiple" className="w-full">
+              <div className="flex w-full">
+                <AccordionItem value="audio" className="flex-1 border-r border-studio-electric/30 last:border-r-0">
+                  <AccordionTrigger className="px-4 py-2 hover:bg-studio-electric/10 text-studio-electric justify-center">
+                    Áudio
+                  </AccordionTrigger>
+                </AccordionItem>
+                <AccordionItem value="files" className="flex-1 border-r border-studio-electric/30 last:border-r-0">
+                  <AccordionTrigger className="px-4 py-2 hover:bg-studio-electric/10 text-studio-electric justify-center">
+                    Arquivos
+                  </AccordionTrigger>
+                </AccordionItem>
+                <AccordionItem value="resources" className="flex-1 border-r border-studio-electric/30 last:border-r-0">
+                  <AccordionTrigger className="px-4 py-2 hover:bg-studio-electric/10 text-studio-electric justify-center">
+                    Recursos
+                  </AccordionTrigger>
+                </AccordionItem>
+                <AccordionItem value="log" className="flex-1 border-r border-studio-electric/30 last:border-r-0">
+                  <AccordionTrigger className="px-4 py-2 hover:bg-studio-electric/10 text-studio-electric justify-center">
+                    Log
+                  </AccordionTrigger>
+                </AccordionItem>
+                <AccordionItem value="debug" className="flex-1">
+                  <AccordionTrigger className="px-4 py-2 hover:bg-studio-electric/10 text-studio-electric justify-center">
+                    Debug
+                  </AccordionTrigger>
+                </AccordionItem>
+              </div>
+            </Accordion>
+          </div>
+          
+          {/* Conteúdo das Abas */}
+          <Accordion type="multiple" className="w-full">
+            <AccordionItem value="audio" className="border-studio-electric/30 border-x border-b rounded-b-lg">
+              <AccordionContent className="px-4 pb-4 bg-black">
+                <AudioSettings />
+              </AccordionContent>
+            </AccordionItem>
 
-          <AccordionItem value="files" className="border-studio-electric/30">
-            <AccordionTrigger className="px-4 py-2 bg-black hover:bg-studio-electric/10 text-studio-electric">
-              Arquivos
-            </AccordionTrigger>
-            <AccordionContent className="px-4 pb-4">
-              <FileManagementSettings />
-            </AccordionContent>
-          </AccordionItem>
+            <AccordionItem value="files" className="border-studio-electric/30 border-x border-b">
+              <AccordionContent className="px-4 pb-4 bg-black">
+                <FileManagementSettings />
+              </AccordionContent>
+            </AccordionItem>
 
-          <AccordionItem value="resources" className="border-studio-electric/30">
-            <AccordionTrigger className="px-4 py-2 bg-black hover:bg-studio-electric/10 text-studio-electric">
-              Recursos
-            </AccordionTrigger>
-            <AccordionContent className="px-4 pb-4">
-              <ResourceMonitor />
-            </AccordionContent>
-          </AccordionItem>
+            <AccordionItem value="resources" className="border-studio-electric/30 border-x border-b">
+              <AccordionContent className="px-4 pb-4 bg-black">
+                <ResourceMonitor />
+              </AccordionContent>
+            </AccordionItem>
 
-          <AccordionItem value="log" className="border-studio-electric/30">
-            <AccordionTrigger className="px-4 py-2 bg-black hover:bg-studio-electric/10 text-studio-electric">
-              Log
-            </AccordionTrigger>
-            <AccordionContent className="px-4 pb-4">
-              <LogTab />
-            </AccordionContent>
-          </AccordionItem>
+            <AccordionItem value="log" className="border-studio-electric/30 border-x border-b">
+              <AccordionContent className="px-4 pb-4 bg-black">
+                <LogTab />
+              </AccordionContent>
+            </AccordionItem>
 
-          <AccordionItem value="debug" className="border-studio-electric/30">
-            <AccordionTrigger className="px-4 py-2 bg-black hover:bg-studio-electric/10 text-studio-electric">
-              Debug
-            </AccordionTrigger>
-            <AccordionContent className="px-4 pb-4">
-              <DebugTab />
-            </AccordionContent>
-          </AccordionItem>
-        </Accordion>
+            <AccordionItem value="debug" className="border-studio-electric/30 border-x border-b rounded-b-lg">
+              <AccordionContent className="px-4 pb-4 bg-black">
+                <DebugTab />
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
+        </div>
 
         <footer className="mt-4 text-center text-xs text-muted-foreground">
           <div className="bg-muted/50 rounded-lg p-2 border border-border">
