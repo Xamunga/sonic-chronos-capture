@@ -56,31 +56,31 @@ const Index = () => {
           <div className="flex bg-black border border-studio-electric/30 rounded-t-lg">
             <button
               onClick={() => setActiveTab(activeTab === 'audio' ? null : 'audio')}
-              className="flex-1 px-4 py-2 hover:bg-studio-electric/10 text-studio-electric border-r border-studio-electric/30 transition-colors"
+              className="flex-1 px-4 py-2 hover:bg-studio-electric/10 text-studio-electric border-r border-studio-electric/30 transition-colors text-lg"
             >
               Áudio
             </button>
             <button
               onClick={() => setActiveTab(activeTab === 'files' ? null : 'files')}
-              className="flex-1 px-4 py-2 hover:bg-studio-electric/10 text-studio-electric border-r border-studio-electric/30 transition-colors"
+              className="flex-1 px-4 py-2 hover:bg-studio-electric/10 text-studio-electric border-r border-studio-electric/30 transition-colors text-lg"
             >
               Arquivos
             </button>
             <button
               onClick={() => setActiveTab(activeTab === 'resources' ? null : 'resources')}
-              className="flex-1 px-4 py-2 hover:bg-studio-electric/10 text-studio-electric border-r border-studio-electric/30 transition-colors"
+              className="flex-1 px-4 py-2 hover:bg-studio-electric/10 text-studio-electric border-r border-studio-electric/30 transition-colors text-lg"
             >
               Recursos
             </button>
             <button
               onClick={() => setActiveTab(activeTab === 'log' ? null : 'log')}
-              className="flex-1 px-4 py-2 hover:bg-studio-electric/10 text-studio-electric border-r border-studio-electric/30 transition-colors"
+              className="flex-1 px-4 py-2 hover:bg-studio-electric/10 text-studio-electric border-r border-studio-electric/30 transition-colors text-lg"
             >
               Log
             </button>
             <button
               onClick={() => setActiveTab(activeTab === 'debug' ? null : 'debug')}
-              className="flex-1 px-4 py-2 hover:bg-studio-electric/10 text-studio-electric transition-colors"
+              className="flex-1 px-4 py-2 hover:bg-studio-electric/10 text-studio-electric transition-colors text-lg"
             >
               Debug
             </button>
