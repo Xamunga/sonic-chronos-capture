@@ -54,7 +54,7 @@ const VUMeters = () => {
     return (
       <div className="flex items-center space-x-3">
         <span className="text-sm font-medium text-studio-electric w-8">{label}</span>
-        <div className="flex-1 h-8 bg-studio-dark rounded-lg overflow-hidden relative border border-studio-electric/30">
+        <div className="flex-1 h-9 bg-studio-dark rounded-lg overflow-hidden relative border border-studio-electric/30">
           <div 
             className="vu-meter h-full transition-all duration-75 ease-out"
             style={{ width: `${displayPercentage}%` }}
