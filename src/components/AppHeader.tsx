@@ -19,8 +19,7 @@ const AppHeader = () => {
         <div className="text-right">
           <div className="text-lg font-semibold text-studio-electric">ALES Supervisão de Sonorização</div>
           <div className="text-xs text-muted-foreground">
-            Soluções Profissionais em Áudio
-          </div>
+        </div>
         </div>
       </div>
     </Card>;
