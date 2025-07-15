@@ -35,7 +35,7 @@ const SpectrumAnalyzer = () => {
           height: `${level}%`
         }} />)}
         </div>
-        <div className="mt-2 flex justify-between text-xs text-studio-neon mx-[6px]">
+        <div className="mt-2 flex justify-between text-xs text-studio-neon mx-[6px] ml-[40%]">
           <span>20Hz</span>
           <span>1kHz</span>
           <span>20kHz</span>
