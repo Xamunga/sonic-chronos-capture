@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useWindowSize } from '@/hooks/useWindowSize';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
@@ -11,7 +10,6 @@ import ResourceMonitor from '../components/ResourceMonitor';
 import FileManagementSettings from '../components/FileManagementSettings';
 import LogTab from '../components/LogTab';
 import DebugTab from '../components/DebugTab';
-
 const Index = () => {
   const [outputPath, setOutputPath] = useState('C:\\Gravacoes\\');
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -23,11 +21,12 @@ const Index = () => {
     const interval = setInterval(() => {
       setCurrentTime(new Date());
     }, 1000);
-
     return () => clearInterval(interval);
   }, []);
-  return (
-    <div className="min-h-screen bg-background p-1" style={{ width: '100%', maxHeight: '530px' }}>
+  return <div className="min-h-screen bg-background p-1" style={{
+    width: '100%',
+    maxHeight: '530px'
+  }}>
       <div className="w-full min-h-full flex flex-col">
         <AppHeader />
         
@@ -36,11 +35,17 @@ const Index = () => {
           <div className="space-y-5">
             <RecordingControls outputPath={outputPath} />
             <div className="bg-gradient-to-br from-studio-charcoal to-studio-slate border-studio-electric/30 rounded-lg p-6 text-center border flex flex-col justify-center h-[270px]">
-              <div className="text-studio-electric font-mono text-3xl font-bold" style={{ marginBottom: '3.25rem' }}>
+              <div className="text-studio-electric font-mono text-3xl font-bold" style={{
+              marginBottom: '3.25rem'
+            }}>
                 <span>{currentTime.toLocaleDateString('pt-BR')}</span>
-                <span style={{ marginLeft: '0.8em' }}>{currentTime.toLocaleTimeString('pt-BR')}</span>
+                <span style={{
+                marginLeft: '0.8em'
+              }}>{currentTime.toLocaleTimeString('pt-BR')}</span>
               </div>
-              <div className="text-sm text-muted-foreground bg-black p-2 rounded border border-studio-electric/20 text-white" style={{ textShadow: '0 0 3px hsl(195 100% 50%), 0 0 6px hsl(195 100% 50%)' }}>Data e Hora Atual</div>
+              <div className="text-sm text-muted-foreground bg-black p-2 rounded border border-studio-electric/20 text-white" style={{
+              textShadow: '0 0 3px hsl(195 100% 50%), 0 0 6px hsl(195 100% 50%)'
+            }}>Data e Hora Atual</div>
             </div>
           </div>
           <div className="space-y-4">
@@ -117,13 +122,11 @@ const Index = () => {
         </div>
 
         <footer className="mt-4 text-center text-xs">
-          <div className="bg-black p-2 rounded border border-studio-electric/20 text-white" style={{ textShadow: '0 0 3px hsl(195 100% 50%), 0 0 6px hsl(195 100% 50%)' }}>
-            Gravador Real Time Pro v2.4 | Desenvolvido por Tiago Lacerda
-          </div>
+          <div className="bg-black p-2 rounded border border-studio-electric/20 text-white" style={{
+          textShadow: '0 0 3px hsl(195 100% 50%), 0 0 6px hsl(195 100% 50%)'
+        }}>Gravador Real Time Pro v3.0 | Desenvolvido por Tiago Lacerda</div>
         </footer>
       </div>
-    </div>
-  );
+    </div>;
 };
-
 export default Index;
