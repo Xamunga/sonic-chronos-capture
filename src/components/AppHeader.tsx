@@ -7,7 +7,7 @@ const AppHeader = () => {
           <img 
             src="/lovable-uploads/0ec13f08-862c-49e3-b3c3-79654a38f9c9.png" 
             alt="Audio Recording Icon" 
-            className="w-20 h-20 object-contain rounded-xl"
+            className="w-24 h-24 object-contain rounded-xl"
           />
           <div>
             <h1 className="text-2xl font-bold text-studio-electric">
