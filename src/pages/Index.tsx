@@ -16,6 +16,7 @@ import DebugTab from '../components/DebugTab';
 const Index = () => {
   const [outputPath, setOutputPath] = useState('C:\\Gravacoes\\');
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [activeTab, setActiveTab] = useState<string | null>(null);
   const windowSize = useWindowSize();
 
   // Atualizar data/hora a cada segundo
@@ -53,69 +54,68 @@ const Index = () => {
         <div className="w-full flex-1">
           {/* Triggers das Abas em linha horizontal */}
           <div className="flex bg-black border border-studio-electric/30 rounded-t-lg">
-            <Accordion type="multiple" className="w-full">
-              <div className="flex w-full">
-                <AccordionItem value="audio" className="flex-1 border-r border-studio-electric/30 last:border-r-0">
-                  <AccordionTrigger className="px-4 py-2 hover:bg-studio-electric/10 text-studio-electric justify-center [&>svg]:hidden">
-                    Áudio
-                  </AccordionTrigger>
-                </AccordionItem>
-                <AccordionItem value="files" className="flex-1 border-r border-studio-electric/30 last:border-r-0">
-                  <AccordionTrigger className="px-4 py-2 hover:bg-studio-electric/10 text-studio-electric justify-center [&>svg]:hidden">
-                    Arquivos
-                  </AccordionTrigger>
-                </AccordionItem>
-                <AccordionItem value="resources" className="flex-1 border-r border-studio-electric/30 last:border-r-0">
-                  <AccordionTrigger className="px-4 py-2 hover:bg-studio-electric/10 text-studio-electric justify-center [&>svg]:hidden">
-                    Recursos
-                  </AccordionTrigger>
-                </AccordionItem>
-                <AccordionItem value="log" className="flex-1 border-r border-studio-electric/30 last:border-r-0">
-                  <AccordionTrigger className="px-4 py-2 hover:bg-studio-electric/10 text-studio-electric justify-center [&>svg]:hidden">
-                    Log
-                  </AccordionTrigger>
-                </AccordionItem>
-                <AccordionItem value="debug" className="flex-1">
-                  <AccordionTrigger className="px-4 py-2 hover:bg-studio-electric/10 text-studio-electric justify-center [&>svg]:hidden">
-                    Debug
-                  </AccordionTrigger>
-                </AccordionItem>
-              </div>
-            </Accordion>
+            <button
+              onClick={() => setActiveTab(activeTab === 'audio' ? null : 'audio')}
+              className="flex-1 px-4 py-2 hover:bg-studio-electric/10 text-studio-electric border-r border-studio-electric/30 transition-colors"
+            >
+              Áudio
+            </button>
+            <button
+              onClick={() => setActiveTab(activeTab === 'files' ? null : 'files')}
+              className="flex-1 px-4 py-2 hover:bg-studio-electric/10 text-studio-electric border-r border-studio-electric/30 transition-colors"
+            >
+              Arquivos
+            </button>
+            <button
+              onClick={() => setActiveTab(activeTab === 'resources' ? null : 'resources')}
+              className="flex-1 px-4 py-2 hover:bg-studio-electric/10 text-studio-electric border-r border-studio-electric/30 transition-colors"
+            >
+              Recursos
+            </button>
+            <button
+              onClick={() => setActiveTab(activeTab === 'log' ? null : 'log')}
+              className="flex-1 px-4 py-2 hover:bg-studio-electric/10 text-studio-electric border-r border-studio-electric/30 transition-colors"
+            >
+              Log
+            </button>
+            <button
+              onClick={() => setActiveTab(activeTab === 'debug' ? null : 'debug')}
+              className="flex-1 px-4 py-2 hover:bg-studio-electric/10 text-studio-electric transition-colors"
+            >
+              Debug
+            </button>
           </div>
           
           {/* Conteúdo das Abas */}
-          <Accordion type="multiple" className="w-full">
-            <AccordionItem value="audio" className="border-studio-electric/30 border-x border-b rounded-b-lg">
-              <AccordionContent className="px-4 pb-4 bg-black">
-                <AudioSettings />
-              </AccordionContent>
-            </AccordionItem>
-
-            <AccordionItem value="files" className="border-studio-electric/30 border-x border-b">
-              <AccordionContent className="px-4 pb-4 bg-black">
-                <FileManagementSettings />
-              </AccordionContent>
-            </AccordionItem>
-
-            <AccordionItem value="resources" className="border-studio-electric/30 border-x border-b">
-              <AccordionContent className="px-4 pb-4 bg-black">
-                <ResourceMonitor />
-              </AccordionContent>
-            </AccordionItem>
-
-            <AccordionItem value="log" className="border-studio-electric/30 border-x border-b">
-              <AccordionContent className="px-4 pb-4 bg-black">
-                <LogTab />
-              </AccordionContent>
-            </AccordionItem>
-
-            <AccordionItem value="debug" className="border-studio-electric/30 border-x border-b rounded-b-lg">
-              <AccordionContent className="px-4 pb-4 bg-black">
-                <DebugTab />
-              </AccordionContent>
-            </AccordionItem>
-          </Accordion>
+          {activeTab === 'audio' && (
+            <div className="border-studio-electric/30 border-x border-b rounded-b-lg bg-black px-4 pb-4">
+              <AudioSettings />
+            </div>
+          )}
+          
+          {activeTab === 'files' && (
+            <div className="border-studio-electric/30 border-x border-b rounded-b-lg bg-black px-4 pb-4">
+              <FileManagementSettings />
+            </div>
+          )}
+          
+          {activeTab === 'resources' && (
+            <div className="border-studio-electric/30 border-x border-b rounded-b-lg bg-black px-4 pb-4">
+              <ResourceMonitor />
+            </div>
+          )}
+          
+          {activeTab === 'log' && (
+            <div className="border-studio-electric/30 border-x border-b rounded-b-lg bg-black px-4 pb-4">
+              <LogTab />
+            </div>
+          )}
+          
+          {activeTab === 'debug' && (
+            <div className="border-studio-electric/30 border-x border-b rounded-b-lg bg-black px-4 pb-4">
+              <DebugTab />
+            </div>
+          )}
         </div>
 
         <footer className="mt-4 text-center text-xs">
