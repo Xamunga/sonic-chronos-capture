@@ -7,8 +7,12 @@ const AppHeader = () => {
     <Card className="mb-6 bg-gradient-to-r from-studio-charcoal to-studio-slate border-studio-electric/30">
       <div className="flex items-center justify-between p-6">
         <div className="flex items-center space-x-4">
-          <div className="w-12 h-12 bg-gradient-to-br from-studio-electric to-studio-neon rounded-lg flex items-center justify-center">
-            <span className="text-studio-dark font-bold text-xl">G</span>
+          <div className="w-12 h-12 rounded-lg overflow-hidden">
+            <img 
+              src="/lovable-uploads/1867b4e7-d095-4d77-861c-1b9db4cf0271.png" 
+              alt="Ícone do Gravador"
+              className="w-full h-full object-cover rounded-lg"
+            />
           </div>
           <div>
             <h1 className="text-2xl font-bold text-studio-electric">
