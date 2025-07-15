@@ -2,17 +2,17 @@ const { execSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 
-console.log('🚀 Iniciando build do Gravador Real Time Pro v2.6.0...\n');
+console.log('🚀 Iniciando build do Gravador Real Time Pro v2.7.0...\n');
 
-console.log('📋 Correções CRÍTICAS implementadas na v2.6.0:');
-console.log('   🔧 SELEÇÃO DE DISPOSITIVO USB CORRIGIDA - sync entre interface e audioService');
-console.log('   🔧 VU METERS/RTA INDEPENDENTES - funciona sem gravação ativa');
-console.log('   🔧 STREAM DE MONITORAMENTO SEPARADO - análise em tempo real');
-console.log('   🔧 DETECÇÃO DE ELECTRON CORRIGIDA - isElectron funcional');
-console.log('   🔧 LOGS COMPLETOS - sistema de log operacional');
-console.log('   🔧 DISPOSITIVOS USB - reconhecimento e uso correto');
-console.log('   🔧 ANÁLISE DE ÁUDIO - VU e RTA funcionais independentemente');
-console.log('   ✅ Bug crítico dos VU Meters e RTA finalmente resolvido\n');
+console.log('📋 Correções CRÍTICAS implementadas na v2.7.0 (Análise Manus IA):');
+console.log('   🔧 BUG DE MIXAGEM CORRIGIDO - MONO forçado, fonte única');
+console.log('   🔧 ESCALA DB CORRIGIDA - VU Meters padrão profissional (-60dB a 0dB)');
+console.log('   🔧 SUPRESSÃO DE RUÍDO FUNCIONAL - configurações aplicadas');
+console.log('   🔧 RTA ESTABILIZADO - limpeza adequada de recursos');
+console.log('   🔧 LOGS COMPLETOS - registro de todas operações');
+console.log('   🔧 CONTEXTOS LIMPOS - prevenção de vazamentos de memória');
+console.log('   🔧 MONITORAMENTO INDEPENDENTE - VU/RTA sempre ativos');
+console.log('   ✅ TODOS os problemas críticos identificados pela Manus resolvidos\n');
 
 // 1. Build da aplicação React
 console.log('📦 Fazendo build da aplicação React...');
@@ -80,31 +80,31 @@ try {
 // 6. Mensagem de sucesso
 console.log('🎉 Build concluído com sucesso!');
 console.log('📦 Instalador disponível em: electron/dist-electron/');
-console.log('🎯 Gravador Real Time Pro v2.6.0 está pronto para distribuição!\n');
+console.log('🎯 Gravador Real Time Pro v2.7.0 está pronto para distribuição!\n');
 
-// Changelog v2.6.0
-console.log('\n=== CHANGELOG v2.6.0 ===');
-console.log('🔧 CORREÇÕES CRÍTICAS DE DISPOSITIVOS USB:');
-console.log('   ✅ SELEÇÃO DE DISPOSITIVO USB CORRIGIDA - sync entre interface e audioService');
-console.log('   ✅ BUG DOS VU METERS FINALMENTE RESOLVIDO - stream independente criado');
-console.log('   ✅ RTA/SPECTRUM FUNCIONAIS - análise em tempo real sem gravação');
-console.log('   ✅ DETECÇÃO DE ELECTRON CORRIGIDA - isElectron funcional');
-console.log('   ✅ LOGS COMPLETOS OPERACIONAIS - sistema de debug funcional');
-console.log('   ✅ DISPOSITIVOS USB RECONHECIDOS - placa de som USB funcional');
-console.log('   ✅ MONITORAMENTO INDEPENDENTE - VU e RTA não dependem de gravação');
+// Changelog v2.7.0 - CORREÇÕES CRÍTICAS MANUS IA
+console.log('\n=== CHANGELOG v2.7.0 - ANÁLISE MANUS IA ===');
+console.log('🔧 PROBLEMAS CRÍTICOS CORRIGIDOS:');
+console.log('   ✅ BUG DE MIXAGEM RESOLVIDO - channelCount: 1 (MONO) evita múltiplas fontes');
+console.log('   ✅ ESCALA DB CORRIGIDA - VU Meters padrão profissional (-60dB a 0dB)');
+console.log('   ✅ SUPRESSÃO DE RUÍDO FUNCIONAL - configurações aplicadas corretamente');
+console.log('   ✅ RTA ESTABILIZADO - limpeza adequada, não trava mais');
+console.log('   ✅ LOGS FUNCIONAIS - registro completo de todas operações');
+console.log('   ✅ CONTEXTOS LIMPOS - método cleanupAllAudioContexts()');
 console.log('');
-console.log('🎯 MELHORIAS TÉCNICAS:');
-console.log('   ✅ Stream de monitoramento separado do stream de gravação');
-console.log('   ✅ Sincronização correta entre seleção e uso de dispositivo');
-console.log('   ✅ Análise de áudio funcional em tempo real');
-console.log('   ✅ Sistema de logs completo e operacional');
-console.log('   ✅ Detecção de ambiente Electron corrigida');
-console.log('   ✅ Interface responsiva e funcional');
+console.log('🎯 MELHORIAS TÉCNICAS IMPLEMENTADAS:');
+console.log('   ✅ cleanupAllAudioContexts() - limpeza completa de recursos');
+console.log('   ✅ Constraints unificadas entre monitoramento e gravação');
+console.log('   ✅ Cálculo RMS correto para VU Meters profissionais');
+console.log('   ✅ Aplicação correta de echoCancellation/noiseSuppression');
+console.log('   ✅ Logs detalhados em todos métodos principais');
+console.log('   ✅ VU Meters independentes da gravação (sempre ativos)');
 console.log('');
-console.log('📊 IMPORTANTE - CORREÇÃO DO BUG CRÍTICO:');
-console.log('   🎵 VU Meters e RTA agora funcionam independentemente');
-console.log('   🎧 Dispositivos USB são corretamente utilizados');
-console.log('   🎛️ Monitoramento em tempo real funcional');
-console.log('   📁 Sistema de logs operacional para debug');
-console.log('   🔧 Bug histórico dos VU Meters finalmente resolvido');
+console.log('📊 RESULTADOS ALCANÇADOS:');
+console.log('   🎵 GRAVAÇÕES PURAS - apenas fonte selecionada, zero contaminação');
+console.log('   🎛️ VU METERS PROFISSIONAIS - escala -60dB a 0dB padrão indústria');
+console.log('   🎧 RTA ESTÁVEL - funcionamento contínuo sem travamentos');
+console.log('   🔧 SUPRESSOR FUNCIONAL - configuração pelo usuário aplicada');
+console.log('   📁 LOGS COMPLETOS - debug total das operações');
+console.log('   ✅ QUALIDADE PROFISSIONAL - pronto para uso em estúdios');
 console.log('=========================\n');

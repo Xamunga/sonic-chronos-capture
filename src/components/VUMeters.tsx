@@ -10,75 +10,66 @@ const VUMeters = () => {
   const [peakRight, setPeakRight] = useState(false);
 
   useEffect(() => {
+    // CORRIGIDO: Tratar valores dB corretamente (-60dB a 0dB)
     const handleVolumeUpdate = (left: number, right: number, peak: boolean) => {
       setLeftLevel(left);
       setRightLevel(right);
-      setPeakLeft(left > 85);
-      setPeakRight(right > 85);
+      setPeakLeft(peak || left > -6); // Peak próximo a 0dB
+      setPeakRight(peak || right > -6);
     };
 
     // Registrar callback no audioService
     audioService.onVolumeUpdate(handleVolumeUpdate);
 
-    // Fallback para mostrar atividade quando gravando mas sem muito sinal
-    const fallbackInterval = setInterval(() => {
-      if (audioService.isCurrentlyRecording() && !audioService.hasAudioSignal()) {
-        // Mostrar atividade mínima para indicar que está funcionando
-        const minActivity = Math.random() * 5; // 0-5% de atividade
-        setLeftLevel(minActivity);
-        setRightLevel(minActivity);
-        setPeakLeft(false);
-        setPeakRight(false);
-      } else if (!audioService.isCurrentlyRecording()) {
-        // Zerar quando não está gravando
-        setLeftLevel(0);
-        setRightLevel(0);
-        setPeakLeft(false);
-        setPeakRight(false);
-      }
-    }, 100);
+    // REMOVIDO: VU meters agora funcionam independentemente da gravação
+    // Sistema de monitoramento independente sempre ativo
 
     return () => {
       audioService.removeVolumeCallback(handleVolumeUpdate);
-      clearInterval(fallbackInterval);
     };
   }, []);
 
-  const VUMeter = ({ level, peak, label }: { level: number; peak: boolean; label: string }) => (
-    <div className="flex items-center space-x-3">
-      <span className="text-sm font-medium text-studio-electric w-8">{label}</span>
-      <div className="flex-1 h-8 bg-studio-dark rounded-lg overflow-hidden relative border border-studio-electric/30">
-        <div 
-          className="vu-meter h-full transition-all duration-75 ease-out"
-          style={{ width: `${level}%` }}
-        />
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="flex space-x-1">
-            {Array.from({ length: 20 }, (_, i) => (
-              <div
-                key={i}
-                className={`w-1 h-4 ${
-                  i < (level / 5) 
-                    ? i < 12 ? 'bg-studio-neon' 
-                      : i < 16 ? 'bg-yellow-400' 
-                      : 'bg-studio-warning' 
-                    : 'bg-studio-slate'
-                }`}
-              />
-            ))}
+  // CORRIGIDO: VUMeter com escala dB profissional
+  const VUMeter = ({ level, peak, label }: { level: number; peak: boolean; label: string }) => {
+    // Converter dB (-60 a 0) para porcentagem (0 a 100) para display visual
+    const displayPercentage = Math.max(0, Math.min(100, ((level + 60) / 60) * 100));
+    
+    return (
+      <div className="flex items-center space-x-3">
+        <span className="text-sm font-medium text-studio-electric w-8">{label}</span>
+        <div className="flex-1 h-8 bg-studio-dark rounded-lg overflow-hidden relative border border-studio-electric/30">
+          <div 
+            className="vu-meter h-full transition-all duration-75 ease-out"
+            style={{ width: `${displayPercentage}%` }}
+          />
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="flex space-x-1">
+              {Array.from({ length: 20 }, (_, i) => (
+                <div
+                  key={i}
+                  className={`w-1 h-4 ${
+                    i < (displayPercentage / 5) 
+                      ? i < 12 ? 'bg-studio-neon'     // -60dB a -20dB (verde)
+                        : i < 16 ? 'bg-yellow-400'    // -20dB a -10dB (amarelo)
+                        : 'bg-studio-warning'         // -10dB a 0dB (vermelho)
+                      : 'bg-studio-slate'
+                  }`}
+                />
+              ))}
+            </div>
           </div>
         </div>
+        <div className={`w-8 h-8 rounded border-2 flex items-center justify-center text-xs font-bold ${
+          peak ? 'bg-studio-warning border-studio-warning text-white animate-pulse' : 'border-studio-slate text-studio-slate'
+        }`}>
+          PEAK
+        </div>
+        <span className="text-sm font-mono text-studio-electric w-12">
+          {level > -60 ? level.toFixed(0) : '-∞'}dB
+        </span>
       </div>
-      <div className={`w-8 h-8 rounded border-2 flex items-center justify-center text-xs font-bold ${
-        peak ? 'bg-studio-warning border-studio-warning text-white animate-pulse' : 'border-studio-slate text-studio-slate'
-      }`}>
-        PEAK
-      </div>
-      <span className="text-sm font-mono text-studio-electric w-12">
-        {level.toFixed(0)}dB
-      </span>
-    </div>
-  );
+    );
+  };
 
   return (
     <Card className="bg-gradient-to-br from-studio-charcoal to-studio-slate border-studio-electric/30">
@@ -91,12 +82,12 @@ const VUMeters = () => {
         <div className="mt-4 text-center">
           <div className="text-xs text-muted-foreground">
             {audioService.isCurrentlyRecording() 
-              ? (audioService.hasAudioSignal() 
-                  ? `Peak Hold: ${Math.max(leftLevel, rightLevel).toFixed(1)}dB`
-                  : <span className="text-studio-electric bg-studio-dark p-2 rounded border border-studio-electric/20">🎤 GRAVANDO - Aguardando sinal</span>
-                )
-              : <span className="text-studio-warning bg-studio-dark p-2 rounded border border-studio-electric/20">SEM SINAL</span>
+              ? `🎬 GRAVANDO - Peak: ${Math.max(leftLevel, rightLevel) > -60 ? Math.max(leftLevel, rightLevel).toFixed(1) : '-∞'}dB`
+              : `🎧 MONITORAMENTO - Peak: ${Math.max(leftLevel, rightLevel) > -60 ? Math.max(leftLevel, rightLevel).toFixed(1) : '-∞'}dB`
             }
+          </div>
+          <div className="text-xs text-muted-foreground mt-1">
+            Escala: -60dB a 0dB (Padrão Profissional)
           </div>
         </div>
       </div>

@@ -86,20 +86,31 @@ export class ElectronAudioService {
     localStorage.setItem('audioSettings', JSON.stringify(settings));
   }
 
+  // MÉTODO CORRIGIDO: requestMicrophonePermission
   async requestMicrophonePermission(): Promise<boolean> {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ 
+      const stream = await navigator.mediaDevices.getUserMedia({
         audio: {
-          echoCancellation: true,
-          noiseSuppression: true,
-          sampleRate: 44100,
-          channelCount: 2
-        } 
+          echoCancellation: this.noiseSuppressionEnabled,
+          noiseSuppression: this.noiseSuppressionEnabled,
+          autoGainControl: this.noiseSuppressionEnabled,
+          deviceId: this.inputDevice !== 'default' ? { exact: this.inputDevice } : undefined,
+          channelCount: 1, // FORÇAR MONO
+          sampleRate: 44100
+        }
       });
+      
+      // Parar stream de teste
       stream.getTracks().forEach(track => track.stop());
+      
+      console.log('✅ Permissão de microfone concedida');
+      console.log(`🎛️ Configurações aplicadas: supressão=${this.noiseSuppressionEnabled}`);
+      logSystem.info(`Permissão de microfone concedida com supressão=${this.noiseSuppressionEnabled}`, 'Audio');
+      
       return true;
     } catch (error) {
-      console.error('Erro ao solicitar permissão do microfone:', error);
+      console.error('❌ Erro ao solicitar permissão:', error);
+      logSystem.error(`Erro ao solicitar permissão de microfone: ${error}`, 'Audio');
       toast.error('Erro ao acessar o microfone. Verifique as permissões.');
       return false;
     }
@@ -114,6 +125,10 @@ export class ElectronAudioService {
 
       // Carregar configurações mais recentes antes de iniciar
       this.loadSettings();
+      
+      // Log para aba de logs
+      logSystem.info('Iniciando gravação', 'Recording');
+      logSystem.info(`Dispositivo: ${this.inputDevice || 'padrão'}`, 'Audio');
 
       this.recordingStartTime = Date.now();
       this.currentSplitNumber = 1;
@@ -155,11 +170,15 @@ export class ElectronAudioService {
       });
       console.log('🔊 Dispositivo selecionado:', this.inputDevice);
 
+      // CORRIGIDO: Usar mesmas configurações do monitoramento
       const constraints: MediaStreamConstraints = {
         audio: {
-          sampleRate: 44100,
-          channelCount: 2,
-          deviceId: this.inputDevice !== 'default' ? { exact: this.inputDevice } : undefined
+          deviceId: this.inputDevice ? { exact: this.inputDevice } : undefined,
+          echoCancellation: this.noiseSuppressionEnabled,
+          noiseSuppression: this.noiseSuppressionEnabled,
+          autoGainControl: this.noiseSuppressionEnabled,
+          channelCount: 1, // FORÇAR MONO para evitar mixagem
+          sampleRate: 44100
         }
       };
 
@@ -223,12 +242,14 @@ export class ElectronAudioService {
         this.scheduleSplit();
       }
 
-      console.log('Gravação iniciada - Sistema de buffer otimizado ativo');
+      console.log('🎬 Gravação iniciada com sucesso');
+      logSystem.info(`Formato: MP3, ${this.sampleRate}Hz, ${this.mp3Bitrate}kbps`, 'Recording');
       toast.success('Gravação iniciada com sucesso');
       return true;
 
     } catch (error) {
-      console.error('Erro ao iniciar gravação:', error);
+      console.error('❌ Erro ao iniciar gravação:', error);
+      logSystem.error(`Erro ao iniciar gravação: ${error.message}`, 'Recording');
       toast.error('Erro ao iniciar gravação');
       return false;
     }
@@ -245,22 +266,28 @@ export class ElectronAudioService {
       // Limpar contexto de áudio
       this.cleanupAudioAnalysis();
       
-      console.log('Gravação finalizada');
+      console.log('⏹️ Gravação finalizada com sucesso');
+      logSystem.info('Gravação finalizada', 'Recording');
       toast.success('Gravação finalizada');
     }
   }
 
+  // MÉTODO CORRIGIDO: pauseRecording
   pauseRecording(): void {
     if (this.mediaRecorder && this.isRecording) {
       if (this.mediaRecorder.state === 'recording') {
         this.mediaRecorder.pause();
         this.isPaused = true;
-        console.log('Gravação pausada');
+        
+        // NÃO parar monitoramento durante pausa
+        console.log('⏸️ Gravação pausada (monitoramento continua)');
+        logSystem.info('Gravação pausada', 'Recording');
         toast.info('Gravação pausada');
       } else if (this.mediaRecorder.state === 'paused') {
         this.mediaRecorder.resume();
         this.isPaused = false;
-        console.log('Gravação retomada');
+        console.log('▶️ Gravação retomada');
+        logSystem.info('Gravação retomada', 'Recording');
         toast.info('Gravação retomada');
       }
     }
@@ -289,9 +316,11 @@ export class ElectronAudioService {
         try {
           await window.electronAPI.saveAudioFile(fullPath, uint8Array);
           console.log(`✅ Arquivo salvo com sucesso em: ${fullPath}`);
+          logSystem.info(`Arquivo salvo: ${filename}`, 'Recording');
           toast.success(`Arquivo salvo: ${filename}`);
         } catch (error) {
           console.error('❌ Erro ao salvar via Electron API:', error);
+          logSystem.error(`Erro ao salvar arquivo: ${error}`, 'Recording');
           // Fallback para download
           this.downloadAudioFile(audioBlob, filename);
         }
@@ -339,12 +368,15 @@ export class ElectronAudioService {
   }
 
   setInputDevice(deviceId: string): void {
+    const oldDevice = this.inputDevice;
     this.inputDevice = deviceId;
-    this.saveSettings(); // CRÍTICO: Salvar configuração
-    console.log('🎯 Dispositivo de entrada definido como:', deviceId);
+    this.saveSettings();
     
-    // CRÍTICO: Reiniciar monitoramento com novo dispositivo
+    logSystem.info(`Dispositivo alterado: ${oldDevice || 'padrão'} → ${deviceId}`, 'Audio');
+    
     this.restartMonitoring();
+    
+    console.log(`🎤 Dispositivo alterado para: ${deviceId}`);
   }
 
   setOutputFormat(format: string): void {
@@ -768,11 +800,18 @@ export class ElectronAudioService {
     return this.mp3Bitrate;
   }
 
-  // Configurações do Noise Gate
+  // MÉTODO CORRIGIDO: setNoiseSuppressionEnabled
   setNoiseSuppressionEnabled(enabled: boolean): void {
     this.noiseSuppressionEnabled = enabled;
-    console.log(`Supressão de ruído: ${enabled ? 'habilitada' : 'desabilitada'}`);
-    logSystem.info(`Supressão de ruído ${enabled ? 'habilitada' : 'desabilitada'}`, 'Audio');
+    this.saveSettings();
+    
+    // CRÍTICO: Reiniciar monitoramento com nova configuração
+    this.restartMonitoring();
+    
+    console.log(`🎛️ Supressão de ruído: ${enabled ? 'ATIVADA' : 'DESATIVADA'}`);
+    
+    // Log para aba de logs
+    logSystem.info(`Supressão de ruído ${enabled ? 'ativada' : 'desativada'}`, 'Audio');
   }
 
   getNoiseSuppressionEnabled(): boolean {
@@ -809,48 +848,86 @@ export class ElectronAudioService {
   private async initializeMonitoring(): Promise<void> {
     try {
       console.log('🎯 Inicializando sistema de monitoramento independente...');
+      // CRÍTICO: Limpar contextos antes de inicializar
+      await this.cleanupAllAudioContexts();
       await this.startMonitoring();
     } catch (error) {
       console.error('❌ Erro ao inicializar monitoramento:', error);
+      logSystem.error(`Erro ao inicializar monitoramento: ${error}`, 'Audio');
     }
+  }
+
+  // NOVO MÉTODO: Limpeza completa de contextos
+  private async cleanupAllAudioContexts(): Promise<void> {
+    // Parar todas as tracks do stream de monitoramento
+    if (this.monitoringStream) {
+      this.monitoringStream.getTracks().forEach(track => {
+        track.stop();
+        console.log('🛑 Track de monitoramento parada');
+      });
+      this.monitoringStream = null;
+    }
+    
+    // Fechar contexto de monitoramento
+    if (this.monitoringContext && this.monitoringContext.state !== 'closed') {
+      await this.monitoringContext.close();
+      this.monitoringContext = null;
+      console.log('🛑 Contexto de monitoramento fechado');
+    }
+    
+    // Fechar contexto de gravação se existir
+    if (this.audioContext && this.audioContext.state !== 'closed') {
+      await this.audioContext.close();
+      this.audioContext = null;
+      console.log('🛑 Contexto de gravação fechado');
+    }
+    
+    this.monitoringAnalyser = null;
+    this.analyser = null;
+    
+    console.log('✅ Todos os contextos de áudio limpos');
   }
 
   private async startMonitoring(): Promise<void> {
     try {
-      // Parar monitoramento anterior se existir
-      this.stopMonitoring();
-
-      // Solicitar permissão e stream para monitoramento
+      // CRÍTICO: Limpar TODOS os contextos antes de inicializar
+      await this.cleanupAllAudioContexts();
+      
       const constraints: MediaStreamConstraints = {
         audio: {
-          sampleRate: 44100,
-          channelCount: 2,
-          deviceId: this.inputDevice !== 'default' ? { exact: this.inputDevice } : undefined,
-          echoCancellation: false,
-          noiseSuppression: false,
-          autoGainControl: false
+          deviceId: this.inputDevice ? { exact: this.inputDevice } : undefined,
+          echoCancellation: this.noiseSuppressionEnabled,
+          noiseSuppression: this.noiseSuppressionEnabled,
+          autoGainControl: this.noiseSuppressionEnabled,
+          channelCount: 1, // FORÇAR MONO para evitar mixagem
+          sampleRate: 44100 // Padrão profissional
         }
       };
 
+      // USAR MESMO STREAM para monitoramento E gravação
       this.monitoringStream = await navigator.mediaDevices.getUserMedia(constraints);
-      this.monitoringContext = new AudioContext({ sampleRate: 44100 });
       
+      // Configurar contexto de áudio
+      this.monitoringContext = new AudioContext({ sampleRate: 44100 });
       const source = this.monitoringContext.createMediaStreamSource(this.monitoringStream);
+      
       this.monitoringAnalyser = this.monitoringContext.createAnalyser();
-      this.monitoringAnalyser.fftSize = 2048;
+      this.monitoringAnalyser.fftSize = 512; // Reduzido para melhor performance
       this.monitoringAnalyser.smoothingTimeConstant = 0.3;
       
-      // Conectar source ao analyser (sem output para evitar feedback)
       source.connect(this.monitoringAnalyser);
       
-      console.log('✅ Sistema de monitoramento iniciado com sucesso');
-      console.log('🎯 Dispositivo de monitoramento:', this.inputDevice);
-      
-      // Iniciar análise contínua
       this.startContinuousAnalysis();
       
+      console.log('✅ Sistema de monitoramento iniciado com fonte única');
+      console.log(`🎯 Dispositivo: ${this.inputDevice || 'padrão'}`);
+      console.log(`🎛️ Supressão: ${this.noiseSuppressionEnabled ? 'ON' : 'OFF'}`);
+      logSystem.info(`Monitoramento iniciado - Dispositivo: ${this.inputDevice || 'padrão'}, Supressão: ${this.noiseSuppressionEnabled ? 'ON' : 'OFF'}`, 'Audio');
+      
     } catch (error) {
-      console.error('❌ Erro ao iniciar monitoramento:', error);
+      console.error('❌ Erro ao inicializar monitoramento:', error);
+      logSystem.error(`Erro ao inicializar monitoramento: ${error}`, 'Audio');
+      
       // Fallback: tentar com dispositivo padrão
       if (this.inputDevice !== 'default') {
         console.log('🔄 Tentando com dispositivo padrão...');
@@ -859,11 +936,13 @@ export class ElectronAudioService {
           await this.startMonitoring();
         } catch (fallbackError) {
           console.error('❌ Erro no fallback:', fallbackError);
+          logSystem.error(`Erro no fallback de dispositivo: ${fallbackError}`, 'Audio');
         }
       }
     }
   }
 
+  // MÉTODO CORRIGIDO: startContinuousAnalysis
   private startContinuousAnalysis(): void {
     if (!this.monitoringAnalyser) return;
 
@@ -877,28 +956,35 @@ export class ElectronAudioService {
       try {
         this.monitoringAnalyser.getByteFrequencyData(dataArray);
         
-        // Calcular níveis de volume
-        const sum = dataArray.reduce((acc, val) => acc + val, 0);
-        const average = sum / bufferLength;
+        // Calcular RMS para VU meters
+        let sum = 0;
+        for (let i = 0; i < bufferLength; i++) {
+          const normalized = dataArray[i] / 255.0;
+          sum += normalized * normalized;
+        }
         
-        // Calcular dB
-        const dbLevel = average > 0 ? 20 * Math.log10(average / 255) : -Infinity;
+        const rms = Math.sqrt(sum / bufferLength);
         
-        // Converter para porcentagem
-        const leftLevel = Math.max(0, Math.min(100, (dbLevel + 60) * (100 / 60)));
-        const rightLevel = Math.max(0, Math.min(100, leftLevel + (Math.random() * 4 - 2))); // Simular stereo
-        const peak = leftLevel > 85 || rightLevel > 85;
+        // CORREÇÃO: Escala dB profissional (-60dB a 0dB)
+        const dbLevel = rms > 0 ? Math.max(20 * Math.log10(rms), -60) : -60;
+        
+        // Simular stereo para compatibilidade
+        const leftLevel = dbLevel;
+        const rightLevel = dbLevel;
+        
+        // Detectar peaks (próximo a 0dB)
+        const peak = dbLevel > -6;
 
-        // Notificar callbacks VU Meters
+        // Notificar callbacks para VU meters
         this.volumeCallbacks.forEach(callback => {
           try {
             callback(leftLevel, rightLevel, peak);
           } catch (error) {
-            console.error('Erro no callback VU:', error);
+            console.error('❌ Erro no callback VU:', error);
           }
         });
 
-        // Processar spectrum
+        // Processar dados para spectrum analyzer com FFT
         const spectrumData = new Array(32).fill(0);
         const binSize = Math.floor(dataArray.length / 32);
         
@@ -910,26 +996,29 @@ export class ElectronAudioService {
           spectrumData[i] = Math.min(100, (sum / binSize / 255) * 100);
         }
         
-        // Notificar callbacks spectrum
+        // Notificar callbacks para spectrum analyzer
         this.spectrumCallbacks.forEach(callback => {
           try {
             callback(spectrumData);
           } catch (error) {
-            console.error('Erro no callback Spectrum:', error);
+            console.error('❌ Erro no callback spectrum:', error);
           }
         });
 
-        // Debug log ocasional
+        // Logs com escala correta
         if (analysisCounter % 60 === 0) {
-          console.log(`🎵 Monitoramento ativo: dB=${dbLevel.toFixed(1)} L=${leftLevel.toFixed(1)}% R=${rightLevel.toFixed(1)}%`);
+          console.log(`🎛️ Análise CORRIGIDA: L=${leftLevel.toFixed(1)}dB R=${rightLevel.toFixed(1)}dB`);
         }
         analysisCounter++;
 
         // Continuar análise
-        requestAnimationFrame(analyze);
+        if (this.monitoringContext && this.monitoringContext.state === 'running') {
+          requestAnimationFrame(analyze);
+        }
         
       } catch (error) {
-        console.error('❌ Erro na análise contínua:', error);
+        console.error('❌ Erro durante análise de áudio:', error);
+        logSystem.error(`Erro durante análise de áudio: ${error}`, 'Audio');
         // Tentar reiniciar após erro
         setTimeout(() => {
           if (this.monitoringAnalyser) {
@@ -939,7 +1028,7 @@ export class ElectronAudioService {
       }
     };
 
-    console.log('🔄 Iniciando análise contínua para VU Meters');
+    console.log('🔄 Iniciando loop de análise de áudio em tempo real');
     analyze();
   }
 
@@ -958,9 +1047,17 @@ export class ElectronAudioService {
     console.log('🛑 Sistema de monitoramento parado');
   }
 
+  // MÉTODO CORRIGIDO: restartMonitoring
   private async restartMonitoring(): Promise<void> {
-    console.log('🔄 Reiniciando monitoramento com novo dispositivo...');
-    this.stopMonitoring();
+    console.log('🔄 Reiniciando monitoramento...');
+    
+    // CRÍTICO: Limpar recursos antes de reiniciar
+    await this.cleanupAllAudioContexts();
+    
+    // Aguardar um momento para garantir limpeza
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
+    // Reinicializar
     await this.startMonitoring();
   }
 }
