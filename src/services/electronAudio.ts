@@ -44,6 +44,14 @@ export class ElectronAudioService {
   private monitoringContext: AudioContext | null = null;
   private monitoringAnalyser: AnalyserNode | null = null;
   
+  // NOVO: Sistemas críticos para sessões longas
+  private healthCheckInterval: NodeJS.Timeout | null = null;
+  private backupInterval: NodeJS.Timeout | null = null;
+  private diskSpaceInterval: NodeJS.Timeout | null = null;
+  private lastHealthCheck: number = 0;
+  private backupIntervalMinutes: number = 5; // Backup a cada 5 minutos
+  private minDiskSpaceGB: number = 1; // Mínimo 1GB livre
+  
   // Configurações do Noise Gate
   private noiseSuppressionEnabled = false;
   private noiseThreshold = -35; // dB
@@ -52,8 +60,276 @@ export class ElectronAudioService {
 
   constructor() {
     this.loadSettings();
+    this.setupDeviceChangeMonitoring();
     // NÃO inicializar monitoramento automaticamente
     console.log('🎛️ ElectronAudioService inicializado (monitoramento sob demanda)');
+  }
+
+  // CRÍTICO: Sistema de monitoramento de mudanças de dispositivos
+  private setupDeviceChangeMonitoring(): void {
+    if (navigator.mediaDevices && navigator.mediaDevices.addEventListener) {
+      navigator.mediaDevices.addEventListener('devicechange', () => {
+        console.log('🔄 Mudança de dispositivos detectada');
+        
+        if (this.isRecording) {
+          // Verificar se dispositivo atual ainda existe
+          this.validateAudioDevice(this.inputDevice).then(isValid => {
+            if (!isValid) {
+              console.error('🚨 Dispositivo de gravação desconectado durante sessão!');
+              toast.error('AVISO: Dispositivo de áudio desconectado!');
+              logSystem.error('Dispositivo desconectado durante gravação', 'DeviceChange');
+            }
+          });
+        }
+      });
+    }
+  }
+
+  // CRÍTICO: Sistema de health check para sessões longas
+  private startHealthCheck(): void {
+    this.healthCheckInterval = setInterval(() => {
+      this.performHealthCheck();
+    }, 30000); // Verificar a cada 30 segundos
+    
+    console.log('🏥 Health check iniciado para sessão longa');
+    logSystem.info('Health check iniciado', 'HealthCheck');
+  }
+
+  private stopHealthCheck(): void {
+    if (this.healthCheckInterval) {
+      clearInterval(this.healthCheckInterval);
+      this.healthCheckInterval = null;
+      console.log('🏥 Health check parado');
+      logSystem.info('Health check parado', 'HealthCheck');
+    }
+  }
+
+  private async performHealthCheck(): Promise<void> {
+    try {
+      this.lastHealthCheck = Date.now();
+      
+      // 1. Verificar se MediaRecorder ainda está ativo
+      if (this.isRecording && (!this.mediaRecorder || this.mediaRecorder.state !== 'recording')) {
+        console.error('🚨 CRÍTICO: MediaRecorder parou inesperadamente!');
+        logSystem.error('MediaRecorder parou durante gravação', 'HealthCheck');
+        toast.error('ERRO CRÍTICO: Gravação interrompida! Reiniciando...');
+        
+        // Tentar reiniciar gravação automaticamente
+        await this.restartRecording();
+        return;
+      }
+
+      // 2. Verificar contexto de áudio
+      if (this.audioContext && this.audioContext.state === 'suspended') {
+        console.warn('⚠️ Contexto de áudio suspenso, reativando...');
+        await this.audioContext.resume();
+      }
+
+      // 3. Verificar dispositivo de áudio
+      const isDeviceValid = await this.validateAudioDevice(this.inputDevice);
+      if (!isDeviceValid) {
+        console.error('🚨 CRÍTICO: Dispositivo de áudio desconectado!');
+        logSystem.error('Dispositivo de áudio perdido', 'HealthCheck');
+        toast.error('AVISO: Dispositivo de áudio desconectado!');
+        
+        // Tentar usar dispositivo padrão
+        this.inputDevice = 'default';
+        await this.restartRecording();
+        return;
+      }
+
+      // 4. Verificar uso de memória
+      if ((performance as any).memory) {
+        const memoryUsage = (performance as any).memory.usedJSHeapSize / 1024 / 1024; // MB
+        if (memoryUsage > 500) { // Mais de 500MB
+          console.warn(`⚠️ Alto uso de memória: ${memoryUsage.toFixed(2)}MB`);
+          logSystem.error(`Alto uso de memória: ${memoryUsage.toFixed(2)}MB`, 'HealthCheck');
+          
+          // Forçar garbage collection se disponível
+          if ((window as any).gc) {
+            (window as any).gc();
+          }
+        }
+      }
+
+      console.log('✅ Health check OK');
+      
+    } catch (error) {
+      console.error('❌ Erro no health check:', error);
+      logSystem.error(`Erro no health check: ${error}`, 'HealthCheck');
+    }
+  }
+
+  // CRÍTICO: Método para reiniciar gravação automaticamente
+  private async restartRecording(): Promise<void> {
+    try {
+      console.log('🔄 Tentando reiniciar gravação automaticamente...');
+      
+      const currentOutputPath = this.outputPath;
+      
+      // Parar gravação atual
+      await this.stopRecording();
+      
+      // Aguardar um momento
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Reiniciar gravação
+      const success = await this.startRecording(currentOutputPath);
+      
+      if (success) {
+        console.log('✅ Gravação reiniciada com sucesso');
+        toast.success('Gravação reiniciada automaticamente');
+        logSystem.info('Gravação reiniciada automaticamente', 'Recovery');
+      } else {
+        console.error('❌ Falha ao reiniciar gravação');
+        toast.error('ERRO: Não foi possível reiniciar gravação');
+        logSystem.error('Falha ao reiniciar gravação', 'Recovery');
+      }
+      
+    } catch (error) {
+      console.error('❌ Erro ao reiniciar gravação:', error);
+      logSystem.error(`Erro ao reiniciar gravação: ${error}`, 'Recovery');
+    }
+  }
+
+  // CRÍTICO: Monitoramento de espaço em disco
+  private startDiskSpaceMonitoring(): void {
+    this.diskSpaceInterval = setInterval(() => {
+      this.checkDiskSpace();
+    }, 60000); // Verificar a cada 1 minuto
+    
+    console.log('💾 Monitoramento de espaço em disco iniciado');
+    logSystem.info('Monitoramento de espaço em disco iniciado', 'DiskSpace');
+  }
+
+  private stopDiskSpaceMonitoring(): void {
+    if (this.diskSpaceInterval) {
+      clearInterval(this.diskSpaceInterval);
+      this.diskSpaceInterval = null;
+      console.log('💾 Monitoramento de espaço em disco parado');
+      logSystem.info('Monitoramento de espaço em disco parado', 'DiskSpace');
+    }
+  }
+
+  private async checkDiskSpace(): Promise<void> {
+    try {
+      // Usar Navigator Storage API se disponível
+      if ('storage' in navigator && 'estimate' in navigator.storage) {
+        const estimate = await navigator.storage.estimate();
+        
+        if (estimate.quota && estimate.usage) {
+          const freeSpaceBytes = estimate.quota - estimate.usage;
+          const freeSpaceGB = freeSpaceBytes / (1024 * 1024 * 1024);
+          
+          console.log(`💾 Espaço livre: ${freeSpaceGB.toFixed(2)}GB`);
+          
+          if (freeSpaceGB < this.minDiskSpaceGB) {
+            console.error(`🚨 CRÍTICO: Pouco espaço em disco! ${freeSpaceGB.toFixed(2)}GB restantes`);
+            logSystem.error(`Pouco espaço em disco: ${freeSpaceGB.toFixed(2)}GB`, 'DiskSpace');
+            toast.error(`AVISO: Pouco espaço em disco! ${freeSpaceGB.toFixed(2)}GB restantes`);
+            
+            // Parar gravação se espaço crítico (menos de 500MB)
+            if (freeSpaceGB < 0.5) {
+              console.error('🚨 CRÍTICO: Parando gravação por falta de espaço!');
+              toast.error('ERRO CRÍTICO: Gravação parada por falta de espaço!');
+              logSystem.error('Gravação parada por falta de espaço', 'DiskSpace');
+              await this.stopRecording();
+            }
+          }
+        }
+      }
+      
+    } catch (error) {
+      console.error('❌ Erro ao verificar espaço em disco:', error);
+      logSystem.error(`Erro ao verificar espaço: ${error}`, 'DiskSpace');
+    }
+  }
+
+  // CRÍTICO: Sistema de backup automático
+  private startAutoBackup(): void {
+    this.backupInterval = setInterval(() => {
+      this.createBackupCheckpoint();
+    }, this.backupIntervalMinutes * 60 * 1000);
+    
+    console.log(`💾 Backup automático iniciado (${this.backupIntervalMinutes}min)`);
+    logSystem.info(`Backup automático iniciado (${this.backupIntervalMinutes}min)`, 'Backup');
+  }
+
+  private stopAutoBackup(): void {
+    if (this.backupInterval) {
+      clearInterval(this.backupInterval);
+      this.backupInterval = null;
+      console.log('💾 Backup automático parado');
+      logSystem.info('Backup automático parado', 'Backup');
+    }
+  }
+
+  private createBackupCheckpoint(): void {
+    try {
+      if (!this.isRecording) return;
+      
+      const checkpoint = {
+        timestamp: new Date().toISOString(),
+        outputPath: this.outputPath,
+        recordingStartTime: this.recordingStartTime,
+        currentSplitNumber: this.currentSplitNumber,
+        settings: {
+          outputFormat: this.outputFormat,
+          mp3Bitrate: this.mp3Bitrate,
+          splitEnabled: this.splitEnabled,
+          splitIntervalMinutes: this.splitIntervalMinutes,
+          inputDevice: this.inputDevice
+        }
+      };
+      
+      // Salvar checkpoint no localStorage
+      localStorage.setItem('recordingCheckpoint', JSON.stringify(checkpoint));
+      
+      console.log('💾 Checkpoint criado:', checkpoint.timestamp);
+      logSystem.info(`Checkpoint criado: ${checkpoint.timestamp}`, 'Backup');
+      
+    } catch (error) {
+      console.error('❌ Erro ao criar checkpoint:', error);
+      logSystem.error(`Erro ao criar checkpoint: ${error}`, 'Backup');
+    }
+  }
+
+  // PÚBLICO: Método para recuperar sessão interrompida
+  public async recoverSession(): Promise<boolean> {
+    try {
+      const checkpointData = localStorage.getItem('recordingCheckpoint');
+      if (!checkpointData) return false;
+      
+      const checkpoint = JSON.parse(checkpointData);
+      
+      console.log('🔄 Recuperando sessão interrompida:', checkpoint.timestamp);
+      toast.info('Recuperando sessão de gravação interrompida...');
+      logSystem.info(`Recuperando sessão: ${checkpoint.timestamp}`, 'Recovery');
+      
+      // Restaurar configurações
+      this.outputPath = checkpoint.outputPath;
+      this.recordingStartTime = checkpoint.recordingStartTime;
+      this.currentSplitNumber = checkpoint.currentSplitNumber;
+      this.outputFormat = checkpoint.settings.outputFormat;
+      this.mp3Bitrate = checkpoint.settings.mp3Bitrate;
+      this.splitEnabled = checkpoint.settings.splitEnabled;
+      this.splitIntervalMinutes = checkpoint.settings.splitIntervalMinutes;
+      this.inputDevice = checkpoint.settings.inputDevice;
+      
+      // Limpar checkpoint
+      localStorage.removeItem('recordingCheckpoint');
+      
+      console.log('✅ Sessão recuperada com sucesso');
+      toast.success('Sessão de gravação recuperada!');
+      logSystem.info('Sessão recuperada com sucesso', 'Recovery');
+      
+      return true;
+      
+    } catch (error) {
+      console.error('❌ Erro ao recuperar sessão:', error);
+      logSystem.error(`Erro ao recuperar sessão: ${error}`, 'Recovery');
+      return false;
+    }
   }
 
   private loadSettings() {
@@ -155,6 +431,30 @@ export class ElectronAudioService {
       console.error('❌ Erro ao solicitar permissão:', error);
       logSystem.error(`Erro ao solicitar permissão de microfone: ${error}`, 'Audio');
       toast.error('Erro ao acessar o microfone. Verifique as permissões.');
+      return false;
+    }
+  }
+
+  // CRÍTICO: Validação de dispositivos de áudio
+  private async validateAudioDevice(deviceId: string): Promise<boolean> {
+    try {
+      if (deviceId === 'default') return true;
+      
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const audioInputs = devices.filter(device => device.kind === 'audioinput');
+      
+      const deviceExists = audioInputs.some(device => device.deviceId === deviceId);
+      
+      if (!deviceExists) {
+        console.warn(`⚠️ Dispositivo ${deviceId} não encontrado`);
+        logSystem.error(`Dispositivo ${deviceId} não encontrado`, 'DeviceValidation');
+      }
+      
+      return deviceExists;
+      
+    } catch (error) {
+      console.error('❌ Erro ao validar dispositivo:', error);
+      logSystem.error(`Erro ao validar dispositivo: ${error}`, 'DeviceValidation');
       return false;
     }
   }
@@ -288,6 +588,11 @@ export class ElectronAudioService {
         this.scheduleSplit();
       }
 
+      // CRÍTICO: Iniciar sistemas para sessões longas
+      this.startHealthCheck();
+      this.startDiskSpaceMonitoring();
+      this.startAutoBackup();
+
       console.log('🎬 Gravação iniciada com sucesso');
       logSystem.info(`Formato: MP3, ${this.sampleRate}Hz, ${this.mp3Bitrate}kbps`, 'Recording');
       toast.success('Gravação iniciada com sucesso');
@@ -304,6 +609,14 @@ export class ElectronAudioService {
   async stopRecording(): Promise<void> {
     try {
       if (this.mediaRecorder && this.isRecording) {
+        // CRÍTICO: Parar sistemas para sessões longas
+        this.stopHealthCheck();
+        this.stopDiskSpaceMonitoring();
+        this.stopAutoBackup();
+        
+        // Limpar checkpoint ao parar normalmente
+        localStorage.removeItem('recordingCheckpoint');
+        
         this.mediaRecorder.stop();
         this.mediaRecorder.stream.getTracks().forEach(track => track.stop());
         this.isRecording = false;
@@ -453,20 +766,6 @@ export class ElectronAudioService {
     console.log(`🎤 Dispositivo alterado para: ${deviceId}`);
   }
 
-  // NOVO: Validação de dispositivos de áudio
-  private async validateAudioDevice(deviceId: string): Promise<boolean> {
-    try {
-      if (deviceId === 'default') return true;
-      
-      const devices = await navigator.mediaDevices.enumerateDevices();
-      const audioInputs = devices.filter(device => device.kind === 'audioinput');
-      
-      return audioInputs.some(device => device.deviceId === deviceId);
-    } catch (error) {
-      console.error('❌ Erro ao validar dispositivo:', error);
-      return false;
-    }
-  }
 
   setOutputFormat(format: string): void {
     this.outputFormat = format;
@@ -1031,15 +1330,28 @@ export class ElectronAudioService {
     }
   }
 
-  // MÉTODO CORRIGIDO: startContinuousAnalysis
+  // MÉTODO OTIMIZADO: startContinuousAnalysis com throttling
   private startContinuousAnalysis(): void {
     if (!this.monitoringAnalyser) return;
 
     const bufferLength = this.monitoringAnalyser.frequencyBinCount;
     const dataArray = new Uint8Array(bufferLength);
-    let analysisCounter = 0;
+    let lastAnalysisTime = 0;
+    const analysisThrottle = 50; // Máximo 20 FPS para melhor performance
 
     const analyze = () => {
+      const now = performance.now();
+      
+      // Throttling para otimizar performance
+      if (now - lastAnalysisTime < analysisThrottle) {
+        if (this.monitoringContext && this.monitoringContext.state === 'running') {
+          requestAnimationFrame(analyze);
+        }
+        return;
+      }
+      
+      lastAnalysisTime = now;
+      
       if (!this.monitoringAnalyser || !this.monitoringContext) return;
 
       try {
@@ -1094,11 +1406,10 @@ export class ElectronAudioService {
           }
         });
 
-        // Logs com escala correta
-        if (analysisCounter % 60 === 0) {
-          console.log(`🎛️ Análise CORRIGIDA: L=${leftLevel.toFixed(1)}dB R=${rightLevel.toFixed(1)}dB`);
+        // Logs periódicos para debug (reduzir frequência)
+        if (Math.random() < 0.01) { // 1% chance = logs esporádicos
+          console.log(`🎛️ Análise OTIMIZADA: L=${leftLevel.toFixed(1)}dB R=${rightLevel.toFixed(1)}dB`);
         }
-        analysisCounter++;
 
         // Continuar análise
         if (this.monitoringContext && this.monitoringContext.state === 'running') {
@@ -1148,6 +1459,81 @@ export class ElectronAudioService {
     
     // Reinicializar
     await this.startMonitoring();
+  }
+
+  // NOVO: Sistema de rotação de logs para sessões longas
+  private rotateLogsIfNeeded(): void {
+    try {
+      // Rotação básica através do localStorage para manter logs leves
+      const maxLogEntries = 100;
+      const logKey = 'audioServiceLogs';
+      
+      const storedLogs = localStorage.getItem(logKey);
+      if (storedLogs) {
+        const logs = JSON.parse(storedLogs);
+        if (Array.isArray(logs) && logs.length > maxLogEntries) {
+          // Manter apenas os últimos 50 logs
+          const recentLogs = logs.slice(-50);
+          localStorage.setItem(logKey, JSON.stringify(recentLogs));
+          console.log(`🗂️ Logs rotacionados: ${logs.length} → 50`);
+        }
+      }
+      
+    } catch (error) {
+      console.error('❌ Erro ao rotacionar logs:', error);
+    }
+  }
+
+  // NOVO: Método público para verificar saúde do sistema
+  public getSystemHealth(): {
+    isHealthy: boolean;
+    issues: string[];
+    recommendations: string[];
+  } {
+    const issues: string[] = [];
+    const recommendations: string[] = [];
+
+    try {
+      // Verificar contexto de áudio
+      if (this.monitoringContext && this.monitoringContext.state === 'suspended') {
+        issues.push('Contexto de áudio suspenso');
+        recommendations.push('Reativar contexto de áudio');
+      }
+
+      // Verificar uso de memória
+      if ((performance as any).memory) {
+        const memoryUsage = (performance as any).memory.usedJSHeapSize / 1024 / 1024;
+        if (memoryUsage > 300) {
+          issues.push(`Alto uso de memória: ${memoryUsage.toFixed(2)}MB`);
+          recommendations.push('Considerar limpeza de cache');
+        }
+      }
+
+      // Verificar health check ativo durante gravação
+      if (this.isRecording && !this.healthCheckInterval) {
+        issues.push('Health check não está ativo durante gravação');
+        recommendations.push('Ativar health check para sessões longas');
+      }
+
+      // Verificar backup ativo durante gravação
+      if (this.isRecording && !this.backupInterval) {
+        issues.push('Backup automático não está ativo');
+        recommendations.push('Ativar backup automático');
+      }
+
+      return {
+        isHealthy: issues.length === 0,
+        issues,
+        recommendations
+      };
+
+    } catch (error) {
+      return {
+        isHealthy: false,
+        issues: [`Erro ao verificar saúde do sistema: ${error}`],
+        recommendations: ['Reiniciar o serviço de áudio']
+      };
+    }
   }
 }
 
