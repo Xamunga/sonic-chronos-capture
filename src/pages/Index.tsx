@@ -31,7 +31,7 @@ const Index = () => {
         <AppHeader />
         
         {/* Monitor Principal - Sem abas */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-5">
           <div className="space-y-5">
             <RecordingControls outputPath={outputPath} />
             <div className="bg-gradient-to-br from-studio-charcoal to-studio-slate border-studio-electric/30 rounded-lg p-6 text-center border flex flex-col justify-center h-[270px]">
