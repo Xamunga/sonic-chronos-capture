@@ -55,27 +55,27 @@ const Index = () => {
             <Accordion type="multiple" className="w-full">
               <div className="flex w-full">
                 <AccordionItem value="audio" className="flex-1 border-r border-studio-electric/30 last:border-r-0">
-                  <AccordionTrigger className="px-4 py-2 hover:bg-studio-electric/10 text-studio-electric justify-center">
+                  <AccordionTrigger className="px-4 py-2 hover:bg-studio-electric/10 text-studio-electric justify-center [&>svg]:hidden">
                     Áudio
                   </AccordionTrigger>
                 </AccordionItem>
                 <AccordionItem value="files" className="flex-1 border-r border-studio-electric/30 last:border-r-0">
-                  <AccordionTrigger className="px-4 py-2 hover:bg-studio-electric/10 text-studio-electric justify-center">
+                  <AccordionTrigger className="px-4 py-2 hover:bg-studio-electric/10 text-studio-electric justify-center [&>svg]:hidden">
                     Arquivos
                   </AccordionTrigger>
                 </AccordionItem>
                 <AccordionItem value="resources" className="flex-1 border-r border-studio-electric/30 last:border-r-0">
-                  <AccordionTrigger className="px-4 py-2 hover:bg-studio-electric/10 text-studio-electric justify-center">
+                  <AccordionTrigger className="px-4 py-2 hover:bg-studio-electric/10 text-studio-electric justify-center [&>svg]:hidden">
                     Recursos
                   </AccordionTrigger>
                 </AccordionItem>
                 <AccordionItem value="log" className="flex-1 border-r border-studio-electric/30 last:border-r-0">
-                  <AccordionTrigger className="px-4 py-2 hover:bg-studio-electric/10 text-studio-electric justify-center">
+                  <AccordionTrigger className="px-4 py-2 hover:bg-studio-electric/10 text-studio-electric justify-center [&>svg]:hidden">
                     Log
                   </AccordionTrigger>
                 </AccordionItem>
                 <AccordionItem value="debug" className="flex-1">
-                  <AccordionTrigger className="px-4 py-2 hover:bg-studio-electric/10 text-studio-electric justify-center">
+                  <AccordionTrigger className="px-4 py-2 hover:bg-studio-electric/10 text-studio-electric justify-center [&>svg]:hidden">
                     Debug
                   </AccordionTrigger>
                 </AccordionItem>
