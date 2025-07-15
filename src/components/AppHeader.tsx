@@ -5,9 +5,9 @@ const AppHeader = () => {
       <div className="flex items-center justify-between p-6">
         <div className="flex items-center space-x-4">
           <img 
-            src="/lovable-uploads/fb2a3625-fb9d-4668-b7d8-954b461e765a.png" 
-            alt="ALES Logo" 
-            className="w-36 h-36 object-contain"
+            src="/lovable-uploads/0ec13f08-862c-49e3-b3c3-79654a38f9c9.png" 
+            alt="Audio Recording Icon" 
+            className="w-16 h-16 object-contain"
           />
           <div>
             <h1 className="text-2xl font-bold text-studio-electric">
