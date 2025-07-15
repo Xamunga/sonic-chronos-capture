@@ -3,7 +3,7 @@ import { Card } from '@/components/ui/card';
 const AppHeader = () => {
   return <Card className="mb-6 bg-gradient-to-r from-studio-charcoal to-studio-slate border-studio-electric/30">
       <div className="flex items-center justify-between p-6">
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-4 transform scale-300">
           <img 
             src="/lovable-uploads/fb2a3625-fb9d-4668-b7d8-954b461e765a.png" 
             alt="ALES Logo" 
