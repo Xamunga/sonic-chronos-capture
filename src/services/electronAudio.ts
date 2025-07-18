@@ -1,8 +1,10 @@
 import { toast } from "sonner";
 import { logSystem } from '@/utils/logSystem';
+import { MP3Encoder, MP3Metadata } from './mp3Encoder';
+import { DateFolderFormat, FileNameFormat, MP3MetadataSettings } from '../types/audioTypes';
 
-// VERSÃO 2.8 RESTAURADA + CORREÇÕES CRÍTICAS
-// Base funcional da v2.8 com problemas específicos corrigidos
+// VERSÃO 3.2 - MP3 REAL + METADADOS + FORMATOS COMPATÍVEIS
+// Base v3.1 estável + MP3 real com navegação temporal
 
 export class ElectronAudioService {
   private mediaRecorder: MediaRecorder | null = null;
@@ -17,8 +19,9 @@ export class ElectronAudioService {
   private splitEnabled = false;
   private splitIntervalMinutes = 5;
   private dateFolderEnabled = false;
-  private dateFolderFormat = 'dd-mm';
-  private fileNameFormat = 'timestamp';
+  private dateFolderFormat: DateFolderFormat = 'dd-mm';
+  private fileNameFormat: FileNameFormat = 'hh-mm-ss-seq';
+  private mp3Metadata: MP3MetadataSettings;
   private recordingStartTime = 0;
   private currentSplitNumber = 1;
   private audioContext: AudioContext | null = null;
@@ -35,8 +38,18 @@ export class ElectronAudioService {
   private noiseGateRelease = 200;
 
   constructor() {
+    // Configurações padrão de metadados
+    this.mp3Metadata = {
+      title: '',
+      artist: 'ALES - Setor de Sonorização',
+      album: 'Gravador Real Time Pro',
+      year: '',
+      genre: 'Speech',
+      comment: ''
+    };
+    
     this.loadSettings();
-    console.log('🎛️ ElectronAudioService v2.8 Corrigido inicializado');
+    console.log('🎛️ ElectronAudioService v3.2 - MP3 Real inicializado');
   }
 
   private loadSettings() {
@@ -51,7 +64,15 @@ export class ElectronAudioService {
         this.splitIntervalMinutes = typeof parsed.splitIntervalMinutes === 'number' ? parsed.splitIntervalMinutes : 5;
         this.dateFolderEnabled = typeof parsed.dateFolderEnabled === 'boolean' ? parsed.dateFolderEnabled : false;
         this.dateFolderFormat = typeof parsed.dateFolderFormat === 'string' ? parsed.dateFolderFormat : 'dd-mm';
-        this.fileNameFormat = typeof parsed.fileNameFormat === 'string' ? parsed.fileNameFormat : 'timestamp';
+        this.fileNameFormat = typeof parsed.fileNameFormat === 'string' ? parsed.fileNameFormat : 'hh-mm-ss-seq';
+        this.mp3Metadata = parsed.mp3Metadata || {
+          title: '',
+          artist: 'ALES - Setor de Sonorização',
+          album: 'Gravador Real Time Pro',
+          year: '',
+          genre: 'Speech',
+          comment: ''
+        };
         this.inputDevice = typeof parsed.inputDevice === 'string' ? parsed.inputDevice : 'default';
         this.noiseSuppressionEnabled = typeof parsed.noiseSuppressionEnabled === 'boolean' ? parsed.noiseSuppressionEnabled : false;
         this.noiseThreshold = typeof parsed.noiseThreshold === 'number' ? parsed.noiseThreshold : -35;
@@ -80,7 +101,8 @@ export class ElectronAudioService {
         noiseSuppressionEnabled: this.noiseSuppressionEnabled,
         noiseThreshold: this.noiseThreshold,
         noiseGateAttack: this.noiseGateAttack,
-        noiseGateRelease: this.noiseGateRelease
+        noiseGateRelease: this.noiseGateRelease,
+        mp3Metadata: this.mp3Metadata
       };
       
       localStorage.setItem('audioSettings', JSON.stringify(settings));
@@ -362,11 +384,11 @@ export class ElectronAudioService {
           case 'dd-mm':
             dateFolder = `${now.getDate().toString().padStart(2, '0')}-${(now.getMonth() + 1).toString().padStart(2, '0')}`;
             break;
-          case 'mm-dd':
-            dateFolder = `${(now.getMonth() + 1).toString().padStart(2, '0')}-${now.getDate().toString().padStart(2, '0')}`;
+          case 'mm-dd-yyyy':
+            dateFolder = `${(now.getMonth() + 1).toString().padStart(2, '0')}-${now.getDate().toString().padStart(2, '0')}-${now.getFullYear()}`;
             break;
-          case 'yyyy-mm-dd':
-            dateFolder = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}-${now.getDate().toString().padStart(2, '0')}`;
+          case 'ddmmyy':
+            dateFolder = `${now.getDate().toString().padStart(2, '0')}${(now.getMonth() + 1).toString().padStart(2, '0')}${now.getFullYear().toString().slice(-2)}`;
             break;
           default:
             dateFolder = `${now.getDate().toString().padStart(2, '0')}-${(now.getMonth() + 1).toString().padStart(2, '0')}`;
@@ -429,10 +451,21 @@ export class ElectronAudioService {
         const seq = this.currentSplitNumber.toString().padStart(3, '0');
         return `${hours}-${minutes}-${seconds}-${seq}.${this.outputFormat === 'mp3' ? 'mp3' : 'webm'}`;
       
-      case 'timestamp':
+      case 'ddmmyy_hhmmss':
+        const day = now.getDate().toString().padStart(2, '0');
+        const month = (now.getMonth() + 1).toString().padStart(2, '0');
+        const year = now.getFullYear().toString().slice(-2);
+        const hours2 = now.getHours().toString().padStart(2, '0');
+        const minutes2 = now.getMinutes().toString().padStart(2, '0');
+        const seconds2 = now.getSeconds().toString().padStart(2, '0');
+        return `${day}${month}${year}_${hours2}${minutes2}${seconds2}.${this.outputFormat === 'mp3' ? 'mp3' : 'webm'}`;
+      
       default:
-        const timestamp = now.toISOString().replace(/[:.]/g, '-').split('T')[1].split('-').slice(0, 3).join('-');
-        return `gravacao_${timestamp}_${this.currentSplitNumber}.${this.outputFormat === 'mp3' ? 'mp3' : 'webm'}`;
+        const hoursDefault = now.getHours().toString().padStart(2, '0');
+        const minutesDefault = now.getMinutes().toString().padStart(2, '0');
+        const secondsDefault = now.getSeconds().toString().padStart(2, '0');
+        const seqDefault = this.currentSplitNumber.toString().padStart(3, '0');
+        return `${hoursDefault}-${minutesDefault}-${secondsDefault}-${seqDefault}.${this.outputFormat === 'mp3' ? 'mp3' : 'webm'}`;
     }
   }
 
@@ -638,22 +671,31 @@ export class ElectronAudioService {
     return this.dateFolderEnabled;
   }
 
-  setDateFolderFormat(format: string): void {
+  setDateFolderFormat(format: DateFolderFormat): void {
     this.dateFolderFormat = format;
     this.saveSettings();
   }
 
-  getDateFolderFormat(): string {
+  getDateFolderFormat(): DateFolderFormat {
     return this.dateFolderFormat;
   }
 
-  setFileNameFormat(format: string): void {
+  setFileNameFormat(format: FileNameFormat): void {
     this.fileNameFormat = format;
     this.saveSettings();
   }
 
-  getFileNameFormat(): string {
+  getFileNameFormat(): FileNameFormat {
     return this.fileNameFormat;
+  }
+
+  setMp3Metadata(metadata: MP3MetadataSettings): void {
+    this.mp3Metadata = metadata;
+    this.saveSettings();
+  }
+
+  getMp3Metadata(): MP3MetadataSettings {
+    return this.mp3Metadata;
   }
 
   setNoiseSuppressionEnabled(enabled: boolean): void {
