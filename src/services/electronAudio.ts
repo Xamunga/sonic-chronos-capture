@@ -1,8 +1,9 @@
 import { toast } from "sonner";
 import { logSystem } from '@/utils/logSystem';
+import lamejs from '@breezystack/lamejs';
 
-// VERSÃO 2.8 RESTAURADA + CORREÇÕES CRÍTICAS
-// Base funcional da v2.8 com problemas específicos corrigidos
+// VERSÃO 3.1 - ENCODER MP3 REAL
+// Implementação com @breezystack/lamejs para encoding MP3 confiável
 
 export class ElectronAudioService {
   private mediaRecorder: MediaRecorder | null = null;
@@ -28,6 +29,11 @@ export class ElectronAudioService {
   private hasSignal = false;
   private stream: MediaStream | null = null;
   
+  // MP3 Encoder
+  private scriptProcessor: ScriptProcessorNode | null = null;
+  private mp3Encoder: any = null;
+  private mp3Data: Int8Array[] = [];
+  
   // Configurações do Noise Gate
   private noiseSuppressionEnabled = false;
   private noiseThreshold = -35;
@@ -36,7 +42,7 @@ export class ElectronAudioService {
 
   constructor() {
     this.loadSettings();
-    console.log('🎛️ ElectronAudioService v2.8 Corrigido inicializado');
+    console.log('🎛️ ElectronAudioService v3.1 - Encoder MP3 Real inicializado');
   }
 
   private loadSettings() {
@@ -133,11 +139,13 @@ export class ElectronAudioService {
 
   async startRecording(outputPath: string): Promise<boolean> {
     try {
-      console.log('🎤 Iniciando gravação v2.8...');
+      console.log('🎤 Iniciando gravação v3.1 com encoder MP3...');
       
       this.outputPath = outputPath;
       this.recordingStartTime = Date.now();
       this.currentSplitNumber = 1;
+      this.audioChunks = [];
+      this.mp3Data = [];
       
       const constraints = {
         audio: {
@@ -152,29 +160,70 @@ export class ElectronAudioService {
       
       this.stream = await navigator.mediaDevices.getUserMedia(constraints);
       
-      // CORREÇÃO: Usar WEBM mas salvar como MP3 real posteriormente
-      const options = {
-        mimeType: 'audio/webm;codecs=opus',
-        audioBitsPerSecond: this.mp3Bitrate * 1000
-      };
+      // Configurar AudioContext e análise
+      this.audioContext = new AudioContext({ sampleRate: this.sampleRate });
+      const source = this.audioContext.createMediaStreamSource(this.stream);
       
-      this.mediaRecorder = new MediaRecorder(this.stream, options);
+      // Configurar analyzer para VU e Spectrum
+      this.analyser = this.audioContext.createAnalyser();
+      this.analyser.fftSize = 2048;
+      this.analyser.smoothingTimeConstant = 0.3;
+      source.connect(this.analyser);
       
-      this.mediaRecorder.ondataavailable = (event) => {
-        if (event.data.size > 0) {
-          this.audioChunks.push(event.data);
-        }
-      };
+      // Configurar MP3 Encoder se formato for MP3
+      if (this.outputFormat === 'mp3') {
+        this.mp3Encoder = new lamejs.Mp3Encoder(1, this.sampleRate, this.mp3Bitrate);
+        
+        // ScriptProcessor para capturar PCM
+        this.scriptProcessor = this.audioContext.createScriptProcessor(4096, 1, 1);
+        
+        this.scriptProcessor.onaudioprocess = (e) => {
+          if (!this.isRecording || this.isPaused) return;
+          
+          const inputData = e.inputBuffer.getChannelData(0);
+          const samples = new Int16Array(inputData.length);
+          
+          // Converter Float32 para Int16
+          for (let i = 0; i < inputData.length; i++) {
+            const s = Math.max(-1, Math.min(1, inputData[i]));
+            samples[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+          }
+          
+          // Encodar para MP3
+          const mp3buf = this.mp3Encoder.encodeBuffer(samples);
+          if (mp3buf.length > 0) {
+            this.mp3Data.push(mp3buf);
+          }
+        };
+        
+        source.connect(this.scriptProcessor);
+        this.scriptProcessor.connect(this.audioContext.destination);
+        
+        console.log('✅ Encoder MP3 configurado');
+      } else {
+        // Usar MediaRecorder para WAV/WEBM
+        const options = {
+          mimeType: 'audio/webm;codecs=opus',
+          audioBitsPerSecond: 128000
+        };
+        
+        this.mediaRecorder = new MediaRecorder(this.stream, options);
+        
+        this.mediaRecorder.ondataavailable = (event) => {
+          if (event.data.size > 0) {
+            this.audioChunks.push(event.data);
+          }
+        };
+        
+        this.mediaRecorder.onstop = () => {
+          this.saveRecording();
+        };
+        
+        this.mediaRecorder.start(1000);
+      }
       
-      this.mediaRecorder.onstop = () => {
-        this.saveRecording();
-      };
-      
-      this.mediaRecorder.start(1000);
       this.isRecording = true;
-      
-      // Configurar análise de áudio
-      this.setupAudioAnalysis(this.stream);
+      this.startAudioAnalysis();
       
       // Agendar split se habilitado
       if (this.splitEnabled) {
@@ -194,10 +243,25 @@ export class ElectronAudioService {
   }
 
   stopRecording(): void {
-    if (this.mediaRecorder && this.isRecording) {
-      this.mediaRecorder.stop();
+    if (this.isRecording) {
       this.isRecording = false;
       this.isPaused = false;
+      
+      // Finalizar MP3 se estiver usando
+      if (this.outputFormat === 'mp3' && this.mp3Encoder) {
+        const mp3buf = this.mp3Encoder.flush();
+        if (mp3buf.length > 0) {
+          this.mp3Data.push(mp3buf);
+        }
+      }
+      
+      // Parar MediaRecorder se estiver usando
+      if (this.mediaRecorder) {
+        this.mediaRecorder.stop();
+      } else {
+        // Se não estiver usando MediaRecorder, salvar diretamente
+        this.saveRecording();
+      }
       
       this.cleanupAudioAnalysis();
       
@@ -212,14 +276,18 @@ export class ElectronAudioService {
   }
 
   pauseRecording(): void {
-    if (this.mediaRecorder && this.isRecording) {
+    if (this.isRecording) {
       if (this.isPaused) {
-        this.mediaRecorder.resume();
         this.isPaused = false;
+        if (this.mediaRecorder) {
+          this.mediaRecorder.resume();
+        }
         console.log('▶️ Gravação retomada');
       } else {
-        this.mediaRecorder.pause();
         this.isPaused = true;
+        if (this.mediaRecorder) {
+          this.mediaRecorder.pause();
+        }
         console.log('⏸️ Gravação pausada');
       }
     }
@@ -388,28 +456,45 @@ export class ElectronAudioService {
   }
 
   private async saveRecording(): Promise<void> {
-    if (this.audioChunks.length === 0) {
-      console.warn('⚠️ Nenhum dado de áudio para salvar');
-      return;
-    }
-
     try {
       const finalOutputPath = await this.ensureOutputDirectory(this.outputPath);
       const filename = this.generateFileName();
-      const blob = new Blob(this.audioChunks, { type: 'audio/webm' });
       
-      console.log(`💾 Salvando arquivo: ${filename} (${(blob.size / 1024 / 1024).toFixed(2)}MB)`);
+      let audioData: Uint8Array;
       
-      // Converter Blob para Uint8Array
-      const arrayBuffer = await blob.arrayBuffer();
-      const audioData = new Uint8Array(arrayBuffer);
+      if (this.outputFormat === 'mp3' && this.mp3Data.length > 0) {
+        // Salvar MP3 encodado
+        const totalLength = this.mp3Data.reduce((acc, arr) => acc + arr.length, 0);
+        audioData = new Uint8Array(totalLength);
+        let offset = 0;
+        
+        for (const chunk of this.mp3Data) {
+          audioData.set(chunk, offset);
+          offset += chunk.length;
+        }
+        
+        console.log(`💾 Salvando MP3: ${filename} (${(audioData.length / 1024 / 1024).toFixed(2)}MB)`);
+        this.mp3Data = [];
+        
+      } else if (this.audioChunks.length > 0) {
+        // Salvar WEBM/WAV
+        const blob = new Blob(this.audioChunks, { type: 'audio/webm' });
+        console.log(`💾 Salvando arquivo: ${filename} (${(blob.size / 1024 / 1024).toFixed(2)}MB)`);
+        
+        const arrayBuffer = await blob.arrayBuffer();
+        audioData = new Uint8Array(arrayBuffer);
+        this.audioChunks = [];
+        
+      } else {
+        console.warn('⚠️ Nenhum dado de áudio para salvar');
+        return;
+      }
       
       await window.electronAPI.saveAudioFile(`${finalOutputPath}/${filename}`, audioData);
       
-      this.audioChunks = [];
-      
       console.log('✅ Arquivo salvo com sucesso');
       logSystem.info(`Arquivo salvo: ${filename}`, 'Recording');
+      toast.success(`Arquivo salvo: ${filename}`);
       
     } catch (error) {
       console.error('❌ Erro ao salvar gravação:', error);
@@ -436,25 +521,6 @@ export class ElectronAudioService {
     }
   }
 
-  // Sistema de análise de áudio da v2.8 (funcional)
-  private setupAudioAnalysis(stream: MediaStream): void {
-    try {
-      this.audioContext = new AudioContext({ sampleRate: 44100 });
-      const source = this.audioContext.createMediaStreamSource(stream);
-      
-      this.analyser = this.audioContext.createAnalyser();
-      this.analyser.fftSize = 2048;
-      this.analyser.smoothingTimeConstant = 0.3;
-      
-      source.connect(this.analyser);
-      
-      console.log('🎤 Contexto de áudio configurado');
-      this.startAudioAnalysis();
-    } catch (error) {
-      console.error('❌ Erro ao configurar análise de áudio:', error);
-      logSystem.error(`Erro ao configurar análise de áudio: ${error}`, 'Audio');
-    }
-  }
 
   // CORREÇÃO: RTA otimizado com throttle da v2.9
   private startAudioAnalysis(): void {
@@ -528,11 +594,18 @@ export class ElectronAudioService {
   }
 
   private cleanupAudioAnalysis(): void {
+    if (this.scriptProcessor) {
+      this.scriptProcessor.disconnect();
+      this.scriptProcessor = null;
+    }
+    
     if (this.audioContext) {
       this.audioContext.close();
       this.audioContext = null;
     }
+    
     this.analyser = null;
+    this.mp3Encoder = null;
   }
 
   // Callbacks para UI
