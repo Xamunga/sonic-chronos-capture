@@ -2,35 +2,26 @@ import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
-import { FolderOpen, FileText, Clock, Trash2, Music } from 'lucide-react';
+import { FolderOpen, FileText, Clock, Trash2 } from 'lucide-react';
 import { audioService } from '@/services/electronAudio';
 import { toast } from 'sonner';
 import { logSystem } from '@/utils/logSystem';
-import { DateFolderFormat, FileNameFormat, MP3MetadataSettings } from '@/types/audioTypes';
 
 const FileManagementSettings = () => {
   const [outputPath, setOutputPath] = useState('C:\\Gravacoes\\');
-  const [dateFormat, setDateFormat] = useState<DateFolderFormat>('dd-mm');
+  const [dateFormat, setDateFormat] = useState('dd-mm-yyyy');
   const [dateFolderEnabled, setDateFolderEnabled] = useState(false);
   const [autoDelete, setAutoDelete] = useState(false);
   const [autoDeleteDays, setAutoDeleteDays] = useState(30);
   const [splitEnabled, setSplitEnabled] = useState(false);
   const [splitInterval, setSplitInterval] = useState('5');
-  const [fileNamePattern, setFileNamePattern] = useState<FileNameFormat>('hh-mm-ss-seq');
+  const [fileNamePattern, setFileNamePattern] = useState('timestamp');
+  const [fileNameFormat, setFileNameFormat] = useState('timestamp');
   const [customTitle, setCustomTitle] = useState('');
-  const [mp3Metadata, setMp3Metadata] = useState<MP3MetadataSettings>({
-    title: '',
-    artist: 'ALES - Setor de Sonorização',
-    album: 'Gravador Real Time Pro',
-    year: '',
-    genre: 'Speech',
-    comment: ''
-  });
 
   // Sincronizar com audioService na inicialização
   useEffect(() => {
@@ -40,7 +31,6 @@ const FileManagementSettings = () => {
       setSplitEnabled(audioService.getSplitEnabled());
       setSplitInterval(audioService.getSplitInterval().toString());
       setFileNamePattern(audioService.getFileNameFormat());
-      setMp3Metadata(audioService.getMp3Metadata());
       
       // Carregar configurações de limpeza automática
       const savedSettings = localStorage.getItem('audioSettings');
@@ -58,31 +48,37 @@ const FileManagementSettings = () => {
 
   const dateFormats = [
     { value: 'dd-mm', label: 'DD-MM (31-12)', example: '31-12' },
-    { value: 'mm-dd-yyyy', label: 'MM-DD-YYYY (12-31-2025)', example: '12-31-2025' },
-    { value: 'ddmmyy', label: 'DDMMYY (311225)', example: '311225' },
+    { value: 'dd-mm-yyyy', label: 'DD-MM-AAAA (31-12-2024)', example: '31-12-2024' },
+    { value: 'mm-dd-yyyy', label: 'MM-DD-AAAA (12-31-2024)', example: '12-31-2024' },
+    { value: 'yyyy-mm-dd', label: 'AAAA-MM-DD (2024-12-31)', example: '2024-12-31' },
+    { value: 'yyyy/mm/dd', label: 'AAAA/MM/DD (2024/12/31)', example: '2024/12/31' }
   ];
 
   const fileNamePatterns = [
-    { value: 'hh-mm-ss-seq', label: 'Atual (14-25-33-001.mp3)', example: '14-25-33-001.mp3' },
-    { value: 'ddmmyy_hhmmss', label: 'Sistema Antigo (311225_142533.mp3)', example: '311225_142533.mp3' },
+    { value: 'timestamp', label: 'Data/Hora (2024-12-31_14-30-15)', example: 'gravacao_2024-12-31_14-30-15.wav' },
+    { value: 'hh-mm-ss-seq', label: 'hh-mm-ss-sequência (150520_001)', example: '150520_001.wav' },
+    { value: 'dd-mm-hh-mm-ss-seq', label: 'dd-mm-hh-mm-ss-sequência (10-07-150520_001)', example: '10-07-150520_001.wav' },
+    { value: 'custom-timestamp', label: 'Título + Data/Hora', example: 'Sessao_2024-12-31_14-30-15.wav' },
+    { value: 'sequence', label: 'Sequencial (001, 002, 003)', example: 'gravacao_001.wav' },
+    { value: 'custom', label: 'Personalizado', example: 'CustomName.wav' }
   ];
 
   const formatExampleFileName = () => {
     const now = new Date();
-    const day = now.getDate().toString().padStart(2, '0');
-    const month = (now.getMonth() + 1).toString().padStart(2, '0');
-    const year = now.getFullYear().toString().slice(-2);
-    const hours = now.getHours().toString().padStart(2, '0');
-    const minutes = now.getMinutes().toString().padStart(2, '0');
-    const seconds = now.getSeconds().toString().padStart(2, '0');
+    const timestamp = now.toISOString().replace(/[:.]/g, '-').slice(0, 19);
+    const title = customTitle || 'gravacao';
     
     switch (fileNamePattern) {
-      case 'hh-mm-ss-seq':
-        return `${hours}-${minutes}-${seconds}-001.mp3`;
-      case 'ddmmyy_hhmmss':
-        return `${day}${month}${year}_${hours}${minutes}${seconds}.mp3`;
+      case 'timestamp':
+        return `gravacao_${timestamp}.wav`;
+      case 'custom-timestamp':
+        return `${title}_${timestamp}.wav`;
+      case 'sequence':
+        return `${title}_001.wav`;
+      case 'custom':
+        return `${title}.wav`;
       default:
-        return `${hours}-${minutes}-${seconds}-001.mp3`;
+        return `gravacao_${timestamp}.wav`;
     }
   };
 
@@ -91,15 +87,18 @@ const FileManagementSettings = () => {
     const day = now.getDate().toString().padStart(2, '0');
     const month = (now.getMonth() + 1).toString().padStart(2, '0');
     const year = now.getFullYear().toString();
-    const yearShort = year.slice(-2);
 
     switch (dateFormat) {
       case 'dd-mm':
         return `${day}-${month}`;
+      case 'dd-mm-yyyy':
+        return `${day}-${month}-${year}`;
       case 'mm-dd-yyyy':
         return `${month}-${day}-${year}`;
-      case 'ddmmyy':
-        return `${day}${month}${yearShort}`;
+      case 'yyyy-mm-dd':
+        return `${year}-${month}-${day}`;
+      case 'yyyy/mm/dd':
+        return `${year}/${month}/${day}`;
       default:
         return `${day}-${month}`;
     }
@@ -112,8 +111,7 @@ const FileManagementSettings = () => {
     toast.success(enabled ? 'Pastas por data ativadas' : 'Pastas por data desativadas');
   };
 
-  const handleDateFormatChange = (value: string) => {
-    const format = value as DateFolderFormat;
+  const handleDateFormatChange = (format: string) => {
     setDateFormat(format);
     audioService.setDateFolderFormat(format);
     toast.success('Formato de data atualizado');
@@ -145,18 +143,6 @@ const FileManagementSettings = () => {
     setOutputPath(path);
   };
 
-  const handleFileNameFormatChange = (value: string) => {
-    const format = value as FileNameFormat;
-    setFileNamePattern(format);
-    audioService.setFileNameFormat(format);
-    toast.success('Formato de arquivo atualizado');
-  };
-
-  const handleMetadataChange = (newMetadata: MP3MetadataSettings) => {
-    setMp3Metadata(newMetadata);
-    audioService.setMp3Metadata(newMetadata);
-  };
-
   const handleSaveSettings = () => {
     try {
       // Salvar todas as configurações no audioService e localStorage
@@ -172,15 +158,14 @@ const FileManagementSettings = () => {
         autoDeleteDays,
         outputFormat: audioService.getOutputFormat(),
         mp3Bitrate: audioService.getMp3Bitrate(),
-        sampleRate: audioService.getSampleRate(),
-        mp3Metadata
+        sampleRate: audioService.getSampleRate()
       };
       
       localStorage.setItem('audioSettings', JSON.stringify(settings));
       audioService.saveSettings();
       
       toast.success('Configurações salvas com sucesso!');
-      logSystem.info('Configurações de arquivos salvas', 'Files');
+      logSystem.success('Configurações de arquivos salvas', 'Files');
     } catch (error) {
       console.error('Erro ao salvar configurações:', error);
       toast.error('Erro ao salvar configurações');
@@ -325,201 +310,43 @@ const FileManagementSettings = () => {
         <div className="p-6">
           <div className="flex items-center space-x-2 mb-4">
             <FileText className="w-5 h-5 text-studio-electric" />
-            <h3 className="text-lg font-semibold text-studio-electric">Formatos de Arquivo e Pasta</h3>
+            <h3 className="text-lg font-semibold text-studio-electric">Nomenclatura de Arquivos</h3>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label className="text-sm font-medium text-studio-electric mb-2 block">
-                Formato do Nome do Arquivo
-              </Label>
-              <Select value={fileNamePattern} onValueChange={handleFileNameFormatChange}>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label className="text-xs text-studio-electric">Título Personalizado (opcional)</Label>
+              <Input
+                value={customTitle}
+                onChange={(e) => setCustomTitle(e.target.value)}
+                placeholder="Ex: Sessao, Podcast, Entrevista"
+                className="bg-muted/50 border-studio-electric font-bold"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label className="text-xs text-studio-electric">Padrão de Nomenclatura</Label>
+              <Select value={fileNamePattern} onValueChange={(value) => {
+                setFileNamePattern(value);
+                audioService.setFileNameFormat(value);
+              }}>
                 <SelectTrigger className="bg-muted/50 border-studio-electric font-bold">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   {fileNamePatterns.map((pattern) => (
-                    <SelectItem key={pattern.value} value={pattern.value}>
+                    <SelectItem 
+                      key={pattern.value} 
+                      value={pattern.value}
+                    >
                       {pattern.label}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-              <p className="text-xs text-white mt-1">
-                Exemplo: {formatExampleFileName()}
+              <p className="text-xs text-white">
+                Arquivo criado: {formatExampleFileName()}
               </p>
-            </div>
-          </div>
-        </div>
-      </Card>
-
-      <Separator />
-
-      {/* Metadados MP3 */}
-      <Card className="bg-gradient-to-br from-studio-charcoal to-studio-slate border-studio-electric/30">
-        <div className="p-6">
-          <div className="flex items-center space-x-2 mb-4">
-            <Music className="w-5 h-5 text-studio-electric" />
-            <h3 className="text-lg font-semibold text-studio-electric">Metadados MP3</h3>
-          </div>
-          <p className="text-sm text-white mb-4">
-            Configure os metadados que serão incluídos nos arquivos MP3. 
-            Deixe em branco para usar valores automáticos.
-          </p>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Título */}
-            <div>
-              <Label className="text-sm font-medium text-studio-electric mb-2 block">
-                Título
-              </Label>
-              <Input
-                type="text"
-                value={mp3Metadata.title}
-                onChange={(e) => handleMetadataChange({...mp3Metadata, title: e.target.value})}
-                placeholder="Deixe vazio para usar nome do arquivo"
-                className="bg-muted/50 border-studio-electric"
-              />
-              <p className="text-xs text-white mt-1">
-                Vazio = "Gravação 170725_025340"
-              </p>
-            </div>
-
-            {/* Artista */}
-            <div>
-              <Label className="text-sm font-medium text-studio-electric mb-2 block">
-                Artista
-              </Label>
-              <Input
-                type="text"
-                value={mp3Metadata.artist}
-                onChange={(e) => handleMetadataChange({...mp3Metadata, artist: e.target.value})}
-                placeholder="Ex: ALES - Setor de Sonorização"
-                className="bg-muted/50 border-studio-electric"
-              />
-            </div>
-
-            {/* Álbum */}
-            <div>
-              <Label className="text-sm font-medium text-studio-electric mb-2 block">
-                Álbum
-              </Label>
-              <Input
-                type="text"
-                value={mp3Metadata.album}
-                onChange={(e) => handleMetadataChange({...mp3Metadata, album: e.target.value})}
-                placeholder="Ex: Gravador Real Time Pro"
-                className="bg-muted/50 border-studio-electric"
-              />
-            </div>
-
-            {/* Ano */}
-            <div>
-              <Label className="text-sm font-medium text-studio-electric mb-2 block">
-                Ano
-              </Label>
-              <Input
-                type="number"
-                value={mp3Metadata.year}
-                onChange={(e) => handleMetadataChange({...mp3Metadata, year: e.target.value})}
-                placeholder="Deixe vazio para usar ano atual"
-                min="1900"
-                max="2100"
-                className="bg-muted/50 border-studio-electric"
-              />
-              <p className="text-xs text-white mt-1">
-                Vazio = {new Date().getFullYear()}
-              </p>
-            </div>
-
-            {/* Gênero */}
-            <div>
-              <Label className="text-sm font-medium text-studio-electric mb-2 block">
-                Gênero
-              </Label>
-              <Select
-                value={mp3Metadata.genre}
-                onValueChange={(value) => handleMetadataChange({...mp3Metadata, genre: value})}
-              >
-                <SelectTrigger className="bg-muted/50 border-studio-electric">
-                  <SelectValue placeholder="Selecione um gênero" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="">Nenhum</SelectItem>
-                  <SelectItem value="Speech">Speech (Fala)</SelectItem>
-                  <SelectItem value="Podcast">Podcast</SelectItem>
-                  <SelectItem value="Interview">Interview (Entrevista)</SelectItem>
-                  <SelectItem value="Meeting">Meeting (Reunião)</SelectItem>
-                  <SelectItem value="Conference">Conference (Conferência)</SelectItem>
-                  <SelectItem value="Lecture">Lecture (Palestra)</SelectItem>
-                  <SelectItem value="Other">Other (Outro)</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Comentário */}
-            <div className="md:col-span-2">
-              <Label className="text-sm font-medium text-studio-electric mb-2 block">
-                Comentário
-              </Label>
-              <Textarea
-                value={mp3Metadata.comment}
-                onChange={(e) => handleMetadataChange({...mp3Metadata, comment: e.target.value})}
-                placeholder="Deixe vazio para usar data/hora automática"
-                rows={3}
-                className="bg-muted/50 border-studio-electric"
-              />
-              <p className="text-xs text-white mt-1">
-                Vazio = "Gravado em 17/07/2025 02:53:40 - 320kbps"
-              </p>
-            </div>
-          </div>
-
-          {/* Botões de ação */}
-          <div className="flex space-x-3 mt-4">
-            <Button
-              onClick={() => handleMetadataChange({
-                title: '',
-                artist: 'ALES - Setor de Sonorização',
-                album: 'Gravador Real Time Pro',
-                year: '',
-                genre: 'Speech',
-                comment: ''
-              })}
-              variant="outline"
-              size="sm"
-            >
-              Restaurar Padrões
-            </Button>
-            
-            <Button
-              onClick={() => handleMetadataChange({
-                title: '',
-                artist: '',
-                album: '',
-                year: '',
-                genre: '',
-                comment: ''
-              })}
-              variant="outline"
-              size="sm"
-            >
-              Limpar Todos
-            </Button>
-          </div>
-
-          {/* Preview dos metadados */}
-          <div className="mt-4 p-3 bg-muted/20 rounded-md">
-            <h4 className="text-sm font-medium text-studio-electric mb-2">
-              Preview dos Metadados:
-            </h4>
-            <div className="text-xs text-white space-y-1">
-              <div><strong>Título:</strong> {mp3Metadata.title || 'Gravação 170725_025340'}</div>
-              <div><strong>Artista:</strong> {mp3Metadata.artist || 'Não definido'}</div>
-              <div><strong>Álbum:</strong> {mp3Metadata.album || 'Não definido'}</div>
-              <div><strong>Ano:</strong> {mp3Metadata.year || new Date().getFullYear()}</div>
-              <div><strong>Gênero:</strong> {mp3Metadata.genre || 'Não definido'}</div>
-              <div><strong>Comentário:</strong> {mp3Metadata.comment || 'Gravado em [data/hora] - [qualidade]kbps'}</div>
             </div>
           </div>
         </div>
@@ -589,9 +416,9 @@ const FileManagementSettings = () => {
               </span>
             </div>
             <div>
-              <span className="text-white">Formato de Arquivo:</span>
+              <span className="text-white">Formato de Data:</span>
               <span className="ml-2 font-bold text-studio-electric">
-                {fileNamePattern === 'hh-mm-ss-seq' ? 'Atual' : 'Sistema Antigo'}
+                {dateFormat}
               </span>
             </div>
             <div>
